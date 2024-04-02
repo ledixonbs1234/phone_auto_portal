@@ -112,8 +112,6 @@ class CreatenewController extends GetxController {
 
   void setUp(KhachHangs kh) {
     if (kh.tenKH != khachHang.value.tenKH) {
-      buuGuis.clear();
-      iBuuGui.value = -1;
       khachHang.value = kh;
     }
     // isCheckChapNhan.value = false;

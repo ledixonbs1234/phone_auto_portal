@@ -113,11 +113,6 @@ class HomeController extends GetxController {
 
   Future<void> onListenNotification(MessageReceiveModel message) async {
     switch (message.Lenh) {
-      case "updateportal":
-        await updateKhachHang();
-
-        break;
-
       case "message":
         stateText.value = message.DoiTuong;
 
