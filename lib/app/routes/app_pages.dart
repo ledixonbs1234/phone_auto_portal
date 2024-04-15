@@ -8,6 +8,8 @@ import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/portalinfo/bindings/portalinfo_binding.dart';
 import '../modules/portalinfo/views/portalinfo_view.dart';
+import '../modules/printPage/bindings/print_page_binding.dart';
+import '../modules/printPage/views/print_page_view.dart';
 
 part 'app_routes.dart';
 
@@ -36,6 +38,11 @@ class AppPages {
       name: _Paths.PORTALINFO,
       page: () => const PortalinfoView(),
       binding: PortalinfoBinding(),
+    ),
+    GetPage(
+      name: _Paths.PRINT_PAGE,
+      page: () => const PrintPageView(),
+      binding: PrintPageBinding(),
     ),
   ];
 }

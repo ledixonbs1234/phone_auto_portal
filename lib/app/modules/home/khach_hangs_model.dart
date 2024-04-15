@@ -66,6 +66,7 @@ class BuuGuis {
   String? trangThaiRequest;
   String? money;
   int? index;
+  List<String>? listDo = <String>[];
 
   BuuGuis(
       {this.khoiLuong,
@@ -73,16 +74,18 @@ class BuuGuis {
       this.timeTrangThai,
       this.trangThai,
       this.money,
+      this.listDo,
       this.trangThaiRequest,
-      this.index}) {}
+      this.index});
 
   BuuGuis.fromJson(Map<dynamic, dynamic> json) {
     khoiLuong = json['KhoiLuong'];
     maBuuGui = json['MaBuuGui'];
-    isBlackList = json['IsBlackList']??false;
+    isBlackList = json['IsBlackList'] ?? false;
     timeTrangThai = json['TimeTrangThai'];
     trangThai = json['TrangThai'];
     money = json['Money'];
+    listDo = json['ListDo'];
 
     trangThaiRequest = json['TrangThaiRequest'];
     index = json['index'];
@@ -97,6 +100,7 @@ class BuuGuis {
     data['TrangThai'] = trangThai;
     data['index'] = index;
     data['Money'] = money;
+    data['ListDo'] = listDo;
     data['TrangThaiRequest'] = trangThaiRequest;
     return data;
   }

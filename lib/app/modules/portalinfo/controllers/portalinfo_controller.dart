@@ -21,6 +21,7 @@ class PortalinfoController extends GetxController {
   final stateText = "".obs;
 
   final isSortDiNgoai = false.obs;
+  final isPrinted = true.obs;
 
   var isWaitingCodes = false;
 
@@ -102,7 +103,9 @@ class PortalinfoController extends GetxController {
             MessageReceiveModel(
                 "dongdingoai",
                 jsonEncode(Dingoaicodes(
-                    codes: codes, isSorted: isSortDiNgoai.value))));
+                    codes: codes,
+                    isSorted: isSortDiNgoai.value,
+                    isPrinted: isPrinted.value))));
       }
     } else if (message.Lenh == "message") {
       stateText.value = message.DoiTuong;

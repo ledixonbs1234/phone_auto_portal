@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
+import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
 import 'package:phone_auto_portal/app/routes/app_pages.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/firebase_options.dart';
@@ -39,6 +40,7 @@ Future<void> main() async {
   Get.put(PortalinfoController());
   Get.put(CreatenewController());
   Get.put(DetailController());
+  Get.put(PrintPageController());
   // Get.put(DingoaiController());
   // Get.put(WebController());
   // Get.put(SavedMHController());

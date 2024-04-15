@@ -166,6 +166,12 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             controller.isSortDiNgoai.value = e!;
                           }),
                       const Text("Sắp xếp"),
+                      Checkbox(
+                          value: controller.isPrinted.value,
+                          onChanged: (e) {
+                            controller.isPrinted.value = e!;
+                          }),
+                      const Text("In"),
                     ],
                   ),
                   Row(

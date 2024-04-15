@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,11 +12,22 @@ class CreatenewController extends GetxController {
   final khachHang = KhachHangs().obs;
   final buuGuis = <BuuGuis>[].obs;
   final isChangeKL = false.obs;
+  final isDo = false.obs;
   late FocusNode focusKL;
+  late FocusNode focusK1;
+  late FocusNode focusK2;
+  late FocusNode focusK3;
   final stateText = "".obs;
+  final listKichThuoc = <String>["", "", ""].obs;
   final iBuuGui = (-1).obs;
+  final susggestMHs = <String>[].obs;
+  final opacityLevel = 1.0.obs;
+  final countBuuGuiConLai = 0.obs;
 
   TextEditingController textHintController = TextEditingController();
+  TextEditingController k1 = TextEditingController();
+  TextEditingController k2 = TextEditingController();
+  TextEditingController k3 = TextEditingController();
 
   TextEditingController textMHController = TextEditingController();
 
@@ -29,6 +41,16 @@ class CreatenewController extends GetxController {
     super.onReady();
     focusHint = FocusNode();
     focusKL = FocusNode();
+    focusK1 = FocusNode();
+    focusK2 = FocusNode();
+    focusK3 = FocusNode();
+    focusHint.addListener(() {
+      if (focusHint.hasFocus) {
+        k1.text = "";
+        k2.text = "";
+        k3.text = "";
+      }
+    });
   }
 
   void onChangeHintMH(String hintNumber) async {
@@ -38,11 +60,13 @@ class CreatenewController extends GetxController {
 
     String currentMaHieu = "";
 
-    for (var buugui in khachHang.value.buuGuis!) {
-      if (buugui.maBuuGui!.lastIndexOf(hintNumber) != -1) {
-        currentMaHieu = buugui.maBuuGui!;
+    for (var buugui in susggestMHs) {
+      if (buugui.lastIndexOf(hintNumber) != -1) {
+        currentMaHieu = buugui;
         count++;
-        if (count > 1) break;
+        if (count > 1) {
+          break;
+        }
       }
     }
 
@@ -52,67 +76,97 @@ class CreatenewController extends GetxController {
           .where((element) => element.maBuuGui == currentMaHieu)
           .isNotEmpty) {
         textHintController.text = "";
+        focusHint.requestFocus();
         return;
       }
+
       textMHController.text = currentMaHieu.toUpperCase();
       if (isChangeKL.value) {
         focusKL.requestFocus();
 
         sleep(const Duration(milliseconds: 300));
+      } else if (isDo.value) {
+        focusK1.requestFocus();
       } else {
         addKhachHang();
+        focusHint.requestFocus();
+        //show keyboard
       }
+      update();
     }
   }
 
   void addKhachHang() {
-    if (isChangeKL.value) {
-      if (textMHController.text.isNotEmpty &&
-          textKLController.text.isNotEmpty) {
-        buuGuis.add(BuuGuis(
-            index: buuGuis.length + 1,
-            maBuuGui: textMHController.text,
-            khoiLuong: int.parse(textKLController.text)));
+    susggestMHs.remove(textMHController.text);
+    var bgTemp =
+        BuuGuis(index: buuGuis.length + 1, maBuuGui: textMHController.text);
+    if (textMHController.text.isNotEmpty) {
+      if (isChangeKL.value) {
+        if (textKLController.text.isNotEmpty) {
+          bgTemp.khoiLuong = int.parse(textKLController.text);
+        }
+      } else {
+        bgTemp.khoiLuong = khachHang.value.buuGuis!
+            .firstWhere((element) => textMHController.text == element.maBuuGui)
+            .khoiLuong;
       }
-    } else {
-      if (textMHController.text.isNotEmpty) {
-        buuGuis.add(BuuGuis(
-            index: buuGuis.length + 1,
-            maBuuGui: textMHController.text,
-            khoiLuong: khachHang.value.buuGuis!
-                .firstWhere(
-                    (element) => textMHController.text == element.maBuuGui)
-                .khoiLuong));
+      if (isDo.value) {
+        //kiem tra k1 k2 k3 co empty khong
+        if (k1.text.isNotEmpty && k2.text.isNotEmpty && k3.text.isNotEmpty) {
+          bgTemp.listDo = [k1.text, k2.text, k3.text];
+        }
       }
+      buuGuis.add(bgTemp);
     }
     buuGuis.sort((a, b) => b.index!.compareTo(a.index!));
     textMHController.text = "";
     textKLController.text = "";
     textHintController.text = "";
+    k1.text = "";
+    k2.text = "";
+    k3.text = "";
+    focusHint.requestFocus();
     update();
   }
 
   addKL(int kl) {
     textKLController.text = kl.toString();
     addKhachHang();
-    focusHint.requestFocus();
   }
 
   deleteSelected() {
     if (iBuuGui.value != -1) {
       buuGuis.removeAt(iBuuGui.value);
     }
+    refreshSussgest();
     update();
   }
 
   deleteAll() {
     buuGuis.clear();
+    refreshSussgest();
     update();
+  }
+
+  refreshSussgest() {
+    susggestMHs.clear();
+    for (var buugui in khachHang.value.buuGuis!) {
+      if (buugui.trangThai == "Đang đi thu gom" ||
+          buugui.trangThai == "Nhận hàng thành công" ||
+          buugui.trangThai == "Đã phân hướng") {
+        susggestMHs.add(buugui.maBuuGui!);
+      }
+    }
+    if (buuGuis.isNotEmpty) {
+      susggestMHs.removeWhere((element1) =>
+          buuGuis.where((element) => element.maBuuGui == element1).isNotEmpty);
+    }
   }
 
   void setUp(KhachHangs kh) {
     if (kh.tenKH != khachHang.value.tenKH) {
       khachHang.value = kh;
+      refreshSussgest();
     }
     // isCheckChapNhan.value = false;
     // setDefaultInfo();
@@ -131,6 +185,7 @@ class CreatenewController extends GetxController {
       }
     }
     count -= buuGuis.length;
+    opacityLevel.value = 0;
     return count;
   }
 
@@ -170,6 +225,30 @@ class CreatenewController extends GetxController {
         stateText.value = message.DoiTuong;
         break;
       default:
+    }
+  }
+
+  void checkSelected() {
+    //kiem tra listDo trong iBuugui co empty khong va hien len thong qua k1 k2 k3
+    if (iBuuGui.value != -1) {
+      var bg = buuGuis[iBuuGui.value];
+      if (bg.listDo != null) {
+        k1.text = bg.listDo![0];
+        k2.text = bg.listDo![1];
+        k3.text = bg.listDo![2];
+      } else {
+        k1.text = "";
+        k2.text = "";
+        k3.text = "";
+      }
+    }
+  }
+
+  printSelected() {
+    //gui len in ma hieu duoc chon
+    if (iBuuGui.value != -1) {
+      FirebaseManager().addMessage(
+          MessageReceiveModel("printBD1New", buuGuis[iBuuGui.value].maBuuGui!));
     }
   }
 }

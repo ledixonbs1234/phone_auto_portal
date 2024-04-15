@@ -1,3 +1,4 @@
+import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,7 @@ class CreatenewView extends GetView<CreatenewController> {
   const CreatenewView({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
     return Scaffold(
       appBar: AppBar(
         title: Text(controller.khachHang.value.tenKH.toString(),
@@ -26,13 +28,17 @@ class CreatenewView extends GetView<CreatenewController> {
                 () => Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text(
-                      "Còn Lại : ${controller.getSLBuuGui()}",
-                      style: const TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold),
-                    )
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      color: Colors.blue,
+                      child: Text(
+                        "Còn Lại : ${controller.susggestMHs.length}",
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -44,34 +50,43 @@ class CreatenewView extends GetView<CreatenewController> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: SizedBox(
-                        width: 100,
+                        width: 150,
                         height: 40,
-                        child: TextField(
-                          focusNode: controller.focusHint,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                          controller: controller.textHintController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          onChanged: (s) {
-                            controller.textHintController.text = s;
-                            controller.onChangeHintMH(s);
-                          },
+                        child: Obx(
+                          () => SimpleAutoCompleteTextField(
+                            key: keys,
+                            focusNode: controller.focusHint,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18),
+                            controller: controller.textHintController,
+                            keyboardType: TextInputType.number,
+                            textChanged: (s) {
+                              if (s.isNotEmpty) controller.onChangeHintMH(s);
+                            },
+                            clearOnSubmit: true,
+                            textSubmitted: (s) =>
+                                {controller.onChangeHintMH(s)},
+                            suggestions: controller.susggestMHs.value,
+                          ),
                         )),
                   ),
-                  Row(
-                    children: [
-                      Obx(
-                        () => Checkbox(
+                  Obx(
+                    () => Row(
+                      children: [
+                        Checkbox(
                             value: controller.isChangeKL.value,
                             onChanged: (e) {
                               controller.isChangeKL.value = e!;
                             }),
-                      ),
-                      const Text('Thay đổi KL')
-                    ],
+                        const Text('KL'),
+                        Checkbox(
+                            value: controller.isDo.value,
+                            onChanged: (e) {
+                              controller.isDo.value = e!;
+                            }),
+                        const Text('Đo'),
+                      ],
+                    ),
                   )
                 ],
               ),
@@ -119,8 +134,12 @@ class CreatenewView extends GetView<CreatenewController> {
                           },
                           onSubmitted: (s) {
                             //thuc hien add number trong nay
-                            controller.addKhachHang();
-                            controller.focusHint.requestFocus();
+                            if (controller.isDo.value) {
+                              controller.focusK1.requestFocus();
+                            } else {
+                              controller.addKhachHang();
+                              controller.focusHint.requestFocus();
+                            }
                           },
                         )),
                   )
@@ -169,6 +188,80 @@ class CreatenewView extends GetView<CreatenewController> {
                           controller.addKL(2000))
                 ],
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: TextField(
+                        textAlign: TextAlign.center,
+                        focusNode: controller.focusK1,
+                        minLines: null,
+                        controller: controller.k1,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        onChanged: (s) {
+                          controller.listKichThuoc[0] = s;
+                        },
+                        onSubmitted: (value) =>
+                            controller.focusK2.requestFocus(),
+                        //rounded textfield
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: 50,
+                      child: TextField(
+                        focusNode: controller.focusK2,
+                        textAlign: TextAlign.center,
+                        minLines: null,
+                        controller: controller.k2,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        onChanged: (s) {
+                          controller.listKichThuoc[1] = s;
+                        },
+                        onSubmitted: (value) =>
+                            controller.focusK3.requestFocus(),
+                        //rounded textfield
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: 50,
+                      child: TextField(
+                        textAlign: TextAlign.center,
+                        focusNode: controller.focusK3,
+                        minLines: null,
+                        controller: controller.k3,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        onChanged: (s) {
+                          controller.listKichThuoc[2] = s;
+                        },
+                        onSubmitted: (value) {
+                          //THucw hien add khach hang voi kich thuoc cho truowc
+                          controller.addKhachHang();
+                        },
+                        //rounded textfield
+                      ),
+                    ),
+                  )
+                ],
+              ),
               SizedBox(
                 height: Get.width,
                 child: GetBuilder<CreatenewController>(
@@ -197,14 +290,7 @@ class CreatenewView extends GetView<CreatenewController> {
                                 selected: index == dx.iBuuGui.value,
                                 onSelectChanged: (value) {
                                   dx.iBuuGui.value = index;
-
-                                  // thuc hien lenh trong nay
-                                  // controller.selectedDanhSachBD(index);
-                                  // if (!dx.trangThais[index].) {
-                                  //   dx.listBDDen[index].SelectedItem = true;
-                                  // } else {
-                                  //   dx.listBDDen[index].SelectedItem = false;
-                                  // }
+                                  dx.checkSelected();
                                   dx.update();
                                 },
                                 color:
@@ -262,18 +348,19 @@ class CreatenewView extends GetView<CreatenewController> {
                     children: [
                       ElevatedButton(
                           child: const Text(
-                            'Xóa Đã Chọn',
+                            'Xóa S',
                           ),
                           onPressed: () => controller.deleteSelected()),
                       SizedBox(
                         width: 10,
                       ),
                       ElevatedButton(
+                          onPressed: () {},
                           child: const Text(
                             'Xóa',
                             style: TextStyle(color: Colors.red),
                           ),
-                          onPressed: () => controller.deleteAll())
+                          onLongPress: () => controller.deleteAll())
                     ],
                   ),
                   ElevatedButton(
@@ -281,7 +368,7 @@ class CreatenewView extends GetView<CreatenewController> {
                         'Send',
                         style: TextStyle(color: Colors.blue),
                       ),
-                      onPressed: () => controller.sendToPC())
+                      onPressed: () => controller.sendToPC()),
                 ],
               ),
             ],

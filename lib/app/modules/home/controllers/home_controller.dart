@@ -14,6 +14,8 @@ import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 
+import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
+
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 
 import '../../portalinfo/controllers/portalinfo_controller.dart';
@@ -189,6 +191,14 @@ class HomeController extends GetxController {
     detail.setUp(seKhachHangs.value);
 
     Get.toNamed("/createnew");
+  }
+
+  void goToPrintPage() {
+    var detail = Get.find<PrintPageController>();
+
+    detail.khachHang.value = seKhachHangs.value;
+
+    Get.toNamed("/print-page");
   }
 
   void editHopDong() {

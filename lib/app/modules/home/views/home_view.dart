@@ -328,6 +328,11 @@ class HomeView extends GetView<HomeController> {
                           child: const Text('Chi Tiết')),
                       ElevatedButton(
                           onPressed: () {
+                            controller.goToPrintPage();
+                          },
+                          child: const Text('In Mã Hiệu')),
+                      ElevatedButton(
+                          onPressed: () {
                             controller.goToCreateNew();
                           },
                           child: const Text('Tạo Mới'))
