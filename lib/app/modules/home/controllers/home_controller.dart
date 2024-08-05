@@ -1,4 +1,4 @@
-import 'dart:ffi';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
@@ -42,6 +42,8 @@ class HomeController extends GetxController {
   final stateText = "".obs;
 
   var textMHController = TextEditingController();
+  var accountTE = TextEditingController();
+  var passwordTE = TextEditingController();
 
   var addressController = TextEditingController();
 
@@ -57,7 +59,14 @@ class HomeController extends GetxController {
 
   final selectedMayChu = "maychu".obs;
 
-  final maychus = <String>["maychu", "mayphu", "mayphusan", "maytest"].obs;
+  final maychus = <String>[
+    "maychu",
+    "mayphu",
+    "mayphusan",
+    "maytest",
+    "maygiaodich 1",
+    "maygiaodich 2"
+  ].obs;
 
   @override
   void onInit() {
@@ -69,10 +78,13 @@ class HomeController extends GetxController {
     // khachHangs.clear();
 
     keyController.text = GetStorage().read("key") ?? "maychu";
+    selectedMayChu.value = keyController.text;
 
     // var temps = await FirebaseManager().getKhachHangs();
 
     numberHopDongController.text = "0";
+    accountTE.text = GetStorage().read("account") ?? "";
+    passwordTE.text = GetStorage().read("password") ?? "";
 
     // if (temps.isNotEmpty) {
 
@@ -165,14 +177,7 @@ class HomeController extends GetxController {
 
       stateText.value = "Tìm thấy ${khachHangFinded.tenKH}";
 
-      //pause 2 sencond
-
-      // sleep(const Duration(milliseconds: 1000));
-
       textMHController.text = "";
-
-      //unfocus textfield
-
       FocusScope.of(Get.context!).unfocus();
     }
   }
@@ -233,12 +238,13 @@ class HomeController extends GetxController {
 
   khoiTaoPortal() {
     stateText.value = "Đang khởi tạo";
-
     FirebaseManager().addMessage(MessageReceiveModel(
         "khoitao",
-        '{'
-            '"maKH"'
-            ': "${seKhachHangs.value.maKH}"}'));
+        const JsonEncoder().convert({
+          "maKH": seKhachHangs.value.maKH,
+          "account": accountTE.text,
+          "password": passwordTE.text
+        })));
   }
 
   void goToOption() {
@@ -276,5 +282,10 @@ class HomeController extends GetxController {
     var portalInfo = Get.find<PortalinfoController>();
 
     portalInfo.refreshPortal();
+  }
+
+  void saveAccount() {
+    GetStorage().write("account", accountTE.text);
+    GetStorage().write("password", passwordTE.text);
   }
 }

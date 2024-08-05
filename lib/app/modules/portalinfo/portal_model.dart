@@ -8,6 +8,7 @@ class Portal {
   String? trangThai;
   List<BuuGuiPs>? buuGuiPs;
   bool selected = false;
+  bool isXuLyDiNgoai = false;
 
   Portal(
       {this.id,
@@ -54,18 +55,21 @@ class Portal {
 class BuuGuiPs {
   String? id;
   String? maHieu;
+  String? weight;
 
-  BuuGuiPs({this.id, this.maHieu});
+  BuuGuiPs({this.id, this.maHieu, this.weight});
 
   BuuGuiPs.fromJson(Map<dynamic, dynamic> json) {
     id = json['Id'];
     maHieu = json['MaHieu'];
+    weight = json['Weight'];
   }
 
   Map<dynamic, dynamic> toJson() {
     final data = <dynamic, dynamic>{};
     data['Id'] = id;
     data['MaHieu'] = maHieu;
+    data['Weight'] = weight;
     return data;
   }
 }

@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../controllers/print_page_controller.dart';
 
 class PrintPageView extends GetView<PrintPageController> {
-  const PrintPageView({Key? key}) : super(key: key);
+  const PrintPageView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class PrintPageView extends GetView<PrintPageController> {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 18),
                   controller: controller.editMHC,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.text,
                   onChanged: (e) {
                     controller.onChangeMH(e);
                   },
@@ -35,7 +35,7 @@ class PrintPageView extends GetView<PrintPageController> {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   controller.buuGui.value,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 17,
                       color: Colors.blue,
                       fontWeight: FontWeight.bold),

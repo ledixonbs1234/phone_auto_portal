@@ -19,19 +19,23 @@ class HomeView extends GetView<HomeController> {
           title: SizedBox(
             width: 150,
             child: Obx(
-              () => DropdownButton<String>(
-                value: controller.selectedMayChu.value,
-                onChanged: (value) {
-                  controller.selectedMayChu.value = value!;
+              () => Row(
+                children: [
+                  DropdownButton<String>(
+                    value: controller.selectedMayChu.value,
+                    onChanged: (value) {
+                      controller.selectedMayChu.value = value!;
 
-                  controller.saveKey(value);
-                },
-                items: controller.maychus.map((e) {
-                  return DropdownMenuItem<String>(
-                    value: e,
-                    child: Text(e),
-                  );
-                }).toList(),
+                      controller.saveKey(value);
+                    },
+                    items: controller.maychus.map((e) {
+                      return DropdownMenuItem<String>(
+                        value: e,
+                        child: Text(e),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ),
           ),
@@ -183,7 +187,7 @@ class HomeView extends GetView<HomeController> {
 
                 SizedBox(
                   width: Get.width,
-                  height: 270,
+                  height: 260,
                   child: Card(
                     elevation: 4,
 
@@ -194,7 +198,7 @@ class HomeView extends GetView<HomeController> {
                     color: Colors.blue[50], // Add color to the card
 
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         children: [
                           Expanded(
@@ -314,6 +318,81 @@ class HomeView extends GetView<HomeController> {
                       ),
                     ),
                   ),
+                ),
+                TextButton(
+                  onPressed: () => showDialog<String>(
+                    context: context,
+                    builder: (BuildContext context) => Dialog(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16.0),
+                                child: Column(
+                                  children: [
+                                    SizedBox(
+                                      width: Get.width - 140,
+                                      child: TextField(
+                                        onChanged: (s) {},
+                                        controller: controller.accountTE,
+                                        decoration: const InputDecoration(
+                                          hintText: 'Tài khoản',
+                                        ),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                    TextField(
+                                      onChanged: (s) {},
+                                      controller: controller.passwordTE,
+                                      obscureText: true,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Mật khẩu',
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                )),
+                            const SizedBox(height: 15),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: ElevatedButton(
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStateProperty.all(
+                                                  Colors.lightBlue.shade200)),
+                                      onPressed: () {
+                                        controller.saveAccount();
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Lưu')),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Close'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  child: const Text('Tài khoản'),
                 ),
 
                 Padding(

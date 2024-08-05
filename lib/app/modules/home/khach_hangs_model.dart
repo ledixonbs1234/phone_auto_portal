@@ -59,6 +59,7 @@ class KhachHangs {
 
 class BuuGuis {
   int? khoiLuong;
+  String? id;
   String? maBuuGui;
   String? timeTrangThai;
   bool isBlackList = false;
@@ -73,6 +74,7 @@ class BuuGuis {
       this.maBuuGui,
       this.timeTrangThai,
       this.trangThai,
+      this.id,
       this.money,
       this.listDo,
       this.trangThaiRequest,
@@ -81,6 +83,7 @@ class BuuGuis {
   BuuGuis.fromJson(Map<dynamic, dynamic> json) {
     khoiLuong = json['KhoiLuong'];
     maBuuGui = json['MaBuuGui'];
+    id = json['Id'];
     isBlackList = json['IsBlackList'] ?? false;
     timeTrangThai = json['TimeTrangThai'];
     trangThai = json['TrangThai'];
@@ -95,6 +98,7 @@ class BuuGuis {
     final data = <dynamic, dynamic>{};
     data['KhoiLuong'] = khoiLuong;
     data['MaBuuGui'] = maBuuGui;
+    data['Id'] = id;
     data['IsBlackList'] = isBlackList;
     data['TimeTrangThai'] = timeTrangThai;
     data['TrangThai'] = trangThai;

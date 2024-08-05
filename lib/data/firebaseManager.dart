@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
+import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
@@ -22,6 +23,7 @@ class FirebaseManager {
   late DetailController? detail;
   late CreatenewController? createNew;
   late PortalinfoController? portalInfo;
+  late EditPageController? editPage;
   // String? getKey() {
   //   var box = GetStorage();
   //   String? key = box.read('keymqtt');
@@ -110,12 +112,14 @@ class FirebaseManager {
           detail = Get.find<DetailController>();
           createNew = Get.find<CreatenewController>();
           portalInfo = Get.find<PortalinfoController>();
+          editPage = Get.find<EditPageController>();
           //         autoBDController = Get.find<AutoBdController>();
           //         detailController = Get.find<DetailController>();
           portalInfo?.onListenNotification(message);
           detail?.onListenNotification(message);
           home?.onListenNotification(message);
           createNew?.onListenNotification(message);
+          editPage?.onListenNotification(message);
           //         maHieu?.onListenNotification(message);
           //         diNgoai?.onListenNotification(message);
           //         webController?.onListenNotification(message);
@@ -267,15 +271,15 @@ class FirebaseManager {
     addMessage(MessageReceiveModel("getPortal", ""));
   }
 
-  getPortal() async {
-    var childs = await database.child("PORTAL/MAINPAGE").get();
-    portalInfo = Get.find<PortalinfoController>();
-    childs.children.forEach((element) {
-      Map<dynamic, dynamic> mapChild = element.value as Map<dynamic, dynamic>;
-      portalInfo!.portals.add(Portal.fromJson(mapChild));
-    });
-    portalInfo!.update();
-  }
+  // getPortal() async {
+  //   var childs = await database.child("PORTAL/MAINPAGE").get();
+  //   portalInfo = Get.find<PortalinfoController>();
+  //   childs.children.forEach((element) {
+  //     Map<dynamic, dynamic> mapChild = element.value as Map<dynamic, dynamic>;
+  //     portalInfo!.portals.add(Portal.fromJson(mapChild));
+  //   });
+  //   portalInfo!.update();
+  // }
 
   void pushBlackList(String s) {
     database.child('PORTAL/BLACKLIST/').push().set({"maBuuGui": s});

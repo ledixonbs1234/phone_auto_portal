@@ -6,42 +6,22 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:group_button/group_button.dart';
 
-import '../controllers/createnew_controller.dart';
+import '../controllers/edit_page_controller.dart';
 
-class CreatenewView extends GetView<CreatenewController> {
-  const CreatenewView({Key? key}) : super(key: key);
+class EditPageView extends GetView<EditPageController> {
+  const EditPageView({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
     return Scaffold(
       appBar: AppBar(
-        title: Text(controller.khachHang.value.tenKH.toString(),
-            style: const TextStyle(
-                color: Colors.teal, fontSize: 20, fontWeight: FontWeight.bold)),
+        title: Text(controller.portal.value.name!),
         centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Obx(
-                () => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8.0),
-                      color: Colors.blue,
-                      child: Text(
-                        "Còn Lại : ${controller.susggestMHs.length}",
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -287,7 +267,7 @@ class CreatenewView extends GetView<CreatenewController> {
               ),
               SizedBox(
                 height: Get.width,
-                child: GetBuilder<CreatenewController>(
+                child: GetBuilder<EditPageController>(
                   builder: (dx) => DataTable2(
                     showCheckboxColumn: false,
                     sortAscending: false,
@@ -371,29 +351,27 @@ class CreatenewView extends GetView<CreatenewController> {
                     children: [
                       ElevatedButton(
                           child: const Text(
-                            'Xóa',
-                            style: TextStyle(color: Colors.red),
+                            'Xóa S',
                           ),
-                          onLongPress: () => controller.deleteAll(),
                           onPressed: () => controller.deleteSelected()),
                       SizedBox(
                         width: 10,
                       ),
                       ElevatedButton(
-                          onPressed: () {
-                            controller.sendPrintBD1();
-                          },
+                          onPressed: () {},
                           child: const Text(
-                            'Print BD1',
-                          )),
+                            'Xóa',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          onLongPress: () => controller.deleteAll())
                     ],
                   ),
                   ElevatedButton(
                       child: const Text(
-                        'Send',
+                        'Sửa',
                         style: TextStyle(color: Colors.blue),
                       ),
-                      onPressed: () => controller.sendToPC()),
+                      onPressed: () => controller.editAll()),
                 ],
               ),
             ],

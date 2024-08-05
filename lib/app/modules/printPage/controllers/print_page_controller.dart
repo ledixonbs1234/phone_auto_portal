@@ -36,11 +36,9 @@ class PrintPageController extends GetxController {
   }
 
   void printMaHieu() {
-    if (editMHC.text.isNotEmpty) {
-      if (buuGui.value.isNotEmpty) {
-        FirebaseManager()
-            .addMessage(MessageReceiveModel("printBD1New", buuGui.value));
-      }
+    if (buuGui.value.isNotEmpty) {
+      FirebaseManager()
+          .addMessage(MessageReceiveModel("printBD1New", buuGui.value));
     }
   }
 }

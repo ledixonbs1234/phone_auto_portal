@@ -9,6 +9,7 @@ abstract class Routes {
   static const OPTIONS = _Paths.OPTIONS;
   static const PORTALINFO = _Paths.PORTALINFO;
   static const PRINT_PAGE = _Paths.PRINT_PAGE;
+  static const EDIT_PAGE = _Paths.EDIT_PAGE;
 }
 
 abstract class _Paths {
@@ -19,4 +20,5 @@ abstract class _Paths {
   static const OPTIONS = '/options';
   static const PORTALINFO = '/portalinfo';
   static const PRINT_PAGE = '/print-page';
+  static const EDIT_PAGE = '/edit-page';
 }

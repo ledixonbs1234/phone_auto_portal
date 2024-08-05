@@ -4,6 +4,8 @@ import '../modules/createnew/bindings/createnew_binding.dart';
 import '../modules/createnew/views/createnew_view.dart';
 import '../modules/detail/bindings/detail_binding.dart';
 import '../modules/detail/views/detail_view.dart';
+import '../modules/edit_page/bindings/edit_page_binding.dart';
+import '../modules/edit_page/views/edit_page_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/portalinfo/bindings/portalinfo_binding.dart';
@@ -43,6 +45,11 @@ class AppPages {
       name: _Paths.PRINT_PAGE,
       page: () => const PrintPageView(),
       binding: PrintPageBinding(),
+    ),
+    GetPage(
+      name: _Paths.EDIT_PAGE,
+      page: () => const EditPageView(),
+      binding: EditPageBinding(),
     ),
   ];
 }

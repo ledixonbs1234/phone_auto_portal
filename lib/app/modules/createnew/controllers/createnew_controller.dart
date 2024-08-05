@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
+import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 
 import '../../home/messageReceiveModel.dart';
@@ -13,10 +14,10 @@ class CreatenewController extends GetxController {
   final buuGuis = <BuuGuis>[].obs;
   final isChangeKL = false.obs;
   final isDo = false.obs;
-  late FocusNode focusKL;
-  late FocusNode focusK1;
-  late FocusNode focusK2;
-  late FocusNode focusK3;
+  late FocusNode focusKL = FocusNode();
+  late FocusNode focusK1 = FocusNode();
+  late FocusNode focusK2 = FocusNode();
+  late FocusNode focusK3 = FocusNode();
   final stateText = "".obs;
   final listKichThuoc = <String>["", "", ""].obs;
   final iBuuGui = (-1).obs;
@@ -44,6 +45,7 @@ class CreatenewController extends GetxController {
     focusK1 = FocusNode();
     focusK2 = FocusNode();
     focusK3 = FocusNode();
+
     focusHint.addListener(() {
       if (focusHint.hasFocus) {
         k1.text = "";
@@ -53,47 +55,23 @@ class CreatenewController extends GetxController {
     });
   }
 
-  void onChangeHintMH(String hintNumber) async {
+  void onFindedMH(String buuGuiTemp) async {
     //thuc hien tim kiem ma buu gui tu sau sang truoc
+    //kiem tra currentMaHieu có phải là bưu gửi đang tồn tại trong buuguis không
+    textMHController.text = buuGuiTemp.toUpperCase();
+    textHintController.text = "";
+    if (isChangeKL.value) {
+      focusKL.requestFocus();
 
-    int count = 0;
-
-    String currentMaHieu = "";
-
-    for (var buugui in susggestMHs) {
-      if (buugui.lastIndexOf(hintNumber) != -1) {
-        currentMaHieu = buugui;
-        count++;
-        if (count > 1) {
-          break;
-        }
-      }
+      sleep(const Duration(milliseconds: 300));
+    } else if (isDo.value) {
+      focusK1.requestFocus();
+    } else {
+      addKhachHang();
+      focusHint.requestFocus();
+      //show keyboard
     }
-
-    if (count == 1) {
-      //kiem tra currentMaHieu có phải là bưu gửi đang tồn tại trong buuguis không
-      if (buuGuis
-          .where((element) => element.maBuuGui == currentMaHieu)
-          .isNotEmpty) {
-        textHintController.text = "";
-        focusHint.requestFocus();
-        return;
-      }
-
-      textMHController.text = currentMaHieu.toUpperCase();
-      if (isChangeKL.value) {
-        focusKL.requestFocus();
-
-        sleep(const Duration(milliseconds: 300));
-      } else if (isDo.value) {
-        focusK1.requestFocus();
-      } else {
-        addKhachHang();
-        focusHint.requestFocus();
-        //show keyboard
-      }
-      update();
-    }
+    update();
   }
 
   void addKhachHang() {
@@ -250,5 +228,23 @@ class CreatenewController extends GetxController {
       FirebaseManager().addMessage(
           MessageReceiveModel("printBD1New", buuGuis[iBuuGui.value].maBuuGui!));
     }
+  }
+
+  void sendPrintBD1() {
+    stateText.value = "Đang gửi mã hiệu";
+
+    List<String> maHieus = buuGuis.map((e) => e.maBuuGui!).toList();
+
+    FirebaseManager().addMessageToAppBD(
+        FirebaseManager().keyData!,
+        MessageReceiveModel(
+            "dongdingoai",
+            jsonEncode(Dingoaicodes(
+                codes: maHieus,
+                codeIDs: null,
+                isAutoBD: false,
+                isSorted: false,
+                isPrinted: false)),
+            nameMay: FirebaseManager().keyData!));
   }
 }

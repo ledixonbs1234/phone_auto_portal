@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -15,10 +14,6 @@ class DetailController extends GetxController {
   final iSeBuuGui = (-1).obs;
   final count = 0.obs;
   final stateText = "".obs;
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
   void setUp(KhachHangs kh) {
     khachHang.value = kh;
@@ -65,7 +60,10 @@ class DetailController extends GetxController {
 
     if (buuGuis.isNotEmpty) {
       final small = buuGuis.where((m) => m.khoiLuong! < 2000).toList();
+      //remove in small if m.maBuuGui.Length < 13
+      small.removeWhere((element) => element.maBuuGui!.length < 13);
       final large = buuGuis.where((m) => m.khoiLuong! >= 2000).toList();
+      large.removeWhere((element) => element.maBuuGui!.length < 13);
       small.sort((a, b) {
         if (a.maBuuGui!.substring(9, 11) == b.maBuuGui!.substring(9, 11)) {
           return int.parse(b.maBuuGui!.substring(8, 9)) -
@@ -97,16 +95,6 @@ class DetailController extends GetxController {
         update();
       });
     }
-  }
-
-  @override
-  void onReady() {
-    super.onReady();
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
   }
 
   void increment() => count.value++;
@@ -141,6 +129,7 @@ class DetailController extends GetxController {
 //setListBG where buuGuis isBlackList = false
 
     FirebaseManager().setListBG(
+        // ignore: invalid_use_of_protected_member
         buuGuis.value.where((element) => !element.isBlackList).toList());
     FirebaseManager().addMessage(MessageReceiveModel(
         "sendtoportal",

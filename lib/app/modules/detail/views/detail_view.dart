@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import '../controllers/detail_controller.dart';
 
 class DetailView extends GetView<DetailController> {
-  const DetailView({Key? key}) : super(key: key);
+  const DetailView({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,7 +239,7 @@ class DetailView extends GetView<DetailController> {
                                       },
                                       itemBuilder: (BuildContext context) =>
                                           <PopupMenuEntry<String>>[
-                                        dx.buuGuis[index].isBlackList!
+                                        dx.buuGuis[index].isBlackList
                                             ? PopupMenuItem<String>(
                                                 value: 'Xóa khỏi Blacklist',
                                                 child: const Text(
@@ -272,6 +272,19 @@ class DetailView extends GetView<DetailController> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
+                        onPressed: () {
+                          controller.stopToPortal();
+                        },
+                        child: const Text(
+                          'Stop',
+                          style: TextStyle(color: Colors.red),
+                        )),
+                    ElevatedButton(
+                        onPressed: () {
+                          controller.printBD1();
+                        },
+                        child: const Text('Print')),
+                    ElevatedButton(
                         onPressed: controller.isEnableRunBtn.value
                             ? () async {
                                 controller.isEnableRunBtn.value = false;
@@ -285,19 +298,6 @@ class DetailView extends GetView<DetailController> {
                         child: const Text(
                           'Send',
                           style: TextStyle(color: Colors.blue),
-                        )),
-                    ElevatedButton(
-                        onPressed: () {
-                          controller.printBD1();
-                        },
-                        child: const Text('Print')),
-                    ElevatedButton(
-                        onPressed: () {
-                          controller.stopToPortal();
-                        },
-                        child: const Text(
-                          'Stop',
-                          style: TextStyle(color: Colors.red),
                         ))
                   ],
                 ),

@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 import '../controllers/portalinfo_controller.dart';
 
 class PortalinfoView extends GetView<PortalinfoController> {
-  const PortalinfoView({Key? key}) : super(key: key);
+  const PortalinfoView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +20,18 @@ class PortalinfoView extends GetView<PortalinfoController> {
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
                     onPressed: () {
                       controller.refreshPortal();
                     },
                     child: const Text("Refresh")),
+                ElevatedButton(
+                    onPressed: () {
+                      controller.checkDongCT();
+                    },
+                    child: const Text("Check")),
               ],
             ),
             Row(
@@ -45,6 +50,27 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               color: Colors.blue),
                         ),
                       )
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      const Text('Số Lượng : '),
+                      Obx(
+                        () => Text(
+                          '${controller.countPortalSelected.value}',
+                          style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -78,12 +104,67 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   rows: List<DataRow>.generate(
                       dx.portals.length,
                       (index) => DataRow(
-                              selected: dx.portals[index].selected ?? false,
+                              selected: dx.portals[index].selected,
+                              onLongPress: () {
+                                var test = dx.portals[index].selected;
+                                controller.isShowEdit.value = false;
+                                controller.getMaHieuToShow(index);
+
+                                Get.dialog(
+                                    barrierDismissible: false,
+                                    Dialog(
+                                      backgroundColor: Colors.white70,
+                                      child: PopScope(
+                                          child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Column(children: [
+                                          const Text("Danh sách hàng hóa"),
+                                          // Thucw hien send to web vaf lay du lieu lai
+                                          Obx(
+                                            () => Expanded(
+                                              child: ListView.builder(
+                                                itemCount: controller
+                                                        .isShowEdit.value
+                                                    ? dx.currentMaHieusInPortal
+                                                        .length
+                                                    : 0,
+                                                itemBuilder: (context, i) {
+                                                  return Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        dx.currentMaHieusInPortal[i]
+                                                            .code!,
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      Text(dx
+                                                          .currentMaHieusInPortal[
+                                                              i]
+                                                          .Weight!)
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ]),
+                                      )),
+                                    ));
+                              },
                               onSelectChanged: (value) {
                                 dx.iPotal.value = index;
                                 if (dx.portals[index].selected != value) {
                                   dx.portals[index].selected = value!;
                                 }
+                                //count portals selected
+                                dx.countPortalSelected.value = dx.portals
+                                    .where((element) => element.selected)
+                                    .length;
 
                                 dx.update();
                               },
@@ -108,9 +189,11 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                 )),
                                 DataCell(Text(
                                   dx.portals[index].name!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 12,
-                                      color: Color(0xff008DDA),
+                                      color: !dx.portals[index].isXuLyDiNgoai
+                                          ? const Color(0xff008DDA)
+                                          : Colors.orange,
                                       fontStyle: FontStyle.italic),
                                 )),
                                 DataCell(Text(
@@ -187,7 +270,18 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             child: const Text('Lấy Dữ Liệu')),
                         ElevatedButton(
                             onPressed: () {
+                              controller.sendTest();
+                            },
+                            onLongPress: () {
+                              controller.sendDiNgoaiAndRunBD();
+                            },
+                            child: const Text('Test')),
+                        ElevatedButton(
+                            onPressed: () {
                               controller.sendDiNgoai();
+                            },
+                            onLongPress: () {
+                              controller.sendDiNgoaiAndRunBD();
                             },
                             child: const Text('Chạy Đi Ngoài')),
                       ])
@@ -204,6 +298,11 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         controller.editHangHoas();
                       },
                       child: const Text("Sửa")),
+                  ElevatedButton(
+                      onPressed: () {
+                        controller.sendSplitAddress();
+                      },
+                      child: const Text("Split Address")),
                   ElevatedButton(
                     onPressed: () {
                       controller.printPageSelected();
