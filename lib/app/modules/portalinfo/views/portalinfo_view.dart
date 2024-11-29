@@ -119,6 +119,18 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                         padding: const EdgeInsets.all(10),
                                         child: Column(children: [
                                           const Text("Danh sách hàng hóa"),
+                                          Row(
+                                            children: [
+                                              const Text('Người Nhập: '),
+                                              Text(
+                                                dx.portals[index].nguoiNhap!,
+                                                style: const TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
                                           // Thucw hien send to web vaf lay du lieu lai
                                           Obx(
                                             () => Expanded(

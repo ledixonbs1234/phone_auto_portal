@@ -303,7 +303,7 @@ class HomeView extends GetView<HomeController> {
                                             },
                                             style: ButtonStyle(
                                                 backgroundColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                         Colors.lightBlue
                                                             .shade200)),
                                             child: const Text('Lưu')),

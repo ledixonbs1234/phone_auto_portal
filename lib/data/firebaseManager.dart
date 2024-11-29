@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_database/firebase_database.dart';
@@ -52,9 +53,13 @@ class FirebaseManager {
     rootPath.child('message/tophone').onValue.drain();
   }
 
+ late StreamSubscription<DatabaseEvent>? streamTimeUpdate =null;
+
   void setUp() async {
     readKey();
-    database.child('PNS/TimeUpdate').onValue.listen((event) async {
+    if (streamTimeUpdate != null) streamTimeUpdate!.cancel();
+    streamTimeUpdate =
+        database.child('PNS/TimeUpdate').onValue.listen((event) async {
       if (event.snapshot.value == null) return;
       // if (lastTimeUpdateStamp == "") {
       //   lastTimeUpdateStamp = event.snapshot.value as String;

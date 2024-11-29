@@ -65,7 +65,8 @@ class HomeController extends GetxController {
     "mayphusan",
     "maytest",
     "maygiaodich 1",
-    "maygiaodich 2"
+    "maygiaodich 2",
+    "maygiaodich 3",
   ].obs;
 
   @override
