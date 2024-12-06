@@ -185,10 +185,9 @@ class DetailView extends GetView<DetailController> {
                                   // }
                                   dx.update();
                                 },
-                                color:
-                                    MaterialStateProperty.resolveWith<Color?>(
-                                        (Set<MaterialState> states) {
-                                  if (states.contains(MaterialState.selected)) {
+                                color: WidgetStateProperty.resolveWith<Color?>(
+                                    (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.selected)) {
                                     return Theme.of(context)
                                         .colorScheme
                                         .primary
@@ -280,9 +279,11 @@ class DetailView extends GetView<DetailController> {
                           style: TextStyle(color: Colors.red),
                         )),
                     ElevatedButton(
-                        onPressed: () {
-                          controller.printBD1();
-                        },
+                        onPressed: !controller.isPrinting.value
+                            ? () {
+                                controller.printAll();
+                              }
+                            : null,
                         child: const Text('Print')),
                     ElevatedButton(
                         onPressed: controller.isEnableRunBtn.value

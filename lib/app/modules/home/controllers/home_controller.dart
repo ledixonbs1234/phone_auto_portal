@@ -52,6 +52,7 @@ class HomeController extends GetxController {
   var maKHController = TextEditingController();
 
   var keyController = TextEditingController();
+  var dayLastController = TextEditingController();
 
   var capcharController = TextEditingController();
 
@@ -79,6 +80,7 @@ class HomeController extends GetxController {
     // khachHangs.clear();
 
     keyController.text = GetStorage().read("key") ?? "maychu";
+    dayLastController.text = GetStorage().read("day") ?? 2.toString();
     selectedMayChu.value = keyController.text;
 
     // var temps = await FirebaseManager().getKhachHangs();
@@ -102,12 +104,19 @@ class HomeController extends GetxController {
 
   void getPortalData() async {
     imageBytes.value = "";
-
+    //kiểm tra dayLastController có khác 2 không, nếu khác thì save key is day
+    if (dayLastController.text != "2" && dayLastController.value != "") {
+      GetStorage().write("day", dayLastController.text);
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "getpns",
+          const JsonEncoder().convert(
+              {"day": (int.parse(dayLastController.text) * (-1)).toString()})));
+    } else {
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "getpns", const JsonEncoder().convert({"day": "-2"},)));
+    }
     FirebaseManager().showSnackBar("Đang lấy dữ liệu");
-
     stateText.value = "Đang lấy dữ liệu";
-
-    FirebaseManager().addMessage(MessageReceiveModel("getpns", ""));
   }
 
   updateKhachHang() async {
@@ -212,15 +221,17 @@ class HomeController extends GetxController {
   }
 
   void saveHopDong() {
-    isEditHopDong.value = false;
+    if (isEditHopDong.value) {
+      isEditHopDong.value = false;
 
-    FirebaseManager().addHopDong(
-        seKhachHangs.value,
-        HopDong(
-            address: addressController.text,
-            maKH: maKHController.text,
-            isChooseHopDong: isHaveHopDong.value,
-            sTTHopDong: int.parse(numberHopDongController.text)));
+      FirebaseManager().addHopDong(
+          seKhachHangs.value,
+          HopDong(
+              address: addressController.text,
+              maKH: maKHController.text,
+              isChooseHopDong: isHaveHopDong.value,
+              sTTHopDong: int.parse(numberHopDongController.text)));
+    }
   }
 
   Future<void> checkHopDong(KhachHangs value) async {

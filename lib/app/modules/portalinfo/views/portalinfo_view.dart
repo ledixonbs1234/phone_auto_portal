@@ -300,29 +300,33 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ]),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  ElevatedButton(
+            Obx(
+              () => Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          controller.editHangHoas();
+                        },
+                        child: const Text("Sửa")),
+                    ElevatedButton(
+                        onPressed: !controller.isPrinting.value
+                            ? () {
+                                controller.printPageSelectedAndSort();
+                              }
+                            : null,
+                        child: const Text("In Sắp Xếp")),
+                    ElevatedButton(
                       onPressed: () {
-                        controller.editHangHoas();
+                        controller.printPageSelected();
                       },
-                      child: const Text("Sửa")),
-                  ElevatedButton(
-                      onPressed: () {
-                        controller.sendSplitAddress();
-                      },
-                      child: const Text("Split Address")),
-                  ElevatedButton(
-                    onPressed: () {
-                      controller.printPageSelected();
-                    },
-                    child:
-                        const Text("In", style: TextStyle(color: Colors.red)),
-                  )
-                ],
+                      child:
+                          const Text("In", style: TextStyle(color: Colors.red)),
+                    )
+                  ],
+                ),
               ),
             )
           ],

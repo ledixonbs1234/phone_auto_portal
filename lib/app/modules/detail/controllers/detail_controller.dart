@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -14,6 +16,7 @@ class DetailController extends GetxController {
   final iSeBuuGui = (-1).obs;
   final count = 0.obs;
   final stateText = "".obs;
+  final isPrinting = false.obs;
 
   void setUp(KhachHangs kh) {
     khachHang.value = kh;
@@ -112,6 +115,10 @@ class DetailController extends GetxController {
       case "showdetailmessage":
         stateText.value = message.DoiTuong;
         break;
+      case "printDone":
+        isPrinting.value = false;
+          stateText.value = "In xong";
+        break;
 
       default:
     }
@@ -162,5 +169,17 @@ class DetailController extends GetxController {
   void printBD1() {
     if (buuGuis.isEmpty) return;
     FirebaseManager().addMessage(MessageReceiveModel("printbd1", ""));
+  }
+
+  void printAll() {
+    if (buuGuis.isEmpty) return;
+    isPrinting.value = true;
+
+    // Collecting maHieu values from buuGuis
+    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+
+    // Sending the list of maHieus as a message
+    FirebaseManager()
+        .addMessage(MessageReceiveModel("printMaHieus", jsonEncode(maHieus)));
   }
 }

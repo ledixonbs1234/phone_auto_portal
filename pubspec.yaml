@@ -19,12 +19,117 @@ dependencies:
   awesome_notifications: 0.9.3+1
   flutter: 
     sdk: flutter
+  flutter_barcode_scanner: ^2.0.0
+  assets_audio_player: ^3.1.1
 
 dev_dependencies: 
   flutter_lints: ^3.0.0
   flutter_test: 
     sdk: flutter
-
+  
 flutter: 
   uses-material-design: true
+  assets: 
+    - assets/beep.mp3
+    - assets/0.wav
+    - assets/1.wav
+    - assets/2.wav
+    - assets/3.wav
+    - assets/4.wav
+    - assets/5.wav
+    - assets/6.wav
+    - assets/7.wav
+    - assets/8.wav
+    - assets/9.wav
+    - assets/10.wav
+    - assets/11.wav
+    - assets/12.wav
+    - assets/13.wav
+    - assets/14.wav
+    - assets/15.wav
+    - assets/16.wav
+    - assets/17.wav
+    - assets/18.wav
+    - assets/19.wav
+    - assets/20.wav
+    - assets/21.wav
+    - assets/22.wav
+    - assets/23.wav
+    - assets/24.wav
+    - assets/25.wav
+    - assets/26.wav
+    - assets/27.wav
+    - assets/28.wav
+    - assets/29.wav
+    - assets/30.wav
+    - assets/31.wav
+    - assets/32.wav
+    - assets/33.wav
+    - assets/34.wav
+    - assets/35.wav
+    - assets/36.wav
+    - assets/37.wav
+    - assets/38.wav
+    - assets/39.wav
+    - assets/40.wav
+    - assets/41.wav
+    - assets/42.wav
+    - assets/43.wav
+    - assets/44.wav
+    - assets/45.wav
+    - assets/46.wav
+    - assets/47.wav
+    - assets/48.wav
+    - assets/49.wav
+    - assets/50.wav
+    - assets/51.wav
+    - assets/52.wav
+    - assets/53.wav
+    - assets/54.wav
+    - assets/55.wav
+    - assets/56.wav
+    - assets/57.wav
+    - assets/58.wav
+    - assets/59.wav
+    - assets/60.wav
+    - assets/61.wav
+    - assets/62.wav
+    - assets/63.wav
+    - assets/64.wav
+    - assets/65.wav
+    - assets/66.wav
+    - assets/67.wav
+    - assets/68.wav
+    - assets/69.wav
+    - assets/70.wav
+    - assets/71.wav
+    - assets/72.wav
+    - assets/73.wav
+    - assets/74.wav
+    - assets/75.wav
+    - assets/76.wav
+    - assets/77.wav
+    - assets/78.wav
+    - assets/79.wav
+    - assets/80.wav
+    - assets/81.wav
+    - assets/82.wav
+    - assets/83.wav
+    - assets/84.wav
+    - assets/85.wav
+    - assets/86.wav
+    - assets/87.wav
+    - assets/88.wav
+    - assets/89.wav
+    - assets/90.wav
+    - assets/91.wav
+    - assets/92.wav
+    - assets/93.wav
+    - assets/94.wav
+    - assets/95.wav
+    - assets/96.wav
+    - assets/97.wav
+    - assets/98.wav
+    - assets/99.wav
+    - assets/100.wav
 

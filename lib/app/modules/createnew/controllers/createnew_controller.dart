@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
@@ -24,6 +28,7 @@ class CreatenewController extends GetxController {
   final susggestMHs = <String>[].obs;
   final opacityLevel = 1.0.obs;
   final countBuuGuiConLai = 0.obs;
+  final isPrinting = false.obs;
 
   TextEditingController textHintController = TextEditingController();
   TextEditingController k1 = TextEditingController();
@@ -53,6 +58,18 @@ class CreatenewController extends GetxController {
         k3.text = "";
       }
     });
+  }
+
+  void printAll() {
+    if (buuGuis.isEmpty) return;
+    isPrinting.value = true;
+
+    // Collecting maHieu values from buuGuis
+    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+
+    // Sending the list of maHieus as a message
+    FirebaseManager()
+        .addMessage(MessageReceiveModel("printMaHieus", jsonEncode(maHieus)));
   }
 
   void onFindedMH(String buuGuiTemp) async {
@@ -126,18 +143,35 @@ class CreatenewController extends GetxController {
     update();
   }
 
-  refreshSussgest() {
+  void refreshSussgest() {
+    // Xóa danh sách mã hiệu MH gợi ý hiện tại
     susggestMHs.clear();
+
+    // Lặp qua danh sách các đối tượng bưu gửi liên quan đến khách hàng
     for (var buugui in khachHang.value.buuGuis!) {
-      if (buugui.trangThai == "Đang đi thu gom" ||
-          buugui.trangThai == "Nhận hàng thành công" ||
+      // Kiểm tra xem trạng thái của đối tượng bưu gửi có khớp với bất kỳ trạng thái nào được chỉ định không
+      if (buugui.trangThai ==
+              "Đang đi thu gom" || // "In collection" (Đang đi thu gom)
+          buugui.trangThai ==
+              "Nhận hàng thành công" || // "Successful delivery" (Nhận hàng thành công)
           buugui.trangThai == "Đã phân hướng") {
+        // "Directed" (Đã phân hướng)
+        // Thêm mã bưu gửi vào danh sách gợi ý
         susggestMHs.add(buugui.maBuuGui!);
       }
     }
+
+    // Nếu có bất kỳ đối tượng bưu gửi nào trong danh sách buuGuis
     if (buuGuis.isNotEmpty) {
+      // Xóa bất kỳ mã hiệu MH gợi ý nào đã có trong danh sách buuGuis
       susggestMHs.removeWhere((element1) =>
           buuGuis.where((element) => element.maBuuGui == element1).isNotEmpty);
+      //thay thế index trong buuGuis bằng index của bưu gửi + 1
+      int index = buuGuis.length;
+      for (var buuGui in buuGuis.toList()) {
+        buuGui.index = index;
+        index--;
+      }
     }
   }
 
@@ -202,6 +236,10 @@ class CreatenewController extends GetxController {
       case "showdetailmessage":
         stateText.value = message.DoiTuong;
         break;
+      case "printDone":
+        isPrinting.value = false;
+        stateText.value = "In xong";
+        break;
       default:
     }
   }
@@ -246,5 +284,63 @@ class CreatenewController extends GetxController {
                 isSorted: false,
                 isPrinted: false)),
             nameMay: FirebaseManager().keyData!));
+  }
+
+  bool isValidMaHieu(String maHieu) {
+    const pattern = r'^[c|C|r|R|e|E|p|P][a-zA-Z]\d{9}[v|V][n|N]$';
+
+    final regExp = RegExp(pattern);
+
+    return regExp.hasMatch(maHieu);
+  }
+
+  StreamSubscription? onListenBarcode;
+  void addKhachHangAsQR() {
+    try {
+      printInfo(info: "Scan multi code");
+      if (onListenBarcode != null) {
+        onListenBarcode!.cancel();
+      }
+
+      onListenBarcode = FlutterBarcodeScanner.getBarcodeStreamReceiver(
+              "#ff6666", 'Cancel', true, ScanMode.DEFAULT)
+          ?.listen((barcode) async {
+        String barcodeFilled = barcode.trim().toString().toUpperCase();
+
+        bool isValid = isValidMaHieu(barcodeFilled);
+
+        if (isValid && susggestMHs.contains(barcodeFilled)) {
+          printInfo(info: " list $susggestMHs");
+
+          susggestMHs.remove(barcodeFilled);
+
+          printInfo(info: "Code is $barcodeFilled");
+
+          // Get.snackbar("Thông báo", "Added $barcodeFilled",
+          //     duration: const Duration(seconds: 1));
+
+          var bgTemp =
+              BuuGuis(index: buuGuis.length + 1, maBuuGui: barcodeFilled);
+          bgTemp.khoiLuong = khachHang.value.buuGuis!
+              .firstWhere((element) => barcodeFilled == element.maBuuGui)
+              .khoiLuong;
+          buuGuis.add(bgTemp);
+          buuGuis.sort((a, b) => b.index!.compareTo(a.index!));
+
+          update();
+          if (buuGuis.length < 100) {
+            await AssetsAudioPlayer.newPlayer().open(
+              Audio("assets/${buuGuis.length}.wav"),
+            );
+          } else {
+            await AssetsAudioPlayer.newPlayer().open(
+              Audio("assets/beep.mp3"),
+            );
+          }
+        }
+      });
+    } on PlatformException {
+      Get.snackbar("Thông báo", "Lỗi barcode");
+    }
   }
 }

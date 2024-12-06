@@ -282,7 +282,12 @@ class CreatenewView extends GetView<CreatenewController> {
                       onPressed: () {
                         controller.addKhachHang();
                       },
-                      icon: const Icon(Icons.add))
+                      icon: const Icon(Icons.add)),
+                  IconButton.filled(
+                      onPressed: () {
+                        controller.addKhachHangAsQR();
+                      },
+                      icon: const Icon(Icons.barcode_reader))
                 ],
               ),
               SizedBox(
@@ -316,10 +321,9 @@ class CreatenewView extends GetView<CreatenewController> {
                                   dx.checkSelected();
                                   dx.update();
                                 },
-                                color:
-                                    MaterialStateProperty.resolveWith<Color?>(
-                                        (Set<MaterialState> states) {
-                                  if (states.contains(MaterialState.selected)) {
+                                color: WidgetStateProperty.resolveWith<Color?>(
+                                    (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.selected)) {
                                     return Theme.of(context)
                                         .colorScheme
                                         .primary
@@ -376,13 +380,13 @@ class CreatenewView extends GetView<CreatenewController> {
                           ),
                           onLongPress: () => controller.deleteAll(),
                           onPressed: () => controller.deleteSelected()),
-                      SizedBox(
+                      const SizedBox(
                         width: 10,
                       ),
                       ElevatedButton(
-                          onPressed: () {
-                            controller.sendPrintBD1();
-                          },
+                          onPressed: !controller.isPrinting.value?() {
+                            controller.printAll();
+                          }:null,
                           child: const Text(
                             'Print BD1',
                           )),
