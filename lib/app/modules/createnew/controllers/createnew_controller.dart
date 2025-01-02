@@ -28,7 +28,6 @@ class CreatenewController extends GetxController {
   final susggestMHs = <String>[].obs;
   final opacityLevel = 1.0.obs;
   final countBuuGuiConLai = 0.obs;
-  final isPrinting = false.obs;
 
   TextEditingController textHintController = TextEditingController();
   TextEditingController k1 = TextEditingController();
@@ -62,7 +61,6 @@ class CreatenewController extends GetxController {
 
   void printAll() {
     if (buuGuis.isEmpty) return;
-    isPrinting.value = true;
 
     // Collecting maHieu values from buuGuis
     List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
@@ -176,10 +174,10 @@ class CreatenewController extends GetxController {
   }
 
   void setUp(KhachHangs kh) {
-    if (kh.tenKH != khachHang.value.tenKH) {
-      khachHang.value = kh;
-      refreshSussgest();
-    }
+    // if (kh.tenKH != khachHang.value.tenKH) {
+    khachHang.value = kh;
+    refreshSussgest();
+    // }
     // isCheckChapNhan.value = false;
     // setDefaultInfo();
   }
@@ -209,7 +207,7 @@ class CreatenewController extends GetxController {
     if (buuGuis.isEmpty) return;
     stateText.value = "Đang gửi thông tin";
 
-    FirebaseManager().setListBG(buuGuis.value);
+    FirebaseManager().setListBG(buuGuis);
 
     FirebaseManager().addMessage(MessageReceiveModel(
         "sendtoportal",
@@ -233,11 +231,14 @@ class CreatenewController extends GetxController {
         update();
 
         break;
+      case "message":
+        stateText.value = message.DoiTuong;
+
+        break;
       case "showdetailmessage":
         stateText.value = message.DoiTuong;
         break;
       case "printDone":
-        isPrinting.value = false;
         stateText.value = "In xong";
         break;
       default:
@@ -301,6 +302,7 @@ class CreatenewController extends GetxController {
       if (onListenBarcode != null) {
         onListenBarcode!.cancel();
       }
+      List<String> notMHs = [];
 
       onListenBarcode = FlutterBarcodeScanner.getBarcodeStreamReceiver(
               "#ff6666", 'Cancel', true, ScanMode.DEFAULT)
@@ -337,10 +339,37 @@ class CreatenewController extends GetxController {
               Audio("assets/beep.mp3"),
             );
           }
+        } else if (isValid && !notMHs.contains(barcodeFilled)) {
+          notMHs.add(barcodeFilled);
+          await AssetsAudioPlayer.newPlayer().open(
+            Audio("assets/kocobg.mp3"),
+          );
         }
       });
     } on PlatformException {
       Get.snackbar("Thông báo", "Lỗi barcode");
     }
+  }
+
+  void dieuTin() {
+    if (buuGuis.isEmpty) return;
+
+    // Collecting maHieu values from buuGuis
+    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+
+    // Sending the list of maHieus as a message
+    FirebaseManager()
+        .addMessage(MessageReceiveModel("dieuTin", jsonEncode(maHieus)));
+  }
+
+  void hoanTatTin() {
+    if (buuGuis.isEmpty) return;
+
+    // Collecting maHieu values from buuGuis
+    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+
+    // Sending the list of maHieus as a message
+    FirebaseManager()
+        .addMessage(MessageReceiveModel("hoanTatTin", jsonEncode(maHieus)));
   }
 }

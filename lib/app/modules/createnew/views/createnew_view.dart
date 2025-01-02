@@ -21,7 +21,8 @@ class CreatenewView extends GetView<CreatenewController> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
           child: Column(
             children: [
               Obx(
@@ -159,21 +160,25 @@ class CreatenewView extends GetView<CreatenewController> {
                 ],
               ),
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         const SizedBox(
                           width: 50,
                         ),
                         const Text('Trạng Thái : '),
-                        Text(
-                          '${controller.stateText}',
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue),
+                        Obx(
+                          () => Text(
+                            '${controller.stateText}',
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue),
+                          ),
                         )
                       ],
                     ),
@@ -290,8 +295,7 @@ class CreatenewView extends GetView<CreatenewController> {
                       icon: const Icon(Icons.barcode_reader))
                 ],
               ),
-              SizedBox(
-                height: Get.width,
+              Expanded(
                 child: GetBuilder<CreatenewController>(
                   builder: (dx) => DataTable2(
                     showCheckboxColumn: false,
@@ -368,37 +372,68 @@ class CreatenewView extends GetView<CreatenewController> {
                   ),
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Row(
-                    children: [
-                      ElevatedButton(
+              SizedBox(
+                width: 400,
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 2, horizontal: 1),
+                      child: ElevatedButton(
                           child: const Text(
                             'Xóa',
                             style: TextStyle(color: Colors.red),
                           ),
                           onLongPress: () => controller.deleteAll(),
                           onPressed: () => controller.deleteSelected()),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: !controller.isPrinting.value?() {
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 2, horizontal: 1),
+                      child: ElevatedButton(
+                          onPressed: () {
                             controller.printAll();
-                          }:null,
+                          },
                           child: const Text(
                             'Print BD1',
                           )),
-                    ],
-                  ),
-                  ElevatedButton(
-                      child: const Text(
-                        'Send',
-                        style: TextStyle(color: Colors.blue),
-                      ),
-                      onPressed: () => controller.sendToPC()),
-                ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 2, horizontal: 1),
+                      child: ElevatedButton(
+                          child: const Text(
+                            'Send',
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                          onPressed: () => controller.sendToPC()),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 2, horizontal: 1),
+                      child: ElevatedButton(
+                          onPressed: () {
+                            controller.hoanTatTin();
+                          },
+                          child: const Text(
+                            'Hoàn tất tin',
+                          )),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 2, horizontal: 1),
+                      child: ElevatedButton(
+                          onPressed: () {
+                            controller.dieuTin();
+                          },
+                          child: const Text(
+                            'Điều tin',
+                          )),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

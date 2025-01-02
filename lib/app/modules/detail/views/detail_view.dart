@@ -279,11 +279,9 @@ class DetailView extends GetView<DetailController> {
                           style: TextStyle(color: Colors.red),
                         )),
                     ElevatedButton(
-                        onPressed: !controller.isPrinting.value
-                            ? () {
-                                controller.printAll();
-                              }
-                            : null,
+                        onPressed: () {
+                          controller.printAll();
+                        },
                         child: const Text('Print')),
                     ElevatedButton(
                         onPressed: controller.isEnableRunBtn.value

@@ -113,7 +113,10 @@ class HomeController extends GetxController {
               {"day": (int.parse(dayLastController.text) * (-1)).toString()})));
     } else {
       FirebaseManager().addMessage(MessageReceiveModel(
-          "getpns", const JsonEncoder().convert({"day": "-2"},)));
+          "getpns",
+          const JsonEncoder().convert(
+            {"day": "-2"},
+          )));
     }
     FirebaseManager().showSnackBar("Đang lấy dữ liệu");
     stateText.value = "Đang lấy dữ liệu";
@@ -299,5 +302,9 @@ class HomeController extends GetxController {
   void saveAccount() {
     GetStorage().write("account", accountTE.text);
     GetStorage().write("password", passwordTE.text);
+  }
+
+  void getToken() {
+    FirebaseManager().addMessage(MessageReceiveModel("getToken", ""));
   }
 }

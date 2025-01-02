@@ -32,7 +32,6 @@ class PortalinfoController extends GetxController {
   final isShowEdit = false.obs;
 
   final stateText = "".obs;
-  final isPrinting = false.obs;
 
   final isSortDiNgoai = false.obs;
 
@@ -99,7 +98,6 @@ class PortalinfoController extends GetxController {
     List<String?> selecteds = getSelectedsIdPortal();
 
     if (selecteds.isNotEmpty) {
-      isPrinting.value = true;
       FirebaseManager().addMessage(
           MessageReceiveModel("printPageSort", jsonEncode(selecteds)));
     }
@@ -206,7 +204,6 @@ class PortalinfoController extends GetxController {
 
       FirebaseManager().showSnackBar("Cập nhật trạng thái thành công");
     } else if (message.Lenh == "printDone") {
-      isPrinting.value = false;
       stateText.value = "In xong";
     }
   }
@@ -357,11 +354,9 @@ class PortalinfoController extends GetxController {
     isAutoRunBD = false;
 
     List<String?> selecteds = getSelectedsIdPortal();
+    FirebaseManager().addMessage(MessageReceiveModel("test", ""));
     if (selecteds.isNotEmpty) {
       WaitingCodes = "SENDTEST";
-
-      FirebaseManager()
-          .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
     }
   }
 }
