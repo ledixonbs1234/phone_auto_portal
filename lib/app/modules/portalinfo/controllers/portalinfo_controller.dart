@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
@@ -39,7 +38,7 @@ class PortalinfoController extends GetxController {
 
   final isPrinted = true.obs;
 
-  var WaitingCodes = "";
+  var waitingCodes = "";
 
   Future<void> refreshPortal() async {
     await FirebaseManager().refreshPortal();
@@ -56,27 +55,11 @@ class PortalinfoController extends GetxController {
   }
 
   sendDiNgoai() {
-    //thuc hien send di ngoai can co may chu hien thi danh sach may chu can send
-
-    //key sendingoai item doi tuong maychu
-
-    //  var listMaHieu = selecteds.map<String>((ThongTin r) => r.maHieu!).toList();
-
-    // if (iPotal.value != -1) {
-
-    //   isWaitingCodes = true;
-
-    //   FirebaseManager().addMessage(
-
-    //       MessageReceiveModel("getMaHieus", portals[iPotal.value].id!));
-
-    // }
-
     isAutoRunBD = false;
 
     List<String?> selecteds = getSelectedsIdPortal();
     if (selecteds.isNotEmpty) {
-      WaitingCodes = "DONGDINGOAI";
+      waitingCodes = "DONGDINGOAI";
 
       FirebaseManager()
           .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
@@ -108,9 +91,9 @@ class PortalinfoController extends GetxController {
       var codes = (jsonDecode(message.DoiTuong) as List)
           .map((element) => StateMaHieu.fromJson(element))
           .toList();
-      switch (WaitingCodes) {
+      switch (waitingCodes) {
         case "DONGDINGOAI":
-          WaitingCodes = "";
+          waitingCodes = "";
           stateText.value = "Đã lấy được mã hiệu và đang gửi";
           List<String> maHieus = codes.map((e) => e.code!).toList();
           //codeids
@@ -129,7 +112,7 @@ class PortalinfoController extends GetxController {
                   nameMay: FirebaseManager().keyData!));
           break;
         case "SPLITADDRESS":
-          WaitingCodes = "";
+          waitingCodes = "";
           stateText.value = "Đã lấy được mã hiệu và đang gửi";
           List<String> maHieus = codes.map((e) => e.code!).toList();
           //codeids
@@ -144,7 +127,7 @@ class PortalinfoController extends GetxController {
                   nameMay: FirebaseManager().keyData!));
           break;
         case "CHECKMAHIEUDINGOAI":
-          WaitingCodes = "";
+          waitingCodes = "";
           //khi co danh sach gom mahieu va id kem theo thong tin Trang thai
           //gui codes to pc de check trang thai
           var checkInfo = (jsonDecode(message.DoiTuong) as List)
@@ -164,7 +147,7 @@ class PortalinfoController extends GetxController {
                   nameMay: FirebaseManager().keyData!));
           break;
         case "SENDTEST":
-          WaitingCodes = "";
+          waitingCodes = "";
           List<String?> selecteds = codes.map((e) => e.code).toList();
           if (selecteds.isNotEmpty) {
             FirebaseManager().addMessage(MessageReceiveModel(
@@ -173,7 +156,7 @@ class PortalinfoController extends GetxController {
           break;
 
         case "TOSHOW":
-          WaitingCodes = "";
+          waitingCodes = "";
           currentMaHieusInPortal.value = codes;
           isShowEdit.value = true;
           update();
@@ -258,7 +241,7 @@ class PortalinfoController extends GetxController {
     List<String?> selecteds = getSelectedsIdPortal();
 
     if (selecteds.isNotEmpty) {
-      WaitingCodes = "DONGDINGOAI";
+      waitingCodes = "DONGDINGOAI";
 
       FirebaseManager()
           .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
@@ -273,7 +256,7 @@ class PortalinfoController extends GetxController {
     List<String?> selecteds = getSelectedsIdPortal();
 
     if (selecteds.isNotEmpty) {
-      WaitingCodes = "SPLITADDRESS";
+      waitingCodes = "SPLITADDRESS";
 
       FirebaseManager()
           .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
@@ -307,7 +290,7 @@ class PortalinfoController extends GetxController {
       ids.add(portal.id!);
     }
     if (ids.isNotEmpty) {
-      WaitingCodes = "CHECKMAHIEUDINGOAI";
+      waitingCodes = "CHECKMAHIEUDINGOAI";
       FirebaseManager()
           .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(ids)));
     }
@@ -343,7 +326,7 @@ class PortalinfoController extends GetxController {
       return;
     }
 
-    WaitingCodes = "TOSHOW";
+    waitingCodes = "TOSHOW";
     selecteds.add(portals[index].id);
 
     FirebaseManager()
@@ -356,7 +339,7 @@ class PortalinfoController extends GetxController {
     List<String?> selecteds = getSelectedsIdPortal();
     FirebaseManager().addMessage(MessageReceiveModel("test", ""));
     if (selecteds.isNotEmpty) {
-      WaitingCodes = "SENDTEST";
+      waitingCodes = "SENDTEST";
     }
   }
 }

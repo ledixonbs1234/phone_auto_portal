@@ -181,7 +181,7 @@ class EditPageController extends GetxController {
     if (buuGuis.isEmpty) return;
     stateText.value = "Đang gửi thông tin";
 
-    FirebaseManager().setListBG(buuGuis.value);
+    FirebaseManager().setListBG(buuGuis);
 
     FirebaseManager().addMessage(MessageReceiveModel(
         "edittoportal",
