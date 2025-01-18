@@ -21,6 +21,17 @@ def flutterVersionName = localProperties.getProperty('flutter.versionName')
 if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
+def getCurrentBuildNumber() {
+    def buildNumber = 1 // giá trị mặc định nếu không tìm thấy
+    def file = new File("build_number.txt")
+    if (file.exists()) {
+        buildNumber = Integer.parseInt(file.text.trim()) + 1
+        file.text = buildNumber.toString()
+    } else {
+        file.text = buildNumber.toString()
+    }
+    return buildNumber
+}
 
 android {
     namespace "com.example.phone_auto_portal"
@@ -47,8 +58,8 @@ android {
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        versionCode getCurrentBuildNumber()
+        versionName "1.0.0" // Cập nhật thủ công phần major.minor.patch
     }
 
     buildTypes {

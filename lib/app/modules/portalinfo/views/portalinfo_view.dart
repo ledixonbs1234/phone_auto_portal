@@ -106,7 +106,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       (index) => DataRow(
                               selected: dx.portals[index].selected,
                               onLongPress: () {
-                                var test = dx.portals[index].selected;
                                 controller.isShowEdit.value = false;
                                 controller.getMaHieuToShow(index);
 
@@ -180,9 +179,9 @@ class PortalinfoView extends GetView<PortalinfoController> {
 
                                 dx.update();
                               },
-                              color: MaterialStateProperty.resolveWith<Color?>(
-                                  (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.selected)) {
+                              color: WidgetStateProperty.resolveWith<Color?>(
+                                  (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.selected)) {
                                   return Theme.of(context)
                                       .colorScheme
                                       .primary
@@ -300,35 +299,31 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ]),
               ),
             ),
-            Obx(
-              () => Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          controller.editHangHoas();
-                        },
-                        child: const Text("Sửa")),
-                    ElevatedButton(
-                        onPressed: !controller.isPrinting.value
-                            ? () {
-                                controller.printPageSelectedAndSort();
-                              }
-                            : null,
-                        child: const Text("In Sắp Xếp")),
-                    ElevatedButton(
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
                       onPressed: () {
-                        controller.printPageSelected();
+                        controller.editHangHoas();
                       },
-                      child:
-                          const Text("In", style: TextStyle(color: Colors.red)),
-                    )
-                  ],
-                ),
+                      child: const Text("Sửa")),
+                  ElevatedButton(
+                      onPressed: () {
+                        controller.printPageSelectedAndSort();
+                      },
+                      child: const Text("In Sắp Xếp")),
+                  ElevatedButton(
+                    onPressed: () {
+                      controller.printPageSelected();
+                    },
+                    child:
+                        const Text("In", style: TextStyle(color: Colors.red)),
+                  )
+                ],
               ),
-            )
+            ),
           ],
         ),
       ),

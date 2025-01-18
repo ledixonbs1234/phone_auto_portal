@@ -16,7 +16,6 @@ class DetailController extends GetxController {
   final iSeBuuGui = (-1).obs;
   final count = 0.obs;
   final stateText = "".obs;
-  final isPrinting = false.obs;
 
   void setUp(KhachHangs kh) {
     khachHang.value = kh;
@@ -116,10 +115,11 @@ class DetailController extends GetxController {
         stateText.value = message.DoiTuong;
         break;
       case "printDone":
-        isPrinting.value = false;
-          stateText.value = "In xong";
+        stateText.value = "In xong";
         break;
-
+      case "message":
+        stateText.value = message.DoiTuong;
+        break;
       default:
     }
   }
@@ -173,7 +173,6 @@ class DetailController extends GetxController {
 
   void printAll() {
     if (buuGuis.isEmpty) return;
-    isPrinting.value = true;
 
     // Collecting maHieu values from buuGuis
     List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();

@@ -2,7 +2,7 @@ class HopDong {
   String? address = "";
   bool? isChooseHopDong = false;
   int? sTTHopDong = 0;
-  String? maKH = null;
+  String? maKH;
 
   HopDong({this.address, this.isChooseHopDong, this.sTTHopDong, this.maKH});
 

@@ -21,9 +21,9 @@ class StateMaHieu {
     code = json['Code'];
     state = json['State'];
     IDCODE = json['IDCODE'];
-    this.Weight = json['Weight'];
-    this.Name = json['Name'];
-    this.Address = json['Address'];
+    Weight = json['Weight'];
+    Name = json['Name'];
+    Address = json['Address'];
   }
 
   Map<dynamic, dynamic> toJson() {

@@ -9,7 +9,7 @@ import 'package:group_button/group_button.dart';
 import '../controllers/edit_page_controller.dart';
 
 class EditPageView extends GetView<EditPageController> {
-  const EditPageView({Key? key}) : super(key: key);
+  const EditPageView({super.key});
   @override
   Widget build(BuildContext context) {
     var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
@@ -297,9 +297,9 @@ class EditPageView extends GetView<EditPageController> {
                                   dx.update();
                                 },
                                 color:
-                                    MaterialStateProperty.resolveWith<Color?>(
-                                        (Set<MaterialState> states) {
-                                  if (states.contains(MaterialState.selected)) {
+                                    WidgetStateProperty.resolveWith<Color?>(
+                                        (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.selected)) {
                                     return Theme.of(context)
                                         .colorScheme
                                         .primary
@@ -354,7 +354,7 @@ class EditPageView extends GetView<EditPageController> {
                             'Xóa S',
                           ),
                           onPressed: () => controller.deleteSelected()),
-                      SizedBox(
+                      const SizedBox(
                         width: 10,
                       ),
                       ElevatedButton(

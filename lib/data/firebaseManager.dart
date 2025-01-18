@@ -53,7 +53,7 @@ class FirebaseManager {
     rootPath.child('message/tophone').onValue.drain();
   }
 
- late StreamSubscription<DatabaseEvent>? streamTimeUpdate =null;
+ late StreamSubscription<DatabaseEvent>? streamTimeUpdate = null;
 
   void setUp() async {
     readKey();

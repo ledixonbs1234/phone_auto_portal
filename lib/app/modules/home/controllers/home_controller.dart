@@ -71,11 +71,6 @@ class HomeController extends GetxController {
   ].obs;
 
   @override
-  void onInit() {
-    super.onInit();
-  }
-
-  @override
   Future<void> onReady() async {
     // khachHangs.clear();
 
@@ -113,7 +108,10 @@ class HomeController extends GetxController {
               {"day": (int.parse(dayLastController.text) * (-1)).toString()})));
     } else {
       FirebaseManager().addMessage(MessageReceiveModel(
-          "getpns", const JsonEncoder().convert({"day": "-2"},)));
+          "getpns",
+          const JsonEncoder().convert(
+            {"day": "-2"},
+          )));
     }
     FirebaseManager().showSnackBar("Đang lấy dữ liệu");
     stateText.value = "Đang lấy dữ liệu";
@@ -170,8 +168,8 @@ class HomeController extends GetxController {
     KhachHangs? khachHangFinded;
 
     for (var khachHang in khachHangs) {
-      var finded = khachHang.buuGuis!.firstWhereOrNull(
-          (element) => element.maBuuGui?.indexOf(value) != -1);
+      var finded = khachHang.buuGuis!
+          .firstWhereOrNull((element) => element.maBuuGui!.contains(value));
 
       if (finded != null) {
         countFind++;
@@ -299,5 +297,9 @@ class HomeController extends GetxController {
   void saveAccount() {
     GetStorage().write("account", accountTE.text);
     GetStorage().write("password", passwordTE.text);
+  }
+
+  void getToken() {
+    FirebaseManager().addMessage(MessageReceiveModel("getToken", ""));
   }
 }

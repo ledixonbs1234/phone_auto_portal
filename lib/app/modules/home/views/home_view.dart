@@ -64,11 +64,22 @@ class HomeView extends GetView<HomeController> {
             child: Obx(
               () => Column(
                 children: [
-                  ElevatedButton(
-                      onPressed: () {
-                        controller.getPortalData();
-                      },
-                      child: const Text('Get Portal Data')),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {
+                            controller.getPortalData();
+                          },
+                          child: const Text('Get Portal Data')),
+                      IconButton.filledTonal(
+                        onPressed: () {
+                          controller.getToken();
+                        },
+                        icon: const Icon(Icons.refresh),
+                      )
+                    ],
+                  ),
 
                   controller.imageBytes.value.isNotEmpty
                       ? Column(
