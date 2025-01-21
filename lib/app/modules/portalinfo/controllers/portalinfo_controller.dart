@@ -352,10 +352,10 @@ class PortalinfoController extends GetxController {
   void sendTest() {
     isAutoRunBD = false;
 
-    List<String?> selecteds = getSelectedsIdPortal();
-    FirebaseManager().addMessage(MessageReceiveModel("test", ""));
-    if (selecteds.isNotEmpty) {
-      WaitingCodes = "SENDTEST";
-    }
+    // List<String?> selecteds = getSelectedsIdPortal();
+    FirebaseManager().addMessage(MessageReceiveModel("SEND_TEST", "Test ok"));
+    // if (selecteds.isNotEmpty) {
+    //   WaitingCodes = "SENDTEST";
+    // }
   }
 }

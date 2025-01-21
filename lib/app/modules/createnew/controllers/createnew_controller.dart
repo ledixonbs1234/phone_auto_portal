@@ -28,6 +28,8 @@ class CreatenewController extends GetxController {
   final susggestMHs = <String>[].obs;
   final opacityLevel = 1.0.obs;
   final countBuuGuiConLai = 0.obs;
+   String account = "";
+   String password = "";
 
   TextEditingController textHintController = TextEditingController();
   TextEditingController k1 = TextEditingController();
@@ -173,9 +175,22 @@ class CreatenewController extends GetxController {
     }
   }
 
-  void setUp(KhachHangs kh) {
+  khoiTaoPortal() {
+    stateText.value = "Đang khởi tạo";
+    FirebaseManager().addMessage(MessageReceiveModel(
+        "khoitao",
+        const JsonEncoder().convert({
+          "maKH": khachHang.value.maKH,
+          "account": account,
+          "password":password 
+        })));
+  }
+
+  void setUp(KhachHangs kh, String account, String password) {
     // if (kh.tenKH != khachHang.value.tenKH) {
     khachHang.value = kh;
+    this.account = account;
+    this.password = password;
     refreshSussgest();
     // }
     // isCheckChapNhan.value = false;

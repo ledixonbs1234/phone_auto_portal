@@ -155,6 +155,12 @@ class HomeController extends GetxController {
         } else {
           stateText.value = message.DoiTuong;
         }
+        break;
+      case "autologin":
+        FirebaseManager().addMessage(MessageReceiveModel(
+            "autologin",
+            const JsonEncoder().convert(
+                {"account": accountTE.text, "password": passwordTE.text})));
 
         break;
 
@@ -201,7 +207,11 @@ class HomeController extends GetxController {
   void goToCreateNew() {
     var detail = Get.find<CreatenewController>();
 
-    detail.setUp(seKhachHangs.value);
+    if (seKhachHangs.value.maKH == null) {
+      FirebaseManager().showSnackBar("Chưa chọn khách hàng");
+      return;
+    }
+    detail.setUp(seKhachHangs.value, accountTE.text, passwordTE.text);
 
     Get.toNamed("/createnew");
   }

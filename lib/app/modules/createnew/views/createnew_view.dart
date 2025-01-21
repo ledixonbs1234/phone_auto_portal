@@ -27,7 +27,7 @@ class CreatenewView extends GetView<CreatenewController> {
             children: [
               Obx(
                 () => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8.0),
@@ -40,6 +40,9 @@ class CreatenewView extends GetView<CreatenewController> {
                             fontWeight: FontWeight.bold),
                       ),
                     ),
+                    ElevatedButton(
+                        onPressed: () => controller.khoiTaoPortal,
+                        child: const Text('Khởi tạo')),
                   ],
                 ),
               ),

@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -218,11 +219,11 @@ class FirebaseManager {
     return lans;
   }
 
-  Future<HopDong> getHopDong(String MaKH) async {
-    DatabaseEvent data = await database.child('PORTAL/HopDongs/$MaKH').once();
+  Future<HopDong> getHopDong(String maKH) async {
+    DatabaseEvent data = await database.child('PORTAL/HopDongs/$maKH').once();
     if (data.snapshot.value == null) {
       return HopDong(
-          maKH: MaKH, address: "", isChooseHopDong: false, sTTHopDong: 0);
+          maKH: maKH, address: "", isChooseHopDong: false, sTTHopDong: 0);
     }
 
     Map<dynamic, dynamic> mapChild =
