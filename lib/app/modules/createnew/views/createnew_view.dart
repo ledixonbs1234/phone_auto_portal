@@ -15,9 +15,13 @@ class CreatenewView extends GetView<CreatenewController> {
     var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
     return Scaffold(
       appBar: AppBar(
-        title: Text(controller.khachHang.value.tenKH.toString(),
-            style: const TextStyle(
-                color: Colors.teal, fontSize: 20, fontWeight: FontWeight.bold)),
+        title: Obx(
+          () => Text(controller.khachHang.value.tenKH.toString(),
+              style: const TextStyle(
+                  color: Colors.teal,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold)),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -41,7 +45,7 @@ class CreatenewView extends GetView<CreatenewController> {
                       ),
                     ),
                     ElevatedButton(
-                        onPressed: () => controller.khoiTaoPortal,
+                        onPressed: () => controller.khoiTaoPortal(),
                         child: const Text('Khởi tạo')),
                   ],
                 ),
@@ -96,12 +100,12 @@ class CreatenewView extends GetView<CreatenewController> {
                               controller.isChangeKL.value = e!;
                             }),
                         const Text('KL'),
-                        Checkbox(
-                            value: controller.isDo.value,
-                            onChanged: (e) {
-                              controller.isDo.value = e!;
-                            }),
-                        const Text('Đo'),
+                        // Checkbox(
+                        //     value: controller.isDo.value,
+                        //     onChanged: (e) {
+                        //       controller.isDo.value = e!;
+                        //     }),
+                        // const Text('Đo'),
                       ],
                     ),
                   )
@@ -171,7 +175,7 @@ class CreatenewView extends GetView<CreatenewController> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         const SizedBox(
-                          width: 50,
+                          width: 20,
                         ),
                         const Text('Trạng Thái : '),
                         Obx(
@@ -212,78 +216,107 @@ class CreatenewView extends GetView<CreatenewController> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: TextField(
-                        textAlign: TextAlign.center,
-                        focusNode: controller.focusK1,
-                        minLines: null,
-                        controller: controller.k1,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                        onChanged: (s) {
-                          controller.listKichThuoc[0] = s;
-                        },
-                        onEditingComplete: () =>
-                            controller.focusK2.requestFocus(),
-                        onSubmitted: (value) =>
-                            controller.focusK2.requestFocus(),
-                        //rounded textfield
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: 50,
-                      child: TextField(
-                        focusNode: controller.focusK2,
-                        textAlign: TextAlign.center,
-                        minLines: null,
-                        controller: controller.k2,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                        onEditingComplete: () =>
-                            controller.focusK3.requestFocus(),
-                        onChanged: (s) {
-                          controller.listKichThuoc[1] = s;
-                        },
-                        onSubmitted: (value) =>
-                            controller.focusK3.requestFocus(),
-                        //rounded textfield
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: 50,
-                      child: TextField(
-                        textAlign: TextAlign.center,
-                        focusNode: controller.focusK3,
-                        minLines: null,
-                        controller: controller.k3,
-                        onEditingComplete: () => controller.addKhachHang(),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                        onChanged: (s) {
-                          controller.listKichThuoc[2] = s;
-                        },
-                        onSubmitted: (value) {
-                          //THucw hien add khach hang voi kich thuoc cho truowc
-                          controller.addKhachHang();
-                        },
-                        //rounded textfield
-                      ),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  //   child: SizedBox(
+                  //     width: 50,
+                  //     height: 50,
+                  //     child: TextField(
+                  //       textAlign: TextAlign.center,
+                  //       focusNode: controller.focusK1,
+                  //       minLines: null,
+                  //       controller: controller.k1,
+                  //       keyboardType: TextInputType.number,
+                  //       inputFormatters: <TextInputFormatter>[
+                  //         FilteringTextInputFormatter.digitsOnly
+                  //       ],
+                  //       onChanged: (s) {
+                  //         controller.listKichThuoc[0] = s;
+                  //       },
+                  //       onEditingComplete: () =>
+                  //           controller.focusK2.requestFocus(),
+                  //       onSubmitted: (value) =>
+                  //           controller.focusK2.requestFocus(),
+                  //       //rounded textfield
+                  //     ),
+                  //   ),
+                  // ),
+                  // Padding(
+                  //   padding: const EdgeInsets.all(8.0),
+                  //   child: SizedBox(
+                  //     width: 50,
+                  //     child: TextField(
+                  //       focusNode: controller.focusK2,
+                  //       textAlign: TextAlign.center,
+                  //       minLines: null,
+                  //       controller: controller.k2,
+                  //       keyboardType: TextInputType.number,
+                  //       inputFormatters: <TextInputFormatter>[
+                  //         FilteringTextInputFormatter.digitsOnly
+                  //       ],
+                  //       onEditingComplete: () =>
+                  //           controller.focusK3.requestFocus(),
+                  //       onChanged: (s) {
+                  //         controller.listKichThuoc[1] = s;
+                  //       },
+                  //       onSubmitted: (value) =>
+                  //           controller.focusK3.requestFocus(),
+                  //       //rounded textfield
+                  //     ),
+                  //   ),
+                  // ),
+                  // Padding(
+                  //   padding: const EdgeInsets.all(8.0),
+                  //   child: SizedBox(
+                  //     width: 50,
+                  //     child: TextField(
+                  //       textAlign: TextAlign.center,
+                  //       focusNode: controller.focusK3,
+                  //       minLines: null,
+                  //       controller: controller.k3,
+                  //       onEditingComplete: () => controller.addKhachHang(),
+                  //       keyboardType: TextInputType.number,
+                  //       inputFormatters: <TextInputFormatter>[
+                  //         FilteringTextInputFormatter.digitsOnly
+                  //       ],
+                  //       onChanged: (s) {
+                  //         controller.listKichThuoc[2] = s;
+                  //       },
+                  //       onSubmitted: (value) {
+                  //         //THucw hien add khach hang voi kich thuoc cho truowc
+                  //         controller.addKhachHang();
+                  //       },
+                  //       //rounded textfield
+                  //     ),
+                  //   ),
+                  // ),
+                  Obx(
+                    () => DropdownButton<String>(
+                      value: controller.selectedState.value,
+                      onChanged: (value) async {
+                        controller.selectedState.value = value!;
+                        if (value != "CC") {
+                          await controller.getDiNgoaisTempFromFirebase();
+                        }
+                      },
+                      items: const [
+                        DropdownMenuItem(
+                          value: "NTB",
+                          child: Text('Nam Trung Bộ'),
+                        ),
+                        DropdownMenuItem(
+                          value: "DN",
+                          child: Text('Đà Nẵng'),
+                        ),
+                        DropdownMenuItem(
+                          value: "CL",
+                          child: Text('Còn Lại'),
+                        ),
+                        DropdownMenuItem(
+                          value: "CC",
+                          child: Text('Chưa Chọn'),
+                        ),
+                      ],
                     ),
                   ),
                   IconButton.filled(
@@ -295,7 +328,7 @@ class CreatenewView extends GetView<CreatenewController> {
                       onPressed: () {
                         controller.addKhachHangAsQR();
                       },
-                      icon: const Icon(Icons.barcode_reader))
+                      icon: const Icon(Icons.barcode_reader)),
                 ],
               ),
               Expanded(
@@ -375,67 +408,70 @@ class CreatenewView extends GetView<CreatenewController> {
                   ),
                 ),
               ),
-              SizedBox(
-                width: 400,
-                height: 40,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 2, horizontal: 1),
-                      child: ElevatedButton(
-                          child: const Text(
-                            'Xóa',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          onLongPress: () => controller.deleteAll(),
-                          onPressed: () => controller.deleteSelected()),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 2, horizontal: 1),
-                      child: ElevatedButton(
-                          onPressed: () {
-                            controller.printAll();
-                          },
-                          child: const Text(
-                            'Print BD1',
-                          )),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 2, horizontal: 1),
-                      child: ElevatedButton(
-                          child: const Text(
-                            'Send',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                          onPressed: () => controller.sendToPC()),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 2, horizontal: 1),
-                      child: ElevatedButton(
-                          onPressed: () {
-                            controller.hoanTatTin();
-                          },
-                          child: const Text(
-                            'Hoàn tất tin',
-                          )),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 2, horizontal: 1),
-                      child: ElevatedButton(
-                          onPressed: () {
-                            controller.dieuTin();
-                          },
-                          child: const Text(
-                            'Điều tin',
-                          )),
-                    ),
-                  ],
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: SizedBox(
+                  width: 400,
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 1),
+                        child: ElevatedButton(
+                            child: const Text(
+                              'Xóa',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            onLongPress: () => controller.deleteAll(),
+                            onPressed: () => controller.deleteSelected()),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 1),
+                        child: ElevatedButton(
+                            onPressed: () {
+                              controller.printAll();
+                            },
+                            child: const Text(
+                              'Print BD1',
+                            )),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 1),
+                        child: ElevatedButton(
+                            child: const Text(
+                              'Send',
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                            onPressed: () => controller.sendToPC()),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 1),
+                        child: ElevatedButton(
+                            onPressed: () {
+                              controller.hoanTatTin();
+                            },
+                            child: const Text(
+                              'Hoàn tất tin',
+                            )),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 1),
+                        child: ElevatedButton(
+                            onPressed: () {
+                              controller.dieuTin();
+                            },
+                            child: const Text(
+                              'Điều tin',
+                            )),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
 import 'package:get/get.dart';
+import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -66,6 +67,16 @@ class PortalinfoController extends GetxController {
     }
   }
 
+  sendAndCheckDiNgoais() {
+    List<String?> selecteds = getSelectedsIdPortal();
+    if (selecteds.isNotEmpty) {
+      waitingCodes = "WAITINGCHECKDINGOAI";
+
+      FirebaseManager()
+          .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
+    }
+  }
+
   Future<void> printPageSelected() async {
     stateText.value = "Đang chuẩn bị In";
     List<String?> selecteds = getSelectedsIdPortal();
@@ -111,6 +122,25 @@ class PortalinfoController extends GetxController {
                       isPrinted: isPrinted.value)),
                   nameMay: FirebaseManager().keyData!));
           break;
+        case "WAITINGCHECKDINGOAI":
+          waitingCodes = "";
+          stateText.value = "Đã lấy được mã hiệu và đang gửi";
+          List<String> maHieus = codes.map((e) => e.code!).toList();
+          //codeids
+          List<String> codeIDs = codes.map((e) => e.IDCODE!).toList();
+
+          FirebaseManager().addMessageToAppBD(
+              selectedMayChu.value,
+              MessageReceiveModel(
+                  "checkdingoais",
+                  jsonEncode(Dingoaicodes(
+                      codes: maHieus,
+                      codeIDs: codeIDs,
+                      isAutoBD: isAutoRunBD,
+                      isSorted: isSortDiNgoai.value,
+                      isPrinted: isPrinted.value)),
+                  nameMay: FirebaseManager().keyData!));
+          break;
         case "SPLITADDRESS":
           waitingCodes = "";
           stateText.value = "Đã lấy được mã hiệu và đang gửi";
@@ -145,6 +175,12 @@ class PortalinfoController extends GetxController {
               selectedMayChu.value,
               MessageReceiveModel("checkstateportal", jsonEncode(newCheckInfo),
                   nameMay: FirebaseManager().keyData!));
+          break;
+        case "CHECKCREATENEW":
+          waitingCodes = "";
+          var khoitao = Get.find<CreatenewController>();
+          khoitao.syncCodes(codes);
+          Get.toNamed(Routes.CREATENEW);
           break;
         case "SENDTEST":
           waitingCodes = "";
@@ -341,5 +377,31 @@ class PortalinfoController extends GetxController {
     // if (selecteds.isNotEmpty) {
     //   WaitingCodes = "SENDTEST";
     // }
+  }
+
+  void checkCreateNew() {
+    var selecteds = getSelectedsPortal();
+    if (selecteds.length > 1) {
+      FirebaseManager().showSnackBar("Chỉ chọn 1 portal để sửa");
+      return;
+    }
+    if (selecteds.isEmpty) {
+      FirebaseManager().showSnackBar("Chưa chọn portal để sửa");
+      return;
+    }
+
+    Portal selectedPortal = selecteds[0];
+    // if (selectedPortal.trangThai != "2") {
+    //   FirebaseManager().showSnackBar("Không phải trạng thái đang xử lý");
+    //   return;
+    // }
+
+    if (selectedPortal.id != null) {
+      var ids = <String>[];
+      ids.add(selectedPortal.id!);
+      waitingCodes = "CHECKCREATENEW";
+      FirebaseManager()
+          .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(ids)));
+    }
   }
 }

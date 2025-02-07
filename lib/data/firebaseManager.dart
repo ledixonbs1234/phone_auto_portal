@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -7,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
+import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
@@ -54,7 +54,7 @@ class FirebaseManager {
     rootPath.child('message/tophone').onValue.drain();
   }
 
- late StreamSubscription<DatabaseEvent>? streamTimeUpdate = null;
+  late StreamSubscription<DatabaseEvent>? streamTimeUpdate = null;
 
   void setUp() async {
     readKey();
@@ -217,6 +217,20 @@ class FirebaseManager {
     }
 
     return lans;
+  }
+
+  Future<List<DiNgoaiStateInfo>> getDiNgoaisTemp() async {
+    var datas = await database.child('PORTAL/STATES').get();
+    List<DiNgoaiStateInfo> diNgoais = [];
+
+    Iterable<DataSnapshot> childs = datas.children;
+    for (var child in childs) {
+      Map<dynamic, dynamic> mapChild = child.value as Map<dynamic, dynamic>;
+      var diNgoai = DiNgoaiStateInfo.fromJson(mapChild);
+      diNgoais.add(diNgoai);
+    }
+
+    return diNgoais;
   }
 
   Future<HopDong> getHopDong(String maKH) async {

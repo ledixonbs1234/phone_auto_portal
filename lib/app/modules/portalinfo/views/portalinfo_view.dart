@@ -29,9 +29,9 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     child: const Text("Refresh")),
                 ElevatedButton(
                     onPressed: () {
-                      controller.checkDongCT();
+                      controller.sendAndCheckDiNgoais();
                     },
-                    child: const Text("Check")),
+                    child: const Text("Check Đi Ngoài")),
               ],
             ),
             Row(
