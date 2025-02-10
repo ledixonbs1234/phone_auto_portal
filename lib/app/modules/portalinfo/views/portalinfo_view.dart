@@ -19,21 +19,26 @@ class PortalinfoView extends GetView<PortalinfoController> {
       body: Center(
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                    onPressed: () {
-                      controller.refreshPortal();
-                    },
-                    child: const Text("Refresh")),
-                ElevatedButton(
-                    onPressed: () {
-                      controller.sendAndCheckDiNgoais();
-                    },
-                    child: const Text("Check Đi Ngoài")),
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+              ElevatedButton(
+                  onPressed: () {
+                    controller.refreshPortal(null);
+                  },
+                  child: const Text("Refresh")),
+              ElevatedButton(
+                  onPressed: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now());
+                    if (pickedDate != null) {
+                      controller.selectedDate.value = pickedDate;
+                      controller.refreshPortal(controller.selectedDate.value);
+                    }
+                  },
+                  child: const Text("Chọn Ngày")),
+            ]),
             Row(
               children: [
                 Padding(
@@ -130,6 +135,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                               ),
                                             ],
                                           ),
+
                                           // Thucw hien send to web vaf lay du lieu lai
                                           Obx(
                                             () => Expanded(
@@ -153,6 +159,10 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                                                 FontWeight
                                                                     .bold),
                                                       ),
+                                                      Text(dx
+                                                          .currentMaHieusInPortal[
+                                                              i]
+                                                          .Date!),
                                                       Text(dx
                                                           .currentMaHieusInPortal[
                                                               i]
@@ -278,15 +288,20 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             onLongPress: () {
                               controller.layDuLieuLo();
                             },
-                            child: const Text('Lấy Dữ Liệu')),
+                            child: const Text('Lấy DL')),
                         ElevatedButton(
                             onPressed: () {
-                              controller.sendTest();
+                              controller.sendAndCheckDiNgoais();
                             },
-                            onLongPress: () {
-                              controller.sendDiNgoaiAndRunBD();
-                            },
-                            child: const Text('Test')),
+                            child: const Text("Lưu BD1")),
+                        // ElevatedButton(
+                        //     onPressed: () {
+                        //       controller.sendTest();
+                        //     },
+                        //     onLongPress: () {
+                        //       controller.sendDiNgoaiAndRunBD();
+                        //     },
+                        //     child: const Text('Test')),
                         ElevatedButton(
                             onPressed: () {
                               controller.sendDiNgoai();
@@ -294,7 +309,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             onLongPress: () {
                               controller.sendDiNgoaiAndRunBD();
                             },
-                            child: const Text('Chạy Đi Ngoài')),
+                            child: const Text('Đi Ngoài')),
                       ])
                 ]),
               ),

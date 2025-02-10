@@ -35,7 +35,7 @@ class PrintPageController extends GetxController {
     }
   }
 
-  void printMaHieu() {
+  void printMaHieu() async {
     if (buuGui.value.isNotEmpty) {
       FirebaseManager()
           .addMessage(MessageReceiveModel("printBD1New", buuGui.value));

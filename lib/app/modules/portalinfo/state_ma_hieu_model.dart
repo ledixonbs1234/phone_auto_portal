@@ -6,6 +6,7 @@ class StateMaHieu {
   String? Weight;
   String? Name;
   String? Address;
+  String? Date;
 
   StateMaHieu(
       {this.iD,
@@ -14,6 +15,7 @@ class StateMaHieu {
       this.IDCODE,
       this.Weight,
       this.Name,
+      this.Date,
       this.Address});
 
   StateMaHieu.fromJson(Map<dynamic, dynamic> json) {
@@ -24,6 +26,11 @@ class StateMaHieu {
     Weight = json['Weight'];
     Name = json['Name'];
     Address = json['Address'];
+    if (json['Date'] != null) {
+      DateTime parsedDate = DateTime.parse(json['Date']).add(const Duration(hours: 7));
+      Date =
+          "${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}:${parsedDate.second.toString().padLeft(2, '0')}";
+    }
   }
 
   Map<dynamic, dynamic> toJson() {

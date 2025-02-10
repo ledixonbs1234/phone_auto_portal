@@ -301,7 +301,7 @@ class HomeController extends GetxController {
 
     var portalInfo = Get.find<PortalinfoController>();
 
-    portalInfo.refreshPortal();
+    portalInfo.refreshPortal(null);
   }
 
   void saveAccount() {

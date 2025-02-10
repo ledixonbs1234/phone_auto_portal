@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
@@ -21,6 +21,7 @@ class CreatenewController extends GetxController {
   final buuGuis = <BuuGuis>[].obs;
   final diNgoaiStates = <DiNgoaiStateInfo>[].obs;
   final isChangeKL = false.obs;
+  final tenKH = "".obs;
   final isDo = false.obs;
   late FocusNode focusKL = FocusNode();
   late FocusNode focusK1 = FocusNode();
@@ -107,9 +108,14 @@ class CreatenewController extends GetxController {
           bgTemp.khoiLuong = int.parse(textKLController.text);
         }
       } else {
-        bgTemp.khoiLuong = khachHang.value.buuGuis!
-            .firstWhere((element) => textMHController.text == element.maBuuGui)
-            .khoiLuong;
+        if (selectedState.value == "CC") {
+          bgTemp.khoiLuong = khachHang.value.buuGuis!
+              .firstWhere(
+                  (element) => textMHController.text == element.maBuuGui)
+              .khoiLuong;
+        } else {
+          bgTemp.khoiLuong = 1000;
+        }
       }
       if (isDo.value) {
         //kiem tra k1 k2 k3 co empty khong
@@ -145,7 +151,11 @@ class CreatenewController extends GetxController {
 
   deleteAll() {
     buuGuis.clear();
-    refreshSussgest();
+    if (selectedState.value == "CC") {
+      refreshSussgest();
+    } else {
+      getDiNgoaisTempFromFirebase();
+    }
     update();
   }
 
@@ -194,10 +204,14 @@ class CreatenewController extends GetxController {
 
   void setUp(KhachHangs kh, String account, String password) {
     // if (kh.tenKH != khachHang.value.tenKH) {
-    khachHang.value = kh;
-    this.account = account;
-    this.password = password;
-    refreshSussgest();
+    if (selectedState.value == "CC") {
+      khachHang.value = kh;
+      tenKH.value = kh.tenKH!;
+      this.account = account;
+      this.password = password;
+      refreshSussgest();
+      selectedState.value = "CC";
+    } else {}
     // }
     // isCheckChapNhan.value = false;
     // setDefaultInfo();
@@ -320,91 +334,88 @@ class CreatenewController extends GetxController {
   void addKhachHangAsQR() {
     try {
       printInfo(info: "Scan multi code");
-      if (onListenBarcode != null) {
-        onListenBarcode!.cancel();
-      }
+
+      // Cancel any existing barcode listener
+      onListenBarcode?.cancel();
+
       List<String> notMHs = [];
 
       onListenBarcode = FlutterBarcodeScanner.getBarcodeStreamReceiver(
               "#ff6666", 'Cancel', true, ScanMode.DEFAULT)
           ?.listen((barcode) async {
-        String barcodeFilled = barcode.trim().toString().toUpperCase();
+        String barcodeFilled = barcode.trim().toUpperCase();
 
-        bool isValid = isValidMaHieu(barcodeFilled);
-        if (isValid) {
-          if (susggestMHs.contains(barcodeFilled)) {
-            if (selectedState.value == "CC") {
-              susggestMHs.remove(barcodeFilled);
-
-              printInfo(info: "Code is $barcodeFilled");
-
-              // Get.snackbar("Thông báo", "Added $barcodeFilled",
-              //     duration: const Duration(seconds: 1));
-
-              var bgTemp =
-                  BuuGuis(index: buuGuis.length + 1, maBuuGui: barcodeFilled);
-              bgTemp.khoiLuong = khachHang.value.buuGuis!
-                  .firstWhere((element) => barcodeFilled == element.maBuuGui)
-                  .khoiLuong;
-              buuGuis.add(bgTemp);
-              buuGuis.sort((a, b) => b.index!.compareTo(a.index!));
-
-              update();
-              if (buuGuis.length < 100) {
-                await AssetsAudioPlayer.newPlayer().open(
-                  Audio("assets/${buuGuis.length}.wav"),
-                );
-              } else {
-                await AssetsAudioPlayer.newPlayer().open(
-                  Audio("assets/beep.mp3"),
-                );
-              }
-            } else {
-              var diNgoai = diNgoaiStates
-                  .firstWhereOrNull((e) => e.maHieu == barcodeFilled);
-              if (diNgoai != null) {
-                susggestMHs.remove(barcodeFilled);
-
-              printInfo(info: "Code is $barcodeFilled");
-
-              // Get.snackbar("Thông báo", "Added $barcodeFilled",
-              //     duration: const Duration(seconds: 1));
-
-              var bgTemp =
-                  BuuGuis(index: buuGuis.length + 1, maBuuGui: barcodeFilled);
-              bgTemp.khoiLuong = khachHang.value.buuGuis!
-                  .firstWhere((element) => barcodeFilled == element.maBuuGui)
-                  .khoiLuong;
-              buuGuis.add(bgTemp);
-              buuGuis.sort((a, b) => b.index!.compareTo(a.index!));
-
-              update();
-              if (buuGuis.length < 100) {
-                await AssetsAudioPlayer.newPlayer().open(
-                  Audio("assets/${buuGuis.length}.wav"),
-                );
-              } else {
-                await AssetsAudioPlayer.newPlayer().open(
-                  Audio("assets/beep.mp3"),
-                );
-              }
-              }else{
-                await AssetsAudioPlayer.newPlayer().open(
-                  Audio("assets/kocobg.mp3"),
-                );
-              }
-            }
-          } else if (!notMHs.contains(barcodeFilled)) {
-            notMHs.add(barcodeFilled);
-            await AssetsAudioPlayer.newPlayer().open(
-              Audio("assets/kocobg.mp3"),
-            );
-          }
+        if (isValidMaHieu(barcodeFilled)) {
+          await _handleValidBarcode(barcodeFilled, notMHs);
         }
       });
     } on PlatformException {
       Get.snackbar("Thông báo", "Lỗi barcode");
     }
+  }
+
+  Future<void> _handleValidBarcode(
+      String barcodeFilled, List<String> notMHs) async {
+    if (susggestMHs.contains(barcodeFilled)) {
+      await _processSuggestedBarcode(barcodeFilled, notMHs);
+    } else if (buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
+    } else if (!notMHs.contains(barcodeFilled)) {
+      notMHs.add(barcodeFilled);
+      await _playAudio("assets/kocobg.wav");
+    } else {
+      // await _playAudio("assets/kocobg.wav");
+    }
+  }
+
+  Future<void> _processSuggestedBarcode(
+      String barcodeFilled, List<String> notMHs) async {
+    var existingDiNgoais =
+        diNgoaiStates.firstWhereOrNull((m) => m.maHieu == barcodeFilled);
+    if (selectedState.value == "CC" || existingDiNgoais != null) {
+      printInfo(info: "Code is $barcodeFilled");
+
+      var bgTemp = BuuGuis(
+        index: buuGuis.length + 1,
+        maBuuGui: barcodeFilled,
+      );
+
+// Xử lý khối lượng
+      existingDiNgoais == null
+          ? bgTemp.khoiLuong = khachHang.value.buuGuis!
+              .firstWhere((element) => barcodeFilled == element.maBuuGui)
+              .khoiLuong
+          : bgTemp.khoiLuong = 1000;
+      var existingBG =
+          buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
+
+      final shouldAdd = existingDiNgoais == null ||
+          existingDiNgoais.keyExactly == selectedState.value;
+
+      if (shouldAdd && existingBG == null) {
+        susggestMHs.remove(barcodeFilled);
+        buuGuis
+          ..add(bgTemp)
+          ..sort((a, b) => b.index!.compareTo(a.index!));
+        update();
+
+        final length = buuGuis.length;
+        final audioPath =
+            length < 100 ? "assets/$length.wav" : "assets/beep.mp3";
+        await _playAudio(audioPath);
+      } else {
+        if (existingBG == null) await _playAudio("assets/lachuong.mp3");
+      }
+    } else {
+      if (existingDiNgoais == null) {
+        await _playAudio("assets/kocobg.mp3");
+      }
+    }
+  }
+
+  Future<void> _playAudio(String path) async {
+    try {
+      await AssetsAudioPlayer.newPlayer().open(Audio(path));
+    } catch (e) {}
   }
 
   void dieuTin() {
@@ -452,6 +463,36 @@ class CreatenewController extends GetxController {
     for (var diNgoai in diNgoaiStates) {
       susggestMHs.add(diNgoai.maHieu!);
     }
-    khachHang.value.tenKH = "Kiểm tra Hàng";
+    tenKH.value = "Kiểm tra Hàng";
+    update();
+  }
+
+  void preparePrint() {
+    //thực hiện việc send Message để chuẩn bị in toàn bộ cho nó tự chạy
+
+    // Collecting maHieu values from buuGuis
+    List<String?> maHieus =
+        diNgoaiStates.map((buuGui) => buuGui.maHieu).toList();
+    if (maHieus.isEmpty) {
+      stateText.value = "Không có mã hiệu";
+      return;
+    }
+
+    // Sending the list of maHieus as a message
+    FirebaseManager().addMessage(
+        MessageReceiveModel("preparePrintMaHieus", jsonEncode(maHieus)));
+    stateText.value = "Đang chuẩn bị in";
+  }
+
+  Future<void> printAllAndDelete() async {
+    printAll();
+    await deleteBuuGuisOnFirebase();
+  }
+
+  Future<void> deleteBuuGuisOnFirebase() async {
+    await FirebaseManager().deleteBuuGuis(buuGuis.value);
+    if (susggestMHs.isEmpty) {
+      _playAudio("assets/dusoluong.wav");
+    }
   }
 }

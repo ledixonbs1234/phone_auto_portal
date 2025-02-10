@@ -31,6 +31,8 @@ flutter:
   uses-material-design: true
   assets: 
     - assets/beep.mp3
+    - assets/dusoluong.wav
+    - assets/lachuong.mp3
     - assets/0.wav
     - assets/1.wav
     - assets/2.wav

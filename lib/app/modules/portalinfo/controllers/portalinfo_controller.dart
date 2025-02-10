@@ -41,8 +41,10 @@ class PortalinfoController extends GetxController {
 
   var waitingCodes = "";
 
-  Future<void> refreshPortal() async {
-    await FirebaseManager().refreshPortal();
+  final selectedDate = DateTime.now().obs;
+
+  Future<void> refreshPortal(DateTime? time) async {
+    await FirebaseManager().refreshPortal(time);
 
     stateText.value = "Đang cập nhật dữ liệu";
   }
@@ -105,7 +107,7 @@ class PortalinfoController extends GetxController {
       switch (waitingCodes) {
         case "DONGDINGOAI":
           waitingCodes = "";
-          stateText.value = "Đã lấy được mã hiệu và đang gửi";
+          stateText.value = "Đang gửi đi ngoài tới PC ${selectedMayChu.value}";
           List<String> maHieus = codes.map((e) => e.code!).toList();
           //codeids
           List<String> codeIDs = codes.map((e) => e.IDCODE!).toList();
@@ -124,7 +126,8 @@ class PortalinfoController extends GetxController {
           break;
         case "WAITINGCHECKDINGOAI":
           waitingCodes = "";
-          stateText.value = "Đã lấy được mã hiệu và đang gửi";
+          stateText.value =
+              "Đang gửi dữ liệu Check tới PC ${selectedMayChu.value}";
           List<String> maHieus = codes.map((e) => e.code!).toList();
           //codeids
           List<String> codeIDs = codes.map((e) => e.IDCODE!).toList();

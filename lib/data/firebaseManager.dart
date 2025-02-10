@@ -166,12 +166,24 @@ class FirebaseManager {
   //   return last;
   // }
 
-  void addMessage(MessageReceiveModel message) {
-    rootPath.child('message/topc').set(message.toJson());
+  void addMessage(MessageReceiveModel message) async {
+    rootPath
+        .child('message/topc')
+        .set(message.toJson())
+        .timeout(Duration(seconds: 5), onTimeout: () {
+      throw TimeoutException('Ghi dữ liệu quá lâu, thử lại sau.');
+    });
+    ;
   }
 
   void addMessageToAppBD(String maychu, MessageReceiveModel message) {
-    database.child('$maychu/message/topc').set(message.toJson());
+    database
+        .child('$maychu/message/topc')
+        .set(message.toJson())
+        .timeout(Duration(seconds: 5), onTimeout: () {
+      throw TimeoutException('Ghi dữ liệu quá lâu, thử lại sau.');
+    });
+    ;
   }
 
 //   void addNotification(String messageString) {
@@ -287,8 +299,14 @@ class FirebaseManager {
     database.child('PORTAL/BuuGuis').set(jsonEncode(buuGuis));
   }
 
-  refreshPortal() {
-    addMessage(MessageReceiveModel("getPortal", ""));
+  refreshPortal(DateTime? time) {
+    if (time == null) {
+      addMessage(MessageReceiveModel("getPortal", ""));
+    } else {
+      String formattedDate =
+          "${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}/${time.year}";
+      addMessage(MessageReceiveModel("getPortal", formattedDate));
+    }
   }
 
   // getPortal() async {
@@ -329,5 +347,18 @@ class FirebaseManager {
         }
       }
     });
+  }
+
+  Future<void> deleteBuuGuis(List<BuuGuis> value) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('PORTAL/STATES');
+      await Future.wait(
+        value.map((e) => ref.child(e.maBuuGui!).remove()),
+      );
+      printInfo(info: 'Đã xóa ${value.length} bưu gửi thành công');
+    } catch (e) {
+      printInfo(info: 'Lỗi khi xóa: $e');
+      // Xử lý lỗi tại đây
+    }
   }
 }

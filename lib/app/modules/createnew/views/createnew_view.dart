@@ -16,7 +16,7 @@ class CreatenewView extends GetView<CreatenewController> {
     return Scaffold(
       appBar: AppBar(
         title: Obx(
-          () => Text(controller.khachHang.value.tenKH.toString(),
+          () => Text(controller.tenKH.value,
               style: const TextStyle(
                   color: Colors.teal,
                   fontSize: 20,
@@ -45,7 +45,9 @@ class CreatenewView extends GetView<CreatenewController> {
                       ),
                     ),
                     ElevatedButton(
-                        onPressed: () => controller.khoiTaoPortal(),
+                        onPressed: controller.selectedState.value == "CC"
+                            ? () => controller.khoiTaoPortal()
+                            : null,
                         child: const Text('Khởi tạo')),
                   ],
                 ),
@@ -290,6 +292,11 @@ class CreatenewView extends GetView<CreatenewController> {
                   //     ),
                   //   ),
                   // ),
+                  IconButton.filled(
+                      onPressed: () {
+                        controller.preparePrint();
+                      },
+                      icon: const Icon(Icons.print)),
                   Obx(
                     () => DropdownButton<String>(
                       value: controller.selectedState.value,
@@ -431,12 +438,43 @@ class CreatenewView extends GetView<CreatenewController> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 2, horizontal: 1),
                         child: ElevatedButton(
-                            onPressed: () {
-                              controller.printAll();
-                            },
-                            child: const Text(
-                              'Print BD1',
-                            )),
+                          onPressed: () {
+                            controller.selectedState.value != "CC"
+                                ? showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('Confirm Print'),
+                                        content: const Text(
+                                            'Bạn có muốn in BD1 và xoá thông tin đã In không?'),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            onPressed: () {
+                                              controller.printAll();
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text('Chỉ In'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              await controller
+                                                  .printAllAndDelete();
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text(
+                                              'In và Xoá',
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  )
+                                : controller.printAll();
+                          },
+                          child: const Text('In BD1 New'),
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
