@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
@@ -35,7 +36,9 @@ class CreatenewController extends GetxController {
   final countBuuGuiConLai = 0.obs;
   String account = "";
   String password = "";
+  final isFlashOn = false.obs;
 
+  late MobileScannerController mobileScannerController;
   TextEditingController textHintController = TextEditingController();
   TextEditingController k1 = TextEditingController();
   TextEditingController k2 = TextEditingController();
@@ -58,7 +61,7 @@ class CreatenewController extends GetxController {
     focusK1 = FocusNode();
     focusK2 = FocusNode();
     focusK3 = FocusNode();
-
+    mobileScannerController = MobileScannerController();
     focusHint.addListener(() {
       if (focusHint.hasFocus) {
         k1.text = "";
@@ -493,6 +496,20 @@ class CreatenewController extends GetxController {
     await FirebaseManager().deleteBuuGuis(buuGuis.value);
     if (susggestMHs.isEmpty) {
       _playAudio("assets/dusoluong.wav");
+    }
+  }
+
+  Future<void> addKhachHangAsQRV2(String barcode, List<String> notMHs) async {
+    try {
+      printInfo(info: "Scan multi code");
+
+      String barcodeFilled = barcode.trim().toUpperCase();
+
+      if (isValidMaHieu(barcodeFilled)) {
+        await _handleValidBarcode(barcodeFilled, notMHs);
+      }
+    } on PlatformException {
+      Get.snackbar("Thông báo", "Lỗi barcode");
     }
   }
 }

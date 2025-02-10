@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:group_button/group_button.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../controllers/createnew_controller.dart';
 
@@ -333,7 +335,44 @@ class CreatenewView extends GetView<CreatenewController> {
                       icon: const Icon(Icons.add)),
                   IconButton.filled(
                       onPressed: () {
-                        controller.addKhachHangAsQR();
+                        // controller.addKhachHangAsQR();
+                        // controller.addKhachHangAsQRV2();
+                        // showModalBottomSheet(
+                        //   context: context,
+                        //   builder: (context) {
+                        //     return MobileScanner(
+                        //       onDetect: (barcodeCapture) {
+                        //         controller.textHintController.text =
+                        //             barcodeCapture.barcodes.first.rawValue ??
+                        //                 "";
+
+                        //         // Navigator.pop(
+                        //         //     context); // Close the bottom sheet
+                        //       },
+                        //     );
+                        //   },
+                        // );
+                        List<String> notMHs = [];
+                        Get.dialog(
+                          // barrierColor: Colors.transparent,
+                          AlertDialog(
+                            alignment: Alignment.topCenter,
+                            content: SizedBox(
+                              width: 350,
+                              height: 300,
+                              child: MobileScanner(
+                                
+                                onDetect: (barcodeCapture) {
+                                  
+                                  final barcode =
+                                      barcodeCapture.barcodes.first.rawValue ??
+                                          '';
+                                  controller.addKhachHangAsQRV2(barcode,notMHs);
+                                },
+                              ),
+                            ),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.barcode_reader)),
                 ],
