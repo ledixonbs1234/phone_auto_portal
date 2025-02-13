@@ -23,6 +23,7 @@ class CreatenewController extends GetxController {
   final isChangeKL = false.obs;
   final tenKH = "".obs;
   final isDo = false.obs;
+  final is1KG = false.obs;
   late FocusNode focusKL = FocusNode();
   late FocusNode focusK1 = FocusNode();
   late FocusNode focusK2 = FocusNode();
@@ -193,6 +194,10 @@ class CreatenewController extends GetxController {
 
   khoiTaoPortal() {
     stateText.value = "Đang khởi tạo";
+    if (khachHang.value.maKH == "") {
+      stateText.value = "Chưa chọn khách hàng";
+      return;
+    }
     FirebaseManager().addMessage(MessageReceiveModel(
         "khoitao",
         const JsonEncoder().convert({
@@ -384,7 +389,7 @@ class CreatenewController extends GetxController {
           ? bgTemp.khoiLuong = khachHang.value.buuGuis!
               .firstWhere((element) => barcodeFilled == element.maBuuGui)
               .khoiLuong
-          : bgTemp.khoiLuong = 1000;
+          : bgTemp.khoiLuong = int.tryParse(existingDiNgoais.khoiLuong!) ?? 0;
       var existingBG =
           buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
 
@@ -392,6 +397,12 @@ class CreatenewController extends GetxController {
           existingDiNgoais.keyExactly == selectedState.value;
 
       if (shouldAdd && existingBG == null) {
+        if (is1KG.value) {
+          if (bgTemp.khoiLuong! < 2000) {
+            await _playAudio("assets/hang_duoi_2kg.wav");
+            return;
+          }
+        }
         susggestMHs.remove(barcodeFilled);
         buuGuis
           ..add(bgTemp)
@@ -494,5 +505,19 @@ class CreatenewController extends GetxController {
     if (susggestMHs.isEmpty) {
       _playAudio("assets/dusoluong.wav");
     }
+  }
+
+  void showAll() {
+    for (var diNgoaiS in diNgoaiStates) {
+      var bgTemp = BuuGuis(
+        index: buuGuis.length + 1,
+        maBuuGui: diNgoaiS.maHieu,
+      );
+      bgTemp.khoiLuong = int.tryParse(diNgoaiS.khoiLuong!) ?? 0;
+      buuGuis
+        ..add(bgTemp)
+        ..sort((a, b) => b.index!.compareTo(a.index!));
+    }
+    update();
   }
 }

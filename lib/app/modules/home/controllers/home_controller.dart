@@ -124,7 +124,7 @@ class HomeController extends GetxController {
 
     if (temps.isNotEmpty) {
       seKhachHangs.value = temps[0];
-
+checkHopDong(temps[0]);
       khachHangs.addAll(temps);
 
       FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
@@ -258,6 +258,10 @@ class HomeController extends GetxController {
 
   khoiTaoPortal() {
     stateText.value = "Đang khởi tạo";
+    if (seKhachHangs.value.maKH == null) {
+      FirebaseManager().showSnackBar("Chưa chọn khách hàng");
+      return;
+    }
     FirebaseManager().addMessage(MessageReceiveModel(
         "khoitao",
         const JsonEncoder().convert({

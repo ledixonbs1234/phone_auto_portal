@@ -292,11 +292,23 @@ class CreatenewView extends GetView<CreatenewController> {
                   //     ),
                   //   ),
                   // ),
-                  IconButton.filled(
-                      onPressed: () {
-                        controller.preparePrint();
-                      },
-                      icon: const Icon(Icons.print)),
+                  Card(
+                    child: SizedBox(
+                      width: 80,
+                      child: Row(
+                        children: [
+                          Obx(
+                            () => Checkbox(
+                                value: controller.is1KG.value,
+                                onChanged: (e) {
+                                  controller.is1KG.value = e!;
+                                }),
+                          ),
+                          const Text("1KG"),
+                        ],
+                      ),
+                    ),
+                  ),
                   Obx(
                     () => DropdownButton<String>(
                       value: controller.selectedState.value,
@@ -326,6 +338,22 @@ class CreatenewView extends GetView<CreatenewController> {
                       ],
                     ),
                   ),
+                  ElevatedButton(
+                    child: const Text("Hiện Hết"),
+                    onPressed: () {
+                      controller.showAll();
+                    },
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton.filled(
+                      onPressed: () {
+                        controller.preparePrint();
+                      },
+                      icon: const Icon(Icons.print)),
                   IconButton.filled(
                       onPressed: () {
                         controller.addKhachHang();
