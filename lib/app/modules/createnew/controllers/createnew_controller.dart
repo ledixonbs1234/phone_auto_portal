@@ -46,10 +46,22 @@ class CreatenewController extends GetxController {
 
   TextEditingController textKLController = TextEditingController();
 
+  TextEditingController changeKLFromToController = TextEditingController();
+  TextEditingController contentChangeController = TextEditingController();
+  TextEditingController contentChangeKLController = TextEditingController();
+  TextEditingController increaseKLController = TextEditingController();
+
   late FocusNode focusHint;
   final count = 0.obs;
 
   final selectedState = "CC".obs;
+
+  var selectedOption = ''.obs;
+  var changeKLFromTo = 0.obs;
+  var contentChange = ''.obs;
+  var contentChangeKL = 0.obs;
+  var increaseKL = 0.obs;
+  var useOptions = false.obs;
 
   @override
   void onReady() {
@@ -67,6 +79,9 @@ class CreatenewController extends GetxController {
         k3.text = "";
       }
     });
+    // saveOptionsTest();
+
+    loadOptions();
   }
 
   void printAll() {
@@ -249,14 +264,26 @@ class CreatenewController extends GetxController {
 
     FirebaseManager().setListBG(buuGuis);
 
+    Map<String, dynamic> messageData = {
+      'maKH': khachHang.value.maKH,
+      'maBG': buuGuis[iBuuGui.value].maBuuGui,
+    };
+
+    if (useOptions.value) {
+      final options = {
+        'selectedOption': selectedOption.value,
+        'changeKLFromTo': changeKLFromTo.value,
+        'contentChange': contentChange.value,
+        'contentChangeKL': contentChangeKL.value,
+        'increaseKL': increaseKL.value,
+      };
+      messageData['options'] = options;
+    }
+
     FirebaseManager().addMessage(MessageReceiveModel(
-        "sendtoportal",
-        '{'
-                '"maKH"'
-                ': "${khachHang.value.maKH}", '
-                '"maBG"'
-                ':"${buuGuis[iBuuGui.value].maBuuGui}"}'
-            .toString()));
+      "sendtoportal",
+      jsonEncode(messageData),
+    ));
   }
 
   void onListenNotification(MessageReceiveModel message) {
@@ -519,5 +546,39 @@ class CreatenewController extends GetxController {
         ..sort((a, b) => b.index!.compareTo(a.index!));
     }
     update();
+  }
+
+  void saveOptions() {
+    final options = {
+      'selectedOption': selectedOption.value,
+      'changeKLFromTo': changeKLFromTo.value,
+      'contentChange': contentChange.value,
+      'contentChangeKL': contentChangeKL.value,
+      'increaseKL': increaseKL.value,
+      'useOptions': useOptions.value,
+    };
+    GetStorage().write('options_${khachHang.value.maKH}', options);
+    //update useOptions from getx
+  }
+
+  void loadOptions() {
+    final options = GetStorage()
+        .read<Map<String, dynamic>>('options_${khachHang.value.maKH}');
+    selectedOption.value = options?['selectedOption'] ?? '';
+    changeKLFromTo.value = options?['changeKLFromTo'] ?? 0;
+    contentChange.value = options?['contentChange'] ?? '';
+    contentChangeKL.value = options?['contentChangeKL'] ?? 0;
+    increaseKL.value = options?['increaseKL'] ?? 0;
+    useOptions.value = options?['useOptions'] ?? false;
+
+    changeKLFromToController.text = changeKLFromTo.value.toString();
+    contentChangeController.text = contentChange.value;
+    contentChangeKLController.text = contentChangeKL.value.toString();
+    increaseKLController.text = increaseKL.value.toString();
+  }
+
+  void addContentChange() {
+    // Add logic to handle adding new content and KL
+    // For example, you can store them in a list or map
   }
 }

@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:group_button/group_button.dart';
 
 import '../controllers/createnew_controller.dart';
+import 'option_view.dart';
 
 class CreatenewView extends GetView<CreatenewController> {
   const CreatenewView({super.key});
@@ -49,6 +50,29 @@ class CreatenewView extends GetView<CreatenewController> {
                             ? () => controller.khoiTaoPortal()
                             : null,
                         child: const Text('Khởi tạo')),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                          (Set<WidgetState> states) {
+                            return controller.useOptions.value
+                                ? Colors.blue
+                                : Colors.white;
+                          },
+                        ),
+                        foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                          (Set<WidgetState> states) {
+                            return controller.useOptions.value
+                                ? Colors.white
+                                : Colors.purple;
+                          },
+                        ),
+                      ),
+                      onPressed: () {
+                        controller.loadOptions(); // Ensure options are loaded
+                        Get.to(() => const OptionView());
+                      },
+                      child: const Text('Option'),
+                    ),
                   ],
                 ),
               ),

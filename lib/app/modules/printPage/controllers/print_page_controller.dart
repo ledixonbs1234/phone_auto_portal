@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -37,8 +39,12 @@ class PrintPageController extends GetxController {
 
   void printMaHieu() async {
     if (buuGui.value.isNotEmpty) {
-      FirebaseManager()
-          .addMessage(MessageReceiveModel("printBD1New", buuGui.value));
+      List<String?> selecteds = [buuGui.value];
+
+      if (selecteds.isNotEmpty) {
+        FirebaseManager().addMessage(
+            MessageReceiveModel("printMaHieus", jsonEncode(selecteds)));
+      }
     }
   }
 }

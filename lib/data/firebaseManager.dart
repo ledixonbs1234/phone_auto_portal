@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:intl/intl.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,8 +17,9 @@ import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
 import '../app/modules/home/messageReceiveModel.dart';
 
-class FirebaseManager {
+class FirebaseManager with WidgetsBindingObserver {
   static final FirebaseManager _singleton = FirebaseManager._internal();
+  bool IsDebug = false;
   final database = FirebaseDatabase.instance.ref();
   late DatabaseReference rootPath = database;
   late HomeController? home;
@@ -38,9 +39,9 @@ class FirebaseManager {
   String? keyData = "";
   void showSnackBar(String message) {
     Get.snackbar('Thông báo', message,
-        snackPosition: SnackPosition.TOP,
+        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.blue,
-        duration: const Duration(milliseconds: 1500),
+        duration: const Duration(milliseconds: 1000),
         colorText: Colors.white);
   }
 
@@ -165,25 +166,70 @@ class FirebaseManager {
   //   }
   //   return last;
   // }
+  String convertTimestampToTime(int timestamp) {
+    // Chuyển từ milliseconds sang DateTime
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+    // Định dạng thành HH:mm:ss
+    return DateFormat('HH:mm:ss').format(dateTime);
+  }
+
+  void testShowLog() {
+    final logRef = rootPath
+        .child('message/log')
+        .orderByChild('_timestamp')
+        .limitToLast(20);
+    logRef.onValue.listen((event) {
+      event.snapshot.children.forEach((child) {
+        final data = child.value as Map;
+        String device = "";
+        if (data['keyRef'] == null)
+          device = 'WEB';
+        else
+          device = 'PHONE';
+        print(
+            '[${convertTimestampToTime(data['_timestamp'])}] To $device ${data['Lenh']} ${data['DoiTuong']}');
+      });
+    });
+  }
 
   void addMessage(MessageReceiveModel message) async {
     rootPath
         .child('message/topc')
         .set(message.toJson())
-        .timeout(Duration(seconds: 5), onTimeout: () {
+        .timeout(const Duration(seconds: 5), onTimeout: () {
       throw TimeoutException('Ghi dữ liệu quá lâu, thử lại sau.');
     });
-    ;
+  }
+
+  void addPing() async {
+    var message = MessageReceiveModel("ping", keyData!);
+    database
+        .child("PORTAL/STATUS/topc")
+        .set(message.toJson())
+        .timeout(const Duration(seconds: 5), onTimeout: () {
+      throw TimeoutException('Ghi dữ liệu quá lâu, thử lại sau.');
+    });
+  }
+
+  void _checkAndReconnectFirebase() async {
+    try {
+      await FirebaseDatabase.instance.goOffline();
+      await FirebaseDatabase.instance.goOnline();
+
+      printInfo(info: 'Forced Firebase reconnect on app resume');
+    } catch (e) {
+      print('Reconnect error: $e');
+    }
   }
 
   void addMessageToAppBD(String maychu, MessageReceiveModel message) {
     database
         .child('$maychu/message/topc')
         .set(message.toJson())
-        .timeout(Duration(seconds: 5), onTimeout: () {
-      throw TimeoutException('Ghi dữ liệu quá lâu, thử lại sau.');
+        .timeout(const Duration(seconds: 3), onTimeout: () {
+      showSnackBar('Ghi dữ liệu quá lâu, thử lại sau.');
     });
-    ;
   }
 
 //   void addNotification(String messageString) {
@@ -205,7 +251,16 @@ class FirebaseManager {
     return _singleton;
   }
 
-  FirebaseManager._internal();
+  FirebaseManager._internal() {
+    WidgetsBinding.instance
+        .addObserver(this); // Đăng ký lắng nghe trạng thái ứng dụng
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAndReconnectFirebase();
+    }
+  }
 
   Future<List<KhachHangs>> getKhachHangs() async {
     var datas = await database.child('PNS/KhachHangs').get();

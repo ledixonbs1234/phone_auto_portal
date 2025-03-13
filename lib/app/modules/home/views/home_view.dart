@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
+import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 
 import '../controllers/home_controller.dart';
 
@@ -17,28 +18,54 @@ class HomeView extends GetView<HomeController> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: SizedBox(
-            width: 250,
             child: Obx(
               () => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  DropdownButton<String>(
-                    value: controller.selectedMayChu.value,
-                    onChanged: (value) {
-                      controller.selectedMayChu.value = value!;
+                  IconButton.outlined(
+                      onPressed: () {
+                        controller.sendPing();
+                      },
+                      icon: const Icon(
+                        Icons.refresh_outlined,
+                        size: 20,
+                      )),
+                  SizedBox(
+                    child: DropdownButton<HostInfo>(
+                      value: controller.selectedMayChu.value,
+                      onChanged: (value) {
+                        controller.selectedMayChu.value = value!;
 
-                      controller.saveKey(value);
-                    },
-                    items: controller.maychus.map((e) {
-                      return DropdownMenuItem<String>(
-                        value: e,
-                        child: Text(e),
-                      );
-                    }).toList(),
+                        controller.saveKey(value.hostName);
+                      },
+                      onTap: () {
+                        controller.sendPing();
+                      },
+                      items: controller.maychus.map((HostInfo e) {
+                        return DropdownMenuItem<HostInfo>(
+                          value: e,
+                          child: Row(
+                            children: [
+                              Text(e.hostName),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: Icon(Icons.circle,
+                                    color: e.isOnline.value
+                                        ? Colors.green
+                                        : Colors.red,
+                                    size: 10),
+                              )
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
-                      'cách ngày',
+                      'cách',
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
@@ -72,12 +99,6 @@ class HomeView extends GetView<HomeController> {
                             controller.getPortalData();
                           },
                           child: const Text('Get Portal Data')),
-                      IconButton.filledTonal(
-                        onPressed: () {
-                          controller.getToken();
-                        },
-                        icon: const Icon(Icons.refresh),
-                      )
                     ],
                   ),
 

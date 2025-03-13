@@ -11,6 +11,7 @@ import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_co
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
+import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 
@@ -58,16 +59,16 @@ class HomeController extends GetxController {
 
   final imageBytes = "".obs;
 
-  final selectedMayChu = "maychu".obs;
+  final selectedMayChu = HostInfo("maychu").obs;
 
-  final maychus = <String>[
-    "maychu",
-    "mayphu",
-    "mayphusan",
-    "maytest",
-    "maygiaodich 1",
-    "maygiaodich 2",
-    "maygiaodich 3",
+  final maychus = <HostInfo>[
+    HostInfo("maychu"),
+    HostInfo("mayphu"),
+    HostInfo("mayphusan"),
+    HostInfo("maytest"),
+    HostInfo("maygiaodich 1"),
+    HostInfo("maygiaodich 2"),
+    HostInfo("maygiaodich 3"),
   ].obs;
 
   @override
@@ -76,13 +77,14 @@ class HomeController extends GetxController {
 
     keyController.text = GetStorage().read("key") ?? "maychu";
     dayLastController.text = GetStorage().read("day") ?? 2.toString();
-    selectedMayChu.value = keyController.text;
+    selectedMayChu.value = HostInfo(keyController.text);
 
     // var temps = await FirebaseManager().getKhachHangs();
 
     numberHopDongController.text = "0";
     accountTE.text = GetStorage().read("account") ?? "";
     passwordTE.text = GetStorage().read("password") ?? "";
+    sendPing();
 
     // if (temps.isNotEmpty) {
 
@@ -119,12 +121,11 @@ class HomeController extends GetxController {
 
   updateKhachHang() async {
     khachHangs.clear();
-
     var temps = await FirebaseManager().getKhachHangs();
 
     if (temps.isNotEmpty) {
       seKhachHangs.value = temps[0];
-checkHopDong(temps[0]);
+      checkHopDong(temps[0]);
       khachHangs.addAll(temps);
 
       FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
@@ -137,16 +138,11 @@ checkHopDong(temps[0]);
     switch (message.Lenh) {
       case "message":
         stateText.value = message.DoiTuong;
-
         break;
-
       case "showcapchar":
         imageBytes.value = message.DoiTuong.split(',')[1];
-
         stateText.value = "Nhập capchar";
-
         break;
-
       case "checkhopdong":
         if (message.DoiTuong == "ok") {
           FirebaseManager().showSnackBar("Chuẩn bị hợp đồng thành công");
@@ -163,7 +159,16 @@ checkHopDong(temps[0]);
                 {"account": accountTE.text, "password": passwordTE.text})));
 
         break;
-
+      case "pong":
+        printInfo(info: "Pong from ${message.DoiTuong}");
+        //tìm kiếm maychus có hostName = message.DoiTuong và thay thế isOnline = true
+        var finded = maychus.firstWhereOrNull((element) =>
+            element.hostName.toLowerCase() == message.DoiTuong.toLowerCase());
+        if (finded != null) {
+          finded.isOnline.value = true;
+        }
+        break;
+      case "":
       default:
     }
   }
@@ -175,7 +180,7 @@ checkHopDong(temps[0]);
 
     for (var khachHang in khachHangs) {
       var finded = khachHang.buuGuis!
-          .firstWhereOrNull((element) => element.maBuuGui!.contains(value));
+          .firstWhereOrNull((element) => element.maBuuGui!.toUpperCase().contains(value.toUpperCase()));
 
       if (finded != null) {
         countFind++;
@@ -315,5 +320,17 @@ checkHopDong(temps[0]);
 
   void getToken() {
     FirebaseManager().addMessage(MessageReceiveModel("getToken", ""));
+  }
+
+  void test() {
+    FirebaseManager().testShowLog();
+  }
+
+  void sendPing() {
+    //set isOnline false all maychus
+    for (var element in maychus) {
+      element.isOnline.value = false;
+    }
+    FirebaseManager().addPing();
   }
 }

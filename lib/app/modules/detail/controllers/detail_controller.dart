@@ -181,4 +181,11 @@ class DetailController extends GetxController {
     FirebaseManager()
         .addMessage(MessageReceiveModel("printMaHieus", jsonEncode(maHieus)));
   }
+
+  void updateWeight(int index, int newWeight) {
+    if (index >= 0 && index < buuGuis.length) {
+      buuGuis[index].khoiLuong = newWeight;
+      update();
+    }
+  }
 }

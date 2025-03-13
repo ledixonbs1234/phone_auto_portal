@@ -175,15 +175,10 @@ class DetailView extends GetView<DetailController> {
                                 selected: dx.iSeBuuGui.value == index,
                                 onSelectChanged: (value) {
                                   dx.iSeBuuGui.value = index;
-
-                                  // thuc hien lenh trong nay
-                                  // controller.selectedDanhSachBD(index);
-                                  // if (!dx.trangThais[index].) {
-                                  //   dx.listBDDen[index].SelectedItem = true;
-                                  // } else {
-                                  //   dx.listBDDen[index].SelectedItem = false;
-                                  // }
                                   dx.update();
+                                },
+                                onLongPress: () {
+                                  _showWeightDialog(context, index);
                                 },
                                 color: WidgetStateProperty.resolveWith<Color?>(
                                     (Set<WidgetState> states) {
@@ -305,6 +300,44 @@ class DetailView extends GetView<DetailController> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showWeightDialog(BuildContext context, int index) {
+    final TextEditingController weightController = TextEditingController();
+    weightController.text =
+        controller.buuGuis[index].khoiLuong?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Change Weight'),
+          content: TextField(
+            controller: weightController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'New Weight'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Confirm'),
+              onPressed: () {
+                final newWeight = int.tryParse(weightController.text);
+                if (newWeight != null) {
+                  controller.updateWeight(index, newWeight);
+                }
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
