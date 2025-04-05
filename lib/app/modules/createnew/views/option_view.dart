@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/createnew_controller.dart';
@@ -68,6 +69,7 @@ class OptionView extends GetView<CreatenewController> {
                   );
                 } else if (controller.selectedOption.value == 'contentChange') {
                   return Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       TextField(
                         decoration:
@@ -93,6 +95,34 @@ class OptionView extends GetView<CreatenewController> {
                         },
                         child: const Text('Thêm nội dung và KL mới'),
                       ),
+                      controller.contentChanges.isEmpty
+                          ? const Text('Chưa có nội dung thay đổi')
+                          : SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.3,
+                              child: GetBuilder<CreatenewController>(
+                                builder: (dx) => DataTable2(
+                                  columns: const [
+                                    DataColumn2(label: Text('Nội dung')),
+                                    DataColumn2(label: Text('Khối lượng')),
+                                  ],
+                                  rows: dx.contentChanges
+                                      .map((contentChange) => DataRow(
+                                            cells: [
+                                              DataCell(
+                                                  Text(contentChange.content)),
+                                              DataCell(Text(contentChange
+                                                  .khoiLuong
+                                                  .toString())),
+                                            ],
+                                            onLongPress: () {
+                                              controller.contentChanges
+                                                  .remove(contentChange);
+                                            },
+                                          ))
+                                      .toList(),
+                                ),
+                              ),
+                            )
                     ],
                   );
                 } else if (controller.selectedOption.value == 'increaseKL') {

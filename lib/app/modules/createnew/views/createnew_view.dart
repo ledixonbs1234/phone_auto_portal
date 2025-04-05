@@ -405,70 +405,23 @@ class CreatenewView extends GetView<CreatenewController> {
                         size: ColumnSize.L,
                       ),
                       DataColumn2(
+                        label: Text(''), // Không cần tiêu đề nếu muốn cực nhỏ
+                        tooltip: 'Trạng thái', // Tooltip nếu cần
+                        fixedWidth: 30, // Cố định chiều rộng rất nhỏ
+                      ),
+                      DataColumn2(
                           label: Text('Code'), fixedWidth: 120, numeric: false),
                       DataColumn2(
                           label: Text('KL'), fixedWidth: 60, numeric: true),
                       DataColumn2(label: Text('COD'), numeric: true),
                       DataColumn2(label: Text('State'), fixedWidth: 50),
                     ],
-                    rows: List<DataRow>.generate(
-                        dx.buuGuis.length,
-                        (index) => DataRow(
-                                selected: index == dx.iBuuGui.value,
-                                onSelectChanged: (value) {
-                                  dx.iBuuGui.value = index;
-                                  dx.checkSelected();
-                                  dx.update();
-                                },
-                                color: WidgetStateProperty.resolveWith<Color?>(
-                                    (Set<WidgetState> states) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withOpacity(0.6);
-                                  }
-                                  return null; // Use the default value.
-                                }),
-                                cells: [
-                                  DataCell(Text(
-                                    dx.buuGuis[index].index.toString(),
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        color:
-                                            Color.fromARGB(255, 102, 102, 96),
-                                        fontWeight: FontWeight.bold),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].maBuuGui!,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontStyle: FontStyle.italic),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].khoiLuong == null
-                                        ? ""
-                                        : dx.buuGuis[index].khoiLuong!
-                                            .toString(),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].money == null
-                                        ? ""
-                                        : dx.buuGuis[index].money!.toString(),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].trangThaiRequest == null
-                                        ? ""
-                                        : dx.buuGuis[index].trangThaiRequest!
-                                            .toString(),
-                                    style: const TextStyle(color: Colors.teal),
-                                  )),
-                                ])),
+                    rows: _rowsBuild(dx, context),
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: SizedBox(
                   width: 400,
                   height: 40,
@@ -569,5 +522,93 @@ class CreatenewView extends GetView<CreatenewController> {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      // Chuyển sang chữ thường để so sánh dễ hơn
+      case 'đã chấp nhận':
+        return Colors.red;
+      case 'đã phân hướng':
+        return Colors.blue;
+      case 'đang đi thu gom':
+        return Colors.yellow;
+      case 'nhận hàng thành công':
+        return Colors.orange;
+      default:
+        return Colors.grey; // Màu mặc định nếu trạng thái không khớp
+    }
+  }
+
+  List<DataRow> _rowsBuild(CreatenewController dx, BuildContext context) {
+    return List<DataRow>.generate(
+        dx.buuGuis.length,
+        (index) => DataRow(
+                selected: index == dx.iBuuGui.value,
+                onSelectChanged: (value) {
+                  dx.iBuuGui.value = index;
+                  dx.checkSelected();
+                  dx.update();
+                },
+                color: WidgetStateProperty.resolveWith<Color?>(
+                    (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.6);
+                  }
+                  return null; // Use the default value.
+                }),
+                cells: [
+                  DataCell(Text(
+                    dx.buuGuis[index].index.toString(),
+                    style: const TextStyle(
+                        fontSize: 15,
+                        color: Color.fromARGB(255, 102, 102, 96),
+                        fontWeight: FontWeight.bold),
+                  )),
+                  DataCell(
+                    Center(
+                      // Căn giữa hình tròn trong ô
+                      child: Tooltip(
+                        // Thêm tooltip để hiển thị trạng thái khi hover
+                        message:
+                            dx.buuGuis[index].trangThai ?? 'Không xác định',
+                        child: Container(
+                          width: 12, // Kích thước nhỏ
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                                dx.buuGuis[index].trangThai), // Lấy màu động
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  DataCell(Text(
+                    dx.buuGuis[index].maBuuGui!,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic),
+                  )),
+                  DataCell(Text(
+                    dx.buuGuis[index].khoiLuong == null
+                        ? ""
+                        : dx.buuGuis[index].khoiLuong!.toString(),
+                  )),
+                  DataCell(Text(
+                    dx.buuGuis[index].money == null
+                        ? ""
+                        : dx.buuGuis[index].money!.toString(),
+                  )),
+                  DataCell(Text(
+                    dx.buuGuis[index].trangThaiRequest == null
+                        ? ""
+                        : dx.buuGuis[index].trangThaiRequest!.toString(),
+                    style: const TextStyle(color: Colors.teal),
+                  )),
+                ]));
   }
 }

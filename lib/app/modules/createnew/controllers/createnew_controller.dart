@@ -13,6 +13,7 @@ import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
+import 'package:phone_auto_portal/app/modules/createnew/model/contentchangeinfo.dart';
 
 import '../../home/messageReceiveModel.dart';
 
@@ -62,6 +63,7 @@ class CreatenewController extends GetxController {
   var contentChangeKL = 0.obs;
   var increaseKL = 0.obs;
   var useOptions = false.obs;
+  final contentChanges = <ContentChangeInfo>[].obs;
 
   @override
   void onReady() {
@@ -129,6 +131,10 @@ class CreatenewController extends GetxController {
               .firstWhere(
                   (element) => textMHController.text == element.maBuuGui)
               .khoiLuong;
+          bgTemp.trangThai = khachHang.value.buuGuis!
+              .firstWhere(
+                  (element) => textMHController.text == element.maBuuGui)
+              .trangThai;
         } else {
           bgTemp.khoiLuong = 1000;
         }
@@ -231,6 +237,7 @@ class CreatenewController extends GetxController {
       this.password = password;
       refreshSussgest();
       selectedState.value = "CC";
+      loadOptions();
     } else {}
     // }
     // isCheckChapNhan.value = false;
@@ -254,7 +261,7 @@ class CreatenewController extends GetxController {
     return count;
   }
 
-  sendToPC() {
+  void sendToPC() {
     printInfo(info: "Send to portal");
     if (iBuuGui.value == -1) {
       return;
@@ -262,7 +269,7 @@ class CreatenewController extends GetxController {
     if (buuGuis.isEmpty) return;
     stateText.value = "Đang gửi thông tin";
 
-    FirebaseManager().setListBG(buuGuis);
+    FirebaseManager().sendListBDToPortal(buuGuis);
 
     Map<String, dynamic> messageData = {
       'maKH': khachHang.value.maKH,
@@ -273,17 +280,26 @@ class CreatenewController extends GetxController {
       final options = {
         'selectedOption': selectedOption.value,
         'changeKLFromTo': changeKLFromTo.value,
-        'contentChange': contentChange.value,
-        'contentChangeKL': contentChangeKL.value,
         'increaseKL': increaseKL.value,
+        'contentChanges': contentChanges
+            .map((e) => {
+                  'content': removeDiacritics(e.content.toLowerCase()),
+                  'khoiLuong': e.khoiLuong
+                })
+            .toList(),
       };
       messageData['options'] = options;
     }
 
     FirebaseManager().addMessage(MessageReceiveModel(
-      "sendtoportal",
+      "sendautotoportal",
       jsonEncode(messageData),
     ));
+    //Thực hiện xóa state từ vị trí iBuuGui.value đến cuối danh sách
+    for (int i = buuGuis.length - 1; i >= iBuuGui.value; i--) {
+      buuGuis[i].trangThaiRequest = null;
+    }
+    update();
   }
 
   void onListenNotification(MessageReceiveModel message) {
@@ -468,14 +484,51 @@ class CreatenewController extends GetxController {
   }
 
   void hoanTatTin() {
-    if (buuGuis.isEmpty) return;
+    // 1. Kiểm tra nhanh nếu danh sách gốc trống
+    if (buuGuis.isEmpty) {
+      FirebaseManager().showSnackBar(
+        "Danh sách bưu gửi trống. Vui lòng thêm bưu gửi trước.",
+      );
+      return;
+    }
 
-    // Collecting maHieu values from buuGuis
-    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+    // 2. Lọc danh sách: Chỉ giữ lại những bưu gửi có trạng thái
+    //    KHÁC 'nhận hàng thành công' (không phân biệt hoa thường)
+    final List<BuuGuis> buuGuisCanHoanTat = buuGuis.where((buuGui) {
+      // Lấy trạng thái, chuyển về chữ thường, nếu null thì coi như ''
+      final trangThaiLower = buuGui.trangThai?.toLowerCase() ?? '';
+      // Giữ lại nếu trạng thái KHÔNG PHẢI là 'nhận hàng thành công'
+      return trangThaiLower != 'nhận hàng thành công';
+    }).toList(); // Chuyển kết quả lọc thành List
 
-    // Sending the list of maHieus as a message
-    FirebaseManager()
-        .addMessage(MessageReceiveModel("hoanTatTin", jsonEncode(maHieus)));
+    // 3. Kiểm tra xem danh sách sau khi lọc có trống không
+    if (buuGuisCanHoanTat.isEmpty) {
+      // Hiển thị thông báo cho người dùng
+      FirebaseManager().showSnackBar(
+        "Tất cả bưu gửi đều đã nhận hàng thành công.",
+      );
+      return; // Thoát khỏi hàm
+    }
+
+    // 4. Nếu danh sách lọc không trống, lấy danh sách maHieu từ danh sách đã lọc
+    List<String?> maHieus = buuGuisCanHoanTat
+        .map((buuGui) => buuGui.maBuuGui) // Chỉ lấy maBuuGui
+        .toList();
+
+    // 5. Gửi danh sách maHieu đã lọc lên Firebase
+    try {
+      FirebaseManager().addMessage(
+        MessageReceiveModel("hoanTatTin", jsonEncode(maHieus)),
+      );
+      FirebaseManager().showSnackBar(
+        "Đã gửi yêu cầu hoàn tất cho ${maHieus.length} bưu gửi.",
+      );
+    } catch (e) {
+      // Xử lý lỗi nếu có trong quá trình encode hoặc gửi
+      FirebaseManager().showSnackBar(
+        "Lỗi khi gửi yêu cầu hoàn tất: ${e.toString()}",
+      );
+    }
   }
 
   void checkItemDone() {
@@ -552,10 +605,11 @@ class CreatenewController extends GetxController {
     final options = {
       'selectedOption': selectedOption.value,
       'changeKLFromTo': changeKLFromTo.value,
-      'contentChange': contentChange.value,
-      'contentChangeKL': contentChangeKL.value,
       'increaseKL': increaseKL.value,
       'useOptions': useOptions.value,
+      'contentChanges': contentChanges
+          .map((e) => {'content': e.content, 'khoiLuong': e.khoiLuong})
+          .toList(),
     };
     GetStorage().write('options_${khachHang.value.maKH}', options);
     //update useOptions from getx
@@ -566,8 +620,6 @@ class CreatenewController extends GetxController {
         .read<Map<String, dynamic>>('options_${khachHang.value.maKH}');
     selectedOption.value = options?['selectedOption'] ?? '';
     changeKLFromTo.value = options?['changeKLFromTo'] ?? 0;
-    contentChange.value = options?['contentChange'] ?? '';
-    contentChangeKL.value = options?['contentChangeKL'] ?? 0;
     increaseKL.value = options?['increaseKL'] ?? 0;
     useOptions.value = options?['useOptions'] ?? false;
 
@@ -575,10 +627,32 @@ class CreatenewController extends GetxController {
     contentChangeController.text = contentChange.value;
     contentChangeKLController.text = contentChangeKL.value.toString();
     increaseKLController.text = increaseKL.value.toString();
+
+    final contentChangesList =
+        options?['contentChanges'] as List<dynamic>? ?? [];
+    contentChanges.value = contentChangesList
+        .map((e) =>
+            ContentChangeInfo(content: e['content'], khoiLuong: e['khoiLuong']))
+        .toList();
   }
 
   void addContentChange() {
-    // Add logic to handle adding new content and KL
-    // For example, you can store them in a list or map
+    final content = contentChangeController.text;
+    final khoiLuong = int.tryParse(contentChangeKLController.text) ?? 0;
+    contentChanges
+        .add(ContentChangeInfo(content: content, khoiLuong: khoiLuong));
+    contentChangeController.clear();
+    contentChangeKLController.clear();
   }
+}
+
+String removeDiacritics(String str) {
+  const withDiacritics =
+      'áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ';
+  const withoutDiacritics =
+      'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd';
+  for (int i = 0; i < withDiacritics.length; i++) {
+    str = str.replaceAll(withDiacritics[i], withoutDiacritics[i]);
+  }
+  return str;
 }

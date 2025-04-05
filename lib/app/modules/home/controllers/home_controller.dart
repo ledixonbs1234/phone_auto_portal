@@ -70,6 +70,7 @@ class HomeController extends GetxController {
     HostInfo("maygiaodich 2"),
     HostInfo("maygiaodich 3"),
   ].obs;
+  var lastSelectKH = "";
 
   @override
   Future<void> onReady() async {
@@ -124,10 +125,21 @@ class HomeController extends GetxController {
     var temps = await FirebaseManager().getKhachHangs();
 
     if (temps.isNotEmpty) {
-      seKhachHangs.value = temps[0];
-      checkHopDong(temps[0]);
       khachHangs.addAll(temps);
+      //selected lại khách hàng dựa vào lastSelectKH
+      KhachHangs? currentKH;
+      if (lastSelectKH.isNotEmpty) {
+        var finded = khachHangs
+            .firstWhereOrNull((element) => element.maKH == lastSelectKH);
 
+        if (finded != null) {
+          currentKH = finded;
+        }
+      } else {
+        currentKH = temps[0];
+      }
+      seKhachHangs.value = currentKH!;
+      checkHopDong(currentKH);
       FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
 
       stateText.value = "Cập nhật dữ liệu thành công";
@@ -179,8 +191,8 @@ class HomeController extends GetxController {
     KhachHangs? khachHangFinded;
 
     for (var khachHang in khachHangs) {
-      var finded = khachHang.buuGuis!
-          .firstWhereOrNull((element) => element.maBuuGui!.toUpperCase().contains(value.toUpperCase()));
+      var finded = khachHang.buuGuis!.firstWhereOrNull((element) =>
+          element.maBuuGui!.toUpperCase().contains(value.toUpperCase()));
 
       if (finded != null) {
         countFind++;
@@ -332,5 +344,25 @@ class HomeController extends GetxController {
       element.isOnline.value = false;
     }
     FirebaseManager().addPing();
+  }
+
+  void addPortalData() {
+    imageBytes.value = "";
+    //kiểm tra dayLastController có khác 2 không, nếu khác thì save key is day
+    if (dayLastController.text != "2" && dayLastController.value != "") {
+      GetStorage().write("day", dayLastController.text);
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "addpns",
+          const JsonEncoder().convert(
+              {"day": (int.parse(dayLastController.text) * (-1)).toString()})));
+    } else {
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "addpns",
+          const JsonEncoder().convert(
+            {"day": "-2"},
+          )));
+    }
+    FirebaseManager().showSnackBar("Đang lấy dữ liệu");
+    stateText.value = "Đang lấy dữ liệu";
   }
 }

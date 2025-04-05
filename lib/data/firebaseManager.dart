@@ -180,16 +180,17 @@ class FirebaseManager with WidgetsBindingObserver {
         .orderByChild('_timestamp')
         .limitToLast(20);
     logRef.onValue.listen((event) {
-      event.snapshot.children.forEach((child) {
+      for (var child in event.snapshot.children) {
         final data = child.value as Map;
         String device = "";
-        if (data['keyRef'] == null)
+        if (data['keyRef'] == null) {
           device = 'WEB';
-        else
+        } else {
           device = 'PHONE';
+        }
         print(
             '[${convertTimestampToTime(data['_timestamp'])}] To $device ${data['Lenh']} ${data['DoiTuong']}');
-      });
+      }
     });
   }
 
@@ -350,7 +351,7 @@ class FirebaseManager with WidgetsBindingObserver {
     database.child('PORTAL/HopDongs/${value.maKH}/').set(hopDong.toJson());
   }
 
-  void setListBG(List<BuuGuis> buuGuis) {
+  void sendListBDToPortal(List<BuuGuis> buuGuis) {
     database.child('PORTAL/BuuGuis').set(jsonEncode(buuGuis));
   }
 

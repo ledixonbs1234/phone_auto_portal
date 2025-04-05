@@ -124,7 +124,7 @@ class DetailController extends GetxController {
     }
   }
 
-  void sendToPortal() {
+  void sendToPortal({bool isAuto = false}) {
     //thực hiện send to portal
     printInfo(info: "Send to portal");
     if (iSeBuuGui.value == -1) {
@@ -135,17 +135,21 @@ class DetailController extends GetxController {
 
 //setListBG where buuGuis isBlackList = false
 
-    FirebaseManager().setListBG(
+    FirebaseManager().sendListBDToPortal(
         // ignore: invalid_use_of_protected_member
         buuGuis.value.where((element) => !element.isBlackList).toList());
+    final String maKHValue = khachHang.value.maKH!;
+    final String maBGValue = buuGuis[0].maBuuGui!;
+
+    final Map<String, String> messageData = {
+      'maKH': maKHValue,
+      'maBG': maBGValue,
+    };
+// Truyền thẳng Map vào, không cần encode/decode
     FirebaseManager().addMessage(MessageReceiveModel(
-        "sendtoportal",
-        '{'
-                '"maKH"'
-                ': "${khachHang.value.maKH}", '
-                '"maBG"'
-                ':"${buuGuis[iSeBuuGui.value].maBuuGui}"}'
-            .toString()));
+      !isAuto ? "sendtoportal" : "sendautotoportal",
+      const JsonEncoder().convert(messageData),
+    ));
   }
 
   void stopToPortal() {

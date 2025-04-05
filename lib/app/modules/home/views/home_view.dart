@@ -92,13 +92,18 @@ class HomeView extends GetView<HomeController> {
               () => Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       ElevatedButton(
                           onPressed: () {
                             controller.getPortalData();
                           },
                           child: const Text('Get Portal Data')),
+                      ElevatedButton(
+                          onPressed: () {
+                            controller.addPortalData();
+                          },
+                          child: const Text('Thêm Portal'))
                     ],
                   ),
 
@@ -173,6 +178,7 @@ class HomeView extends GetView<HomeController> {
                         if (value == null) return;
 
                         controller.seKhachHangs.value = value;
+                        controller.lastSelectKH = value.maKH!;
 
                         controller.checkHopDong(value);
                       }),

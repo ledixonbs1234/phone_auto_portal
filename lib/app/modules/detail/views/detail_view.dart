@@ -283,14 +283,14 @@ class DetailView extends GetView<DetailController> {
                             ? () async {
                                 controller.isEnableRunBtn.value = false;
 
-                                controller.sendToPortal();
+                                controller.sendToPortal(isAuto: true);
                                 await Future.delayed(
                                     const Duration(seconds: 3));
                                 controller.isEnableRunBtn.value = true;
                               }
                             : null,
                         child: const Text(
-                          'Send',
+                          'Gửi tự động',
                           style: TextStyle(color: Colors.blue),
                         ))
                   ],
