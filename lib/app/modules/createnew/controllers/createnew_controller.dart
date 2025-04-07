@@ -23,6 +23,7 @@ class CreatenewController extends GetxController {
   final diNgoaiStates = <DiNgoaiStateInfo>[].obs;
   final isChangeKL = false.obs;
   final tenKH = "".obs;
+  final isAutoWork = false.obs;
   final isDo = false.obs;
   final is1KG = false.obs;
   late FocusNode focusKL = FocusNode();
@@ -146,8 +147,11 @@ class CreatenewController extends GetxController {
         }
       }
       buuGuis.add(bgTemp);
+      if (isAutoWork.value) {
+        FirebaseManager().sendListScannedToPortal(buuGuis);
+      }
     }
-    buuGuis.sort((a, b) => b.index!.compareTo(a.index!));
+    buuGuis.sort((a, b) => a.index!.compareTo(b.index!));
     textMHController.text = "";
     textKLController.text = "";
     textHintController.text = "";
@@ -173,6 +177,9 @@ class CreatenewController extends GetxController {
 
   deleteAll() {
     buuGuis.clear();
+    if (isAutoWork.value) {
+      FirebaseManager().sendListScannedToPortal([]);
+    }
     if (selectedState.value == "CC") {
       refreshSussgest();
     } else {
@@ -205,11 +212,11 @@ class CreatenewController extends GetxController {
       susggestMHs.removeWhere((element1) =>
           buuGuis.where((element) => element.maBuuGui == element1).isNotEmpty);
       //thay thế index trong buuGuis bằng index của bưu gửi + 1
-      int index = buuGuis.length;
-      for (var buuGui in buuGuis.toList()) {
-        buuGui.index = index;
-        index--;
-      }
+      // int index = buuGuis.length;
+      // for (var buuGui in buuGuis.toList()) {
+      //   buuGui.index = index;
+      //   index--;
+      // }
     }
   }
 
@@ -228,11 +235,17 @@ class CreatenewController extends GetxController {
         })));
   }
 
+  String lastKH = "";
+
   void setUp(KhachHangs kh, String account, String password) {
     // if (kh.tenKH != khachHang.value.tenKH) {
     if (selectedState.value == "CC") {
       khachHang.value = kh;
       tenKH.value = kh.tenKH!;
+      if (lastKH != kh.tenKH) {
+        lastKH = kh.tenKH!;
+        isAutoWork.value = false;
+      }
       this.account = account;
       this.password = password;
       refreshSussgest();
@@ -643,6 +656,40 @@ class CreatenewController extends GetxController {
         .add(ContentChangeInfo(content: content, khoiLuong: khoiLuong));
     contentChangeController.clear();
     contentChangeKLController.clear();
+  }
+
+  autoWork() {
+    stateText.value = "Đang tự động tạo và gửi bưu gửi";
+    Map<String, dynamic> messageData = {
+      'maKH': khachHang.value.maKH,
+    };
+
+    if (useOptions.value) {
+      final options = {
+        'selectedOption': selectedOption.value,
+        'changeKLFromTo': changeKLFromTo.value,
+        'increaseKL': increaseKL.value,
+        'contentChanges': contentChanges
+            .map((e) => {
+                  'content': removeDiacritics(e.content.toLowerCase()),
+                  'khoiLuong': e.khoiLuong
+                })
+            .toList(),
+      };
+      messageData['options'] = options;
+    }
+
+    FirebaseManager().addMessage(MessageReceiveModel(
+      "savekhoptions",
+      jsonEncode(messageData),
+    ));
+  }
+
+  void sendEndAndPrint() {
+    FirebaseManager().addMessage(MessageReceiveModel(
+      "sendtoendandprint",
+      "",
+    ));
   }
 }
 

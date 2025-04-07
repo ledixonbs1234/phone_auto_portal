@@ -139,7 +139,7 @@ class DetailController extends GetxController {
         // ignore: invalid_use_of_protected_member
         buuGuis.value.where((element) => !element.isBlackList).toList());
     final String maKHValue = khachHang.value.maKH!;
-    final String maBGValue = buuGuis[0].maBuuGui!;
+    final String maBGValue = buuGuis[iSeBuuGui.value].maBuuGui!;
 
     final Map<String, String> messageData = {
       'maKH': maKHValue,

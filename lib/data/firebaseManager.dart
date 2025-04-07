@@ -355,6 +355,10 @@ class FirebaseManager with WidgetsBindingObserver {
     database.child('PORTAL/BuuGuis').set(jsonEncode(buuGuis));
   }
 
+  void sendListScannedToPortal(List<BuuGuis> buuGuis) {
+    rootPath.child('scannedItems').set(jsonEncode(buuGuis));
+  }
+
   refreshPortal(DateTime? time) {
     if (time == null) {
       addMessage(MessageReceiveModel("getPortal", ""));

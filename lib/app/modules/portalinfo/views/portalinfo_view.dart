@@ -113,69 +113,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               onLongPress: () {
                                 controller.isShowEdit.value = false;
                                 controller.getMaHieuToShow(index);
-
-                                Get.dialog(
-                                    barrierDismissible: false,
-                                    Dialog(
-                                      backgroundColor: Colors.white70,
-                                      child: PopScope(
-                                          child: Container(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Column(children: [
-                                          const Text("Danh sách hàng hóa"),
-                                          Row(
-                                            children: [
-                                              const Text('Người Nhập: '),
-                                              Text(
-                                                dx.portals[index].nguoiNhap!,
-                                                style: const TextStyle(
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.blue),
-                                              ),
-                                            ],
-                                          ),
-
-                                          // Thucw hien send to web vaf lay du lieu lai
-                                          Obx(
-                                            () => Expanded(
-                                              child: ListView.builder(
-                                                itemCount: controller
-                                                        .isShowEdit.value
-                                                    ? dx.currentMaHieusInPortal
-                                                        .length
-                                                    : 0,
-                                                itemBuilder: (context, i) {
-                                                  return Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        dx.currentMaHieusInPortal[i]
-                                                            .code!,
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                      ),
-                                                      Text(dx
-                                                          .currentMaHieusInPortal[
-                                                              i]
-                                                          .Date!),
-                                                      Text(dx
-                                                          .currentMaHieusInPortal[
-                                                              i]
-                                                          .Weight!)
-                                                    ],
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ),
-                                        ]),
-                                      )),
-                                    ));
+                                showImprovedDialog(
+                                    context, index, dx, controller);
                               },
                               onSelectChanged: (value) {
                                 dx.iPotal.value = index;
@@ -340,6 +279,188 @@ class PortalinfoView extends GetView<PortalinfoController> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void showImprovedDialog(BuildContext context, int index,
+      PortalinfoController dx, PortalinfoController controller) {
+    controller.isShowEdit.value = false; // Reset trước khi hiển thị dialog mới
+    controller.getMaHieuToShow(index);
+    // Lấy trạng thái của portal hiện tại để kiểm tra
+    final String? currentPortalStatus = dx.portals[index].trangThai;
+    final bool showDeleteButton =
+        currentPortalStatus == "2"; // Điều kiện hiển thị nút xóa
+
+    Get.dialog(
+      barrierDismissible: true, // Cho phép đóng bằng cách chạm bên ngoài
+      Dialog(
+        // elevation: 4.0, // Thêm độ nổi nếu muốn
+        backgroundColor: Colors.white, // Nền trắng rõ ràng
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), // Bo góc mềm mại
+        ),
+        child: PopScope(
+          // Sử dụng PopScope thay cho WillPopScope
+          canPop: true, // Có thể đóng bằng nút back
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height *
+                  0.8, // Giới hạn chiều cao
+              maxWidth: 400, // Giới hạn chiều rộng nếu cần
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0), // Padding đồng đều
+              child: Column(
+                mainAxisSize:
+                    MainAxisSize.min, // Để Column co lại theo nội dung
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- Title ---
+                  Text(
+                    "Danh sách hàng hóa",
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple, // Màu title nổi bật
+                        ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Divider(thickness: 1.0), // Vạch ngăn cách
+                  const SizedBox(height: 12.0),
+
+                  // --- Thông tin Người Nhập ---
+                  Row(
+                    children: [
+                      const Text(
+                        'Người Nhập: ',
+                        style: TextStyle(
+                            color: Colors.black54), // Màu chữ nhẹ hơn cho label
+                      ),
+                      Text(
+                        dx.portals[index].nguoiNhap ?? 'N/A', // Xử lý null
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent, // Màu xanh dễ chịu hơn
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0), // Khoảng cách rõ ràng
+
+                  // --- Danh sách Mã hiệu ---
+                  Expanded(
+                    // Để ListView chiếm không gian còn lại
+                    child: Obx(() {
+                      // Hiển thị loading hoặc thông báo nếu cần
+                      if (!controller.isShowEdit.value) {
+                        return const Center(
+                            child:
+                                CircularProgressIndicator()); // Ví dụ loading
+                      }
+                      if (dx.currentMaHieusInPortal.isEmpty) {
+                        return const Center(
+                            child: Text("Không có dữ liệu mã hiệu."));
+                      }
+
+                      // ListView với giao diện ListTile đẹp hơn
+                      return ListView.separated(
+                        shrinkWrap: true, // Quan trọng khi trong Column
+                        itemCount: dx.currentMaHieusInPortal.length,
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1), // Ngăn cách item
+                        itemBuilder: (context, i) {
+                          final item = dx.currentMaHieusInPortal[i];
+                          return ListTile(
+                            dense: true, // Làm list item gọn hơn
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              item.code ?? 'N/A',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(item.Date ?? 'N/A'),
+                            trailing: Row(
+                              // Sử dụng Row để chứa cả KL và nút Xóa
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(item.Weight ??
+                                    'N/A'), // Giữ nguyên Text hiển thị KL
+                                const SizedBox(
+                                    width: 8), // Khoảng cách giữa KL và nút xóa
+                                // --- Chỉ hiển thị nút xóa nếu trạng thái là "2" ---
+                                if (showDeleteButton)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.redAccent),
+                                    tooltip: 'Xóa',
+                                    padding: EdgeInsets
+                                        .zero, // Giảm padding mặc định
+                                    constraints:
+                                        const BoxConstraints(), // Loại bỏ constraint mặc định
+                                    iconSize: 20, // Kích thước icon nhỏ hơn
+                                    onPressed: () {
+                                      // --- Hiển thị Dialog xác nhận ---
+                                      Get.dialog(
+                                        AlertDialog(
+                                          title: const Text("Xác nhận xóa"),
+                                          content: Text(
+                                              "Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Get
+                                                  .back(), // Đóng dialog xác nhận
+                                              child: const Text("Hủy"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Get.back(); // Đóng dialog xác nhận
+                                                // Gọi hàm xóa trong controller
+                                                controller.deleteBG(item);
+                                                //Chờ khoảng 2s
+                                                Future.delayed(
+                                                    const Duration(seconds: 2),
+                                                    () {
+                                                  controller
+                                                      .getMaHieuToShow(index);
+                                                  // Đóng dialog sau khi xóa
+                                                });
+
+                                                // Cập nhật danh sách mã hiệu
+                                              },
+                                              child: const Text("Xóa",
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                        barrierDismissible:
+                                            false, // Không cho đóng bằng cách chạm ra ngoài
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16.0), // Khoảng cách trước nút đóng
+
+                  // --- Nút Đóng ---
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Get.back(), // Hành động đóng dialog
+                      child: const Text("Đóng"),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

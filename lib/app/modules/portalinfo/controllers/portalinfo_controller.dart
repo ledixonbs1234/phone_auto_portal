@@ -246,6 +246,20 @@ class PortalinfoController extends GetxController {
     ));
   }
 
+  // --- HÀM MỚI: Xử lý xóa BG ---
+  void deleteBG(StateMaHieu itemToDelete) {
+    printInfo(info: "Yêu cầu xóa ${itemToDelete.IDCODE!}");
+    // 1. Thực hiện logic xóa thực tế (API call, cập nhật DB,...)
+    // ... (Thêm logic xóa của bạn ở đây) ...
+    FirebaseManager().addMessage(
+        MessageReceiveModel("xoabg", jsonEncode(itemToDelete.IDCODE!)));
+    // 2. Cập nhật UI bằng cách xóa item khỏi list observable
+    // dx.currentMaHieusInPortal.removeWhere((item) => item.code == itemToDelete.code);
+
+    // 3. (Tùy chọn) Hiển thị thông báo thành công
+    Get.snackbar("Thành công", "Đã xóa bưu gửi ${itemToDelete.code}");
+  }
+
   void layDuLieu() {
     stateText.value = "Đang lấy dữ liệu";
 
