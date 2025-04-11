@@ -16,9 +16,12 @@ class DetailController extends GetxController {
   final iSeBuuGui = (-1).obs;
   final count = 0.obs;
   final stateText = "".obs;
-
-  void setUp(KhachHangs kh) {
+  String account = "";
+  String password = "";
+  void setUp(KhachHangs kh,String account,String password) {
     khachHang.value = kh;
+    this.account = account;
+    this.password = password;
     isCheckChapNhan.value = false;
     setDefaultInfo();
   }
@@ -144,6 +147,8 @@ class DetailController extends GetxController {
     final Map<String, String> messageData = {
       'maKH': maKHValue,
       'maBG': maBGValue,
+      'account': account,
+      'password': password
     };
 // Truyền thẳng Map vào, không cần encode/decode
     FirebaseManager().addMessage(MessageReceiveModel(

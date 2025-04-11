@@ -8,9 +8,32 @@ import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 import '../controllers/home_controller.dart';
 
 import '../khach_hangs_model.dart';
+import '../user_info.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+    VoidCallback? onLongPress,
+  }) {
+    return ElevatedButton.icon(
+      icon: Icon(icon, color: color),
+      label: Text(
+        label,
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        side: BorderSide(color: color.withOpacity(0.5)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+      ),
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,22 +114,95 @@ class HomeView extends GetView<HomeController> {
             child: Obx(
               () => Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Obx(() {
+                      // Có thể hiển thị dropdown mờ đi khi đang tải user
+                      return IgnorePointer(
+                        // Ngăn tương tác khi đang tải
+                        ignoring: controller.isLoadingUsers.value,
+                        child: DropdownButtonFormField<UserInfo>(
+                          value: controller.selectedUser.value,
+                          hint: Text(controller.isLoadingUsers.value
+                              ? 'Đang tải...'
+                              : 'Chọn tài khoản portal'),
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                                borderSide: BorderSide(
+                                    color: controller.isLoadingUsers.value
+                                        ? Colors.grey.shade300
+                                        : Colors.grey
+                                            .shade400) // Màu border khi đang tải
+                                ),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                                borderSide: BorderSide(
+                                    color: Theme.of(context).primaryColor,
+                                    width: 1.5)),
+                            labelText: "Tài khoản Portal",
+                            prefixIcon: controller.isLoadingUsers.value
+                                ? Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: SizedBox(
+                                        width: 15,
+                                        height: 15,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 1.5)))
+                                : Icon(Icons.person_outline,
+                                    size: 20), // Icon hoặc loading
+                            filled: controller.isLoadingUsers
+                                .value, // Tô màu nền khi đang tải
+                            fillColor: Colors.grey.shade100,
+                          ),
+                          // Chỉ hiển thị item nếu list không rỗng
+                          items: controller.userList.isNotEmpty
+                              ? controller.userList
+                                  .map<DropdownMenuItem<UserInfo>>(
+                                      (UserInfo user) {
+                                  return DropdownMenuItem<UserInfo>(
+                                    value: user,
+                                    child: Text(user.toString(),
+                                        overflow: TextOverflow.ellipsis),
+                                  );
+                                }).toList()
+                              : [], // Trả về list rỗng nếu userList chưa có gì (ngoài 'Không chọn' lúc đầu)
+                          onChanged: controller.isLoadingUsers.value
+                              ? null
+                              : (UserInfo? newValue) {
+                                  // Vô hiệu hóa onChanged khi đang tải
+                                  controller.selectedUser.value = newValue;
+                                },
+                        ),
+                      );
+                    }),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            controller.getPortalData();
-                          },
-                          child: const Text('Get Portal Data')),
-                      ElevatedButton(
-                          onPressed: () {
-                            controller.addPortalData();
-                          },
-                          child: const Text('Thêm Portal'))
+                      _buildActionButton(
+                        icon: Icons.cloud_download,
+                        label: 'Get Portal Data',
+                        color: Colors.blue,
+                        onPressed: () {
+                          controller.getPortalData();
+                        },
+                      ),
+                      _buildActionButton(
+                        icon: Icons.add_box,
+                        label: 'Thêm Portal',
+                        color: Colors.green,
+                        onPressed: () {
+                          controller.addPortalData();
+                        },
+                      ),
                     ],
                   ),
-
                   controller.imageBytes.value.isNotEmpty
                       ? Column(
                           children: [
@@ -136,7 +232,6 @@ class HomeView extends GetView<HomeController> {
                           ],
                         )
                       : Container(),
-
                   DropdownButton(
                       style: const TextStyle(fontSize: 15, color: Colors.black),
                       value: controller.seKhachHangs.value,
@@ -182,7 +277,6 @@ class HomeView extends GetView<HomeController> {
 
                         controller.checkHopDong(value);
                       }),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -192,7 +286,6 @@ class HomeView extends GetView<HomeController> {
                       )
                     ],
                   ),
-
                   Row(
                     children: [
                       const Text('Tìm kiếm dựa trên MH:'),
@@ -214,9 +307,6 @@ class HomeView extends GetView<HomeController> {
                       )
                     ],
                   ),
-
-                  //create a card
-
                   Row(
                     children: [
                       Padding(
@@ -236,7 +326,6 @@ class HomeView extends GetView<HomeController> {
                       ),
                     ],
                   ),
-
                   SizedBox(
                     width: Get.width,
                     height: 260,
@@ -305,7 +394,12 @@ class HomeView extends GetView<HomeController> {
                                   //set readonly
 
                                   value: controller.isHaveHopDong.value,
-
+                                  activeColor: Colors.green, // Màu nền khi chọn
+                                  checkColor: Colors.white, // Màu dấu tích
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        4.0), // Bo góc cho checkbox
+                                  ),
                                   onChanged: controller.isEditHopDong.value
                                       ? (e) {
                                           controller.isHaveHopDong.value = e!;
@@ -374,106 +468,122 @@ class HomeView extends GetView<HomeController> {
                       ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => showDialog<String>(
-                      context: context,
-                      builder: (BuildContext context) => Dialog(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8.0, horizontal: 16.0),
-                                  child: Column(
-                                    children: [
-                                      SizedBox(
-                                        width: Get.width - 140,
-                                        child: TextField(
-                                          onChanged: (s) {},
-                                          controller: controller.accountTE,
-                                          decoration: const InputDecoration(
-                                            hintText: 'Tài khoản',
-                                          ),
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ),
-                                      TextField(
-                                        onChanged: (s) {},
-                                        controller: controller.passwordTE,
-                                        obscureText: true,
-                                        decoration: const InputDecoration(
-                                          hintText: 'Mật khẩu',
-                                        ),
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  )),
-                              const SizedBox(height: 15),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: ElevatedButton(
-                                        style: ButtonStyle(
-                                            backgroundColor:
-                                                WidgetStateProperty.all(
-                                                    Colors.lightBlue.shade200)),
-                                        onPressed: () {
-                                          controller.saveAccount();
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text('Lưu')),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('Close'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    child: const Text('Tài khoản'),
-                  ),
-
+                  // TextButton(
+                  //   onPressed: () => showDialog<String>(
+                  //     context: context,
+                  //     builder: (BuildContext context) => Dialog(
+                  //       child: Padding(
+                  //         padding: const EdgeInsets.all(8.0),
+                  //         child: Column(
+                  //           mainAxisSize: MainAxisSize.min,
+                  //           mainAxisAlignment: MainAxisAlignment.center,
+                  //           children: <Widget>[
+                  //             Padding(
+                  //                 padding: const EdgeInsets.symmetric(
+                  //                     vertical: 8.0, horizontal: 16.0),
+                  //                 child: Column(
+                  //                   children: [
+                  //                     SizedBox(
+                  //                       width: Get.width - 140,
+                  //                       child: TextField(
+                  //                         onChanged: (s) {},
+                  //                         controller: controller.accountTE,
+                  //                         decoration: const InputDecoration(
+                  //                           hintText: 'Tài khoản',
+                  //                         ),
+                  //                         style: const TextStyle(
+                  //                           fontSize: 14,
+                  //                           color: Colors.black,
+                  //                         ),
+                  //                       ),
+                  //                     ),
+                  //                     TextField(
+                  //                       onChanged: (s) {},
+                  //                       controller: controller.passwordTE,
+                  //                       obscureText: true,
+                  //                       decoration: const InputDecoration(
+                  //                         hintText: 'Mật khẩu',
+                  //                       ),
+                  //                       style: const TextStyle(
+                  //                         fontSize: 14,
+                  //                         color: Colors.black,
+                  //                       ),
+                  //                     ),
+                  //                   ],
+                  //                 )),
+                  //             const SizedBox(height: 15),
+                  //             Row(
+                  //               mainAxisAlignment:
+                  //                   MainAxisAlignment.spaceBetween,
+                  //               children: [
+                  //                 Padding(
+                  //                   padding: const EdgeInsets.all(8.0),
+                  //                   child: _buildActionButton(
+                  //                     icon: Icons.save,
+                  //                     label: 'Lưu',
+                  //                     color: Colors.lightBlue,
+                  //                     onPressed: () {
+                  //                       controller.saveAccount();
+                  //                       Navigator.pop(context);
+                  //                     },
+                  //                   ),
+                  //                 ),
+                  //                 TextButton(
+                  //                   onPressed: () {
+                  //                     Navigator.pop(context);
+                  //                   },
+                  //                   child: const Text('Close'),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  //   child: const Text('Tài khoản'),
+                  // ),
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                            onPressed: () {
-                              controller.goToDetail();
-                            },
-                            child: const Text('Chi Tiết')),
-                        ElevatedButton(
-                            onPressed: () {
-                              controller.goToPrintPage();
-                            },
-                            child: const Text('In Mã Hiệu')),
-                        ElevatedButton(
-                            onPressed: () {
-                              controller.goToCreateNew();
-                            },
-                            child: const Text('Tạo Mới'))
-                      ],
-                    ),
-                  ),
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: _buildActionButton(
+                              icon: Icons.info_outline,
+                              label: 'Chi Tiết',
+                              color: Colors.indigo,
+                              onPressed: () {
+                                controller.goToDetail();
+                              },
+                            ),
+                          ),
+                          const SizedBox(
+                              width:
+                                  8), // khoảng cách giữa các button (nếu cần)
+                          Expanded(
+                            child: _buildActionButton(
+                              icon: Icons.print,
+                              label: 'In MH',
+                              color: Colors.orange,
+                              onPressed: () {
+                                controller.goToPrintPage();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildActionButton(
+                              icon: Icons.create,
+                              label: 'Tạo Mới',
+                              color: Colors.purple,
+                              onPressed: () {
+                                controller.goToCreateNew();
+                              },
+                            ),
+                          ),
+                        ],
+                      )),
                   const SizedBox(
                     height: 60,
                   )

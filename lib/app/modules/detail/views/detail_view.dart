@@ -7,6 +7,36 @@ import '../controllers/detail_controller.dart';
 
 class DetailView extends GetView<DetailController> {
   const DetailView({super.key});
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+  }) {
+    return ElevatedButton.icon(
+      icon: Icon(icon, color: color),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white, // Nền trắng
+        side: BorderSide(color: color.withOpacity(0.5)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      ),
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,6 +86,12 @@ class DetailView extends GetView<DetailController> {
                     children: [
                       Checkbox(
                         value: controller.isCheckedDangGom.value,
+                        activeColor: Colors.green, // Màu nền khi chọn
+                        checkColor: Colors.white, // Màu dấu tích
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(4.0), // Bo góc cho checkbox
+                        ),
                         onChanged: (e) {
                           controller.isCheckedDangGom.value = e!;
                           controller.updateBuuguiFromCheck();
@@ -72,6 +108,12 @@ class DetailView extends GetView<DetailController> {
                   Row(
                     children: [
                       Checkbox(
+                        activeColor: Colors.green, // Màu nền khi chọn
+                        checkColor: Colors.white, // Màu dấu tích
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(4.0), // Bo góc cho checkbox
+                        ),
                         value: controller.isCheckPhanHuong.value,
                         onChanged: (e) {
                           controller.isCheckPhanHuong.value = e!;
@@ -94,6 +136,12 @@ class DetailView extends GetView<DetailController> {
                   Row(
                     children: [
                       Checkbox(
+                        activeColor: Colors.green, // Màu nền khi chọn
+                        checkColor: Colors.white, // Màu dấu tích
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(4.0), // Bo góc cho checkbox
+                        ),
                         value: controller.isCheckNhanHang.value,
                         onChanged: (e) {
                           controller.isCheckNhanHang.value = e!;
@@ -111,6 +159,12 @@ class DetailView extends GetView<DetailController> {
                   Row(
                     children: [
                       Checkbox(
+                        activeColor: Colors.green, // Màu nền khi chọn
+                        checkColor: Colors.white, // Màu dấu tích
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(4.0), // Bo góc cho checkbox
+                        ),
                         value: controller.isCheckChapNhan.value,
                         onChanged: (e) {
                           controller.isCheckChapNhan.value = e!;
@@ -265,34 +319,44 @@ class DetailView extends GetView<DetailController> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    ElevatedButton(
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.stop_circle_outlined,
+                        label: 'Stop',
+                        color: Colors.red,
                         onPressed: () {
                           controller.stopToPortal();
                         },
-                        child: const Text(
-                          'Stop',
-                          style: TextStyle(color: Colors.red),
-                        )),
-                    ElevatedButton(
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.print,
+                        label: 'Print',
+                        color: Colors.orange,
                         onPressed: () {
                           controller.printAll();
                         },
-                        child: const Text('Print')),
-                    ElevatedButton(
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.send,
+                        label: 'Send',
+                        color: Colors.blue,
                         onPressed: controller.isEnableRunBtn.value
                             ? () async {
                                 controller.isEnableRunBtn.value = false;
-
                                 controller.sendToPortal(isAuto: true);
                                 await Future.delayed(
                                     const Duration(seconds: 3));
                                 controller.isEnableRunBtn.value = true;
                               }
                             : null,
-                        child: const Text(
-                          'Gửi tự động',
-                          style: TextStyle(color: Colors.blue),
-                        ))
+                      ),
+                    ),
                   ],
                 ),
               )

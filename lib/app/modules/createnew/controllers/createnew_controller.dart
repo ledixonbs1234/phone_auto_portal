@@ -287,6 +287,8 @@ class CreatenewController extends GetxController {
     Map<String, dynamic> messageData = {
       'maKH': khachHang.value.maKH,
       'maBG': buuGuis[iBuuGui.value].maBuuGui,
+      'account': account,
+      'password': password,
     };
 
     if (useOptions.value) {
@@ -462,7 +464,10 @@ class CreatenewController extends GetxController {
         susggestMHs.remove(barcodeFilled);
         buuGuis
           ..add(bgTemp)
-          ..sort((a, b) => b.index!.compareTo(a.index!));
+          ..sort((a, b) => a.index!.compareTo(b.index!));
+        if (isAutoWork.value) {
+          FirebaseManager().sendListScannedToPortal(buuGuis);
+        }
         update();
 
         final length = buuGuis.length;
@@ -662,6 +667,8 @@ class CreatenewController extends GetxController {
     stateText.value = "Đang tự động tạo và gửi bưu gửi";
     Map<String, dynamic> messageData = {
       'maKH': khachHang.value.maKH,
+      'account': account,
+      'password': password,
     };
 
     if (useOptions.value) {

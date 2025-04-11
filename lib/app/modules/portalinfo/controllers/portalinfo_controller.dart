@@ -69,14 +69,9 @@ class PortalinfoController extends GetxController {
     }
   }
 
-  sendAndCheckDiNgoais() {
-    List<String?> selecteds = getSelectedsIdPortal();
-    if (selecteds.isNotEmpty) {
-      waitingCodes = "WAITINGCHECKDINGOAI";
-
+  test() {
       FirebaseManager()
-          .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
-    }
+          .addMessage(MessageReceiveModel("test", ""));
   }
 
   Future<void> printPageSelected() async {

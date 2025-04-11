@@ -1,13 +1,38 @@
 import 'package:data_table_2/data_table_2.dart';
-
 import 'package:flutter/material.dart';
-
 import 'package:get/get.dart';
-
 import '../controllers/portalinfo_controller.dart';
 
 class PortalinfoView extends GetView<PortalinfoController> {
   const PortalinfoView({super.key});
+
+  // Hàm tạo button chung theo style của CreateNewView
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+  }) {
+    return ElevatedButton.icon(
+      icon: Icon(icon, color: color),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white, // Nền button màu trắng
+        side: BorderSide(color: color.withOpacity(0.5)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      ),
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,26 +44,46 @@ class PortalinfoView extends GetView<PortalinfoController> {
       body: Center(
         child: Column(
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              ElevatedButton(
-                  onPressed: () {
-                    controller.refreshPortal(null);
-                  },
-                  child: const Text("Refresh")),
-              ElevatedButton(
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime.now());
-                    if (pickedDate != null) {
-                      controller.selectedDate.value = pickedDate;
-                      controller.refreshPortal(controller.selectedDate.value);
-                    }
-                  },
-                  child: const Text("Chọn Ngày")),
-            ]),
+            // Row chứa các button Refresh và Chọn Ngày
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.refresh,
+                      label: "Refresh",
+                      color: Colors.blue,
+                      onPressed: () {
+                        controller.refreshPortal(null);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.calendar_today,
+                      label: "Chọn Ngày",
+                      color: Colors.green,
+                      onPressed: () async {
+                        DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime.now());
+                        if (pickedDate != null) {
+                          controller.selectedDate.value = pickedDate;
+                          controller
+                              .refreshPortal(controller.selectedDate.value);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Row hiển thị trạng thái
             Row(
               children: [
                 Padding(
@@ -60,6 +105,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ),
               ],
             ),
+            // Row hiển thị số lượng
             Row(
               children: [
                 Padding(
@@ -81,6 +127,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ),
               ],
             ),
+            // DataTable hiển thị danh sách portal
             Expanded(
               child: GetBuilder<PortalinfoController>(
                 builder: (dx) => DataTable2(
@@ -121,11 +168,10 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                 if (dx.portals[index].selected != value) {
                                   dx.portals[index].selected = value!;
                                 }
-                                //count portals selected
+                                // Cập nhật số lượng portal được chọn
                                 dx.countPortalSelected.value = dx.portals
                                     .where((element) => element.selected)
                                     .length;
-
                                 dx.update();
                               },
                               color: WidgetStateProperty.resolveWith<Color?>(
@@ -136,8 +182,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                       .primary
                                       .withOpacity(0.6);
                                 }
-
-                                return null; // Use the default value.
+                                return null;
                               }),
                               cells: [
                                 DataCell(Text(
@@ -185,12 +230,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ),
               ),
             ),
+            // Card chứa row với các tuỳ chọn và button xử lý portal
             Obx(
               () => Card(
                 child: Column(children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Dropdown chọn may chủ
                       DropdownButton<String>(
                         value: controller.selectedMayChu.value,
                         onChanged: (value) {
@@ -203,78 +250,124 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           );
                         }).toList(),
                       ),
+                      // Checkbox sắp xếp
                       Checkbox(
-                          value: controller.isSortDiNgoai.value,
-                          onChanged: (e) {
-                            controller.isSortDiNgoai.value = e!;
-                          }),
+                        value: controller.isSortDiNgoai.value,
+                        activeColor: Colors
+                            .deepPurple, // Ví dụ: sử dụng màu sâu cho checkbox
+                        checkColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                        onChanged: (e) {
+                          controller.isSortDiNgoai.value = e!;
+                        },
+                      ),
                       const Text("Sắp xếp"),
+                      // Checkbox In
                       Checkbox(
-                          value: controller.isPrinted.value,
-                          onChanged: (e) {
-                            controller.isPrinted.value = e!;
-                          }),
+                        value: controller.isPrinted.value,
+                        activeColor: Colors.orange,
+                        checkColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                        onChanged: (e) {
+                          controller.isPrinted.value = e!;
+                        },
+                      ),
                       const Text("In"),
                     ],
                   ),
-                  Row(
+                  // Row chứa các button xử lý dữ liệu portal
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        ElevatedButton(
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.download,
+                            label: 'Lấy DL',
+                            color: Colors.blue,
                             onPressed: () {
                               controller.layDuLieu();
                             },
                             onLongPress: () {
                               controller.layDuLieuLo();
                             },
-                            child: const Text('Lấy DL')),
-                        ElevatedButton(
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.save,
+                            label: 'Lưu BD1',
+                            color: Colors.orange,
                             onPressed: () {
-                              controller.sendAndCheckDiNgoais();
+                              controller.test();
                             },
-                            child: const Text("Lưu BD1")),
-                        // ElevatedButton(
-                        //     onPressed: () {
-                        //       controller.sendTest();
-                        //     },
-                        //     onLongPress: () {
-                        //       controller.sendDiNgoaiAndRunBD();
-                        //     },
-                        //     child: const Text('Test')),
-                        ElevatedButton(
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.send,
+                            label: 'Đi Ngoài',
+                            color: Colors.green,
                             onPressed: () {
                               controller.sendDiNgoai();
                             },
                             onLongPress: () {
                               controller.sendDiNgoaiAndRunBD();
                             },
-                            child: const Text('Đi Ngoài')),
-                      ])
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ]),
               ),
             ),
+            // Row chứa các button cuối: Sửa, In Sắp Xếp, In
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  ElevatedButton(
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.edit,
+                      label: 'Sửa',
+                      color: Colors.purple,
                       onPressed: () {
                         controller.editHangHoas();
                       },
-                      child: const Text("Sửa")),
-                  ElevatedButton(
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.print,
+                      label: 'In Sort',
+                      color: Colors.teal,
                       onPressed: () {
                         controller.printPageSelectedAndSort();
                       },
-                      child: const Text("In Sắp Xếp")),
-                  ElevatedButton(
-                    onPressed: () {
-                      controller.printPageSelected();
-                    },
-                    child:
-                        const Text("In", style: TextStyle(color: Colors.red)),
-                  )
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.print_outlined,
+                      label: 'In',
+                      color: Colors.red,
+                      onPressed: () {
+                        controller.printPageSelected();
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -296,84 +389,70 @@ class PortalinfoView extends GetView<PortalinfoController> {
     Get.dialog(
       barrierDismissible: true, // Cho phép đóng bằng cách chạm bên ngoài
       Dialog(
-        // elevation: 4.0, // Thêm độ nổi nếu muốn
-        backgroundColor: Colors.white, // Nền trắng rõ ràng
+        backgroundColor: Colors.white, // Nền trắng
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0), // Bo góc mềm mại
+          borderRadius: BorderRadius.circular(12.0),
         ),
         child: PopScope(
-          // Sử dụng PopScope thay cho WillPopScope
-          canPop: true, // Có thể đóng bằng nút back
+          canPop: true,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height *
-                  0.8, // Giới hạn chiều cao
-              maxWidth: 400, // Giới hạn chiều rộng nếu cần
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxWidth: 400,
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16.0), // Padding đồng đều
+              padding: const EdgeInsets.all(16.0),
               child: Column(
-                mainAxisSize:
-                    MainAxisSize.min, // Để Column co lại theo nội dung
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Title ---
+                  // Title
                   Text(
                     "Danh sách hàng hóa",
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple, // Màu title nổi bật
+                          color: Colors.deepPurple,
                         ),
                   ),
                   const SizedBox(height: 8.0),
-                  const Divider(thickness: 1.0), // Vạch ngăn cách
+                  const Divider(thickness: 1.0),
                   const SizedBox(height: 12.0),
-
-                  // --- Thông tin Người Nhập ---
+                  // Thông tin Người Nhập
                   Row(
                     children: [
                       const Text(
                         'Người Nhập: ',
-                        style: TextStyle(
-                            color: Colors.black54), // Màu chữ nhẹ hơn cho label
+                        style: TextStyle(color: Colors.black54),
                       ),
                       Text(
-                        dx.portals[index].nguoiNhap ?? 'N/A', // Xử lý null
+                        dx.portals[index].nguoiNhap ?? 'N/A',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent, // Màu xanh dễ chịu hơn
+                          color: Colors.blueAccent,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16.0), // Khoảng cách rõ ràng
-
-                  // --- Danh sách Mã hiệu ---
+                  const SizedBox(height: 16.0),
+                  // Danh sách Mã hiệu
                   Expanded(
-                    // Để ListView chiếm không gian còn lại
                     child: Obx(() {
-                      // Hiển thị loading hoặc thông báo nếu cần
                       if (!controller.isShowEdit.value) {
-                        return const Center(
-                            child:
-                                CircularProgressIndicator()); // Ví dụ loading
+                        return const Center(child: CircularProgressIndicator());
                       }
                       if (dx.currentMaHieusInPortal.isEmpty) {
                         return const Center(
                             child: Text("Không có dữ liệu mã hiệu."));
                       }
-
-                      // ListView với giao diện ListTile đẹp hơn
                       return ListView.separated(
-                        shrinkWrap: true, // Quan trọng khi trong Column
+                        shrinkWrap: true,
                         itemCount: dx.currentMaHieusInPortal.length,
-                        separatorBuilder: (_, __) =>
-                            const Divider(height: 1), // Ngăn cách item
+                        separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, i) {
                           final item = dx.currentMaHieusInPortal[i];
                           return ListTile(
-                            dense: true, // Làm list item gọn hơn
+                            dense: true,
                             contentPadding: EdgeInsets.zero,
                             title: Text(
                               item.code ?? 'N/A',
@@ -382,26 +461,19 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             ),
                             subtitle: Text(item.Date ?? 'N/A'),
                             trailing: Row(
-                              // Sử dụng Row để chứa cả KL và nút Xóa
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(item.Weight ??
-                                    'N/A'), // Giữ nguyên Text hiển thị KL
-                                const SizedBox(
-                                    width: 8), // Khoảng cách giữa KL và nút xóa
-                                // --- Chỉ hiển thị nút xóa nếu trạng thái là "2" ---
+                                Text(item.Weight ?? 'N/A'),
+                                const SizedBox(width: 8),
                                 if (showDeleteButton)
                                   IconButton(
                                     icon: const Icon(Icons.delete,
                                         color: Colors.redAccent),
                                     tooltip: 'Xóa',
-                                    padding: EdgeInsets
-                                        .zero, // Giảm padding mặc định
-                                    constraints:
-                                        const BoxConstraints(), // Loại bỏ constraint mặc định
-                                    iconSize: 20, // Kích thước icon nhỏ hơn
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    iconSize: 20,
                                     onPressed: () {
-                                      // --- Hiển thị Dialog xác nhận ---
                                       Get.dialog(
                                         AlertDialog(
                                           title: const Text("Xác nhận xóa"),
@@ -409,25 +481,19 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                               "Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?"),
                                           actions: [
                                             TextButton(
-                                              onPressed: () => Get
-                                                  .back(), // Đóng dialog xác nhận
+                                              onPressed: () => Get.back(),
                                               child: const Text("Hủy"),
                                             ),
                                             TextButton(
                                               onPressed: () {
-                                                Get.back(); // Đóng dialog xác nhận
-                                                // Gọi hàm xóa trong controller
+                                                Get.back();
                                                 controller.deleteBG(item);
-                                                //Chờ khoảng 2s
                                                 Future.delayed(
                                                     const Duration(seconds: 2),
                                                     () {
                                                   controller
                                                       .getMaHieuToShow(index);
-                                                  // Đóng dialog sau khi xóa
                                                 });
-
-                                                // Cập nhật danh sách mã hiệu
                                               },
                                               child: const Text("Xóa",
                                                   style: TextStyle(
@@ -435,8 +501,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                             ),
                                           ],
                                         ),
-                                        barrierDismissible:
-                                            false, // Không cho đóng bằng cách chạm ra ngoài
+                                        barrierDismissible: false,
                                       );
                                     },
                                   ),
@@ -447,13 +512,12 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       );
                     }),
                   ),
-                  const SizedBox(height: 16.0), // Khoảng cách trước nút đóng
-
-                  // --- Nút Đóng ---
+                  const SizedBox(height: 16.0),
+                  // Nút Đóng
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => Get.back(), // Hành động đóng dialog
+                      onPressed: () => Get.back(),
                       child: const Text("Đóng"),
                     ),
                   ),

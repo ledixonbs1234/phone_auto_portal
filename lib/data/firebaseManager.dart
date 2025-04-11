@@ -16,6 +16,7 @@ import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
 import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
 import '../app/modules/home/messageReceiveModel.dart';
+import '../app/modules/home/user_info.dart';
 
 class FirebaseManager with WidgetsBindingObserver {
   static final FirebaseManager _singleton = FirebaseManager._internal();
@@ -356,7 +357,13 @@ class FirebaseManager with WidgetsBindingObserver {
   }
 
   void sendListScannedToPortal(List<BuuGuis> buuGuis) {
-    rootPath.child('scannedItems').set(jsonEncode(buuGuis));
+    var message = MessageReceiveModel("", jsonEncode(buuGuis));
+    rootPath
+        .child('scannedItems')
+        .set(message.toJson())
+        .timeout(const Duration(seconds: 5), onTimeout: () {
+      throw TimeoutException('Ghi dữ liệu quá lâu, thử lại sau.');
+    });
   }
 
   refreshPortal(DateTime? time) {
@@ -366,6 +373,39 @@ class FirebaseManager with WidgetsBindingObserver {
       String formattedDate =
           "${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}/${time.year}";
       addMessage(MessageReceiveModel("getPortal", formattedDate));
+    }
+  }
+
+  Future<List<UserInfo>> getPortalUsers() async {
+    final ref = database
+        .child('PORTAL')
+        .child('portalUsers')
+        .ref; // Tham chiếu đến node 'portalUsers'
+    try {
+      final snapshot = await ref.get();
+      if (snapshot.exists && snapshot.value != null) {
+        final Map<dynamic, dynamic> usersData =
+            snapshot.value as Map<dynamic, dynamic>;
+        final List<UserInfo> userList = [];
+        usersData.forEach((key, value) {
+          // Giả sử value là một Map, nếu không cần kiểm tra kiểu dữ liệu
+          if (value is Map) {
+            // Truyền key và value vào fromJson
+            userList.add(UserInfo.fromJson(key.toString(), value));
+          }
+        });
+        // Sắp xếp theo tên hoặc username nếu muốn
+        userList.sort((a, b) => a.name.compareTo(b.name));
+        return userList;
+      } else {
+        print('Node portalUsers không tồn tại hoặc rỗng trong RTDB.');
+        return []; // Trả về danh sách rỗng nếu không có dữ liệu
+      }
+    } catch (e) {
+      print("Lỗi khi lấy portalUsers từ RTDB: $e");
+      // Ném lỗi để controller xử lý (ví dụ: hiển thị thông báo)
+      throw Exception(
+          'Không thể tải danh sách người dùng portal: ${e.toString()}');
     }
   }
 

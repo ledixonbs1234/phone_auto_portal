@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 
@@ -22,6 +23,7 @@ import 'package:phone_auto_portal/data/firebaseManager.dart';
 import '../../portalinfo/controllers/portalinfo_controller.dart';
 
 import '../khach_hangs_model.dart';
+import '../user_info.dart';
 
 class HomeController extends GetxController {
   //TODO: Implement HomeController
@@ -61,6 +63,15 @@ class HomeController extends GetxController {
 
   final selectedMayChu = HostInfo("maychu").obs;
 
+  // --- Trạng thái Chọn Người dùng ---
+  final GetStorage _storage = GetStorage();
+  final userList = <UserInfo>[].obs;
+  final selectedUser = Rx<UserInfo?>(null);
+  final isLoadingUsers = false.obs; // Cờ báo đang tải user từ RTDB
+  final _selectedUserStorageKey =
+      'selectedPortalUsername'; // Lưu username đã chọn vào GetStorage
+  // --- Kết thúc Trạng thái Chọn Người dùng ---
+
   final maychus = <HostInfo>[
     HostInfo("maychu"),
     HostInfo("mayphu"),
@@ -86,7 +97,8 @@ class HomeController extends GetxController {
     accountTE.text = GetStorage().read("account") ?? "";
     passwordTE.text = GetStorage().read("password") ?? "";
     sendPing();
-
+    initializeData();
+    listenForSelectedUserChanges();
     // if (temps.isNotEmpty) {
 
     //   seKhachHangs.value = temps[0];
@@ -98,7 +110,74 @@ class HomeController extends GetxController {
     super.onReady();
   }
 
-  void increment() => count.value++;
+  // Hàm khởi tạo gộp
+  Future<void> initializeData() async {
+    await loadPortalUsersFromRTDB(); // Tải user từ RTDB trước
+    loadSelectedUserFromStorage(); // Sau đó tải lựa chọn từ bộ nhớ cục bộ
+  }
+
+  Future<void> loadPortalUsersFromRTDB() async {
+    isLoadingUsers.value = true;
+    userList.clear(); // Xóa list cũ trước khi tải
+    // Luôn thêm lựa chọn "Không chọn" vào đầu danh sách
+    final noSelectionUser =
+        UserInfo(name: 'Không chọn', username: '', password: '');
+    userList.add(noSelectionUser);
+
+    try {
+      final List<UserInfo> fetchedUsers =
+          await FirebaseManager().getPortalUsers();
+      userList.addAll(fetchedUsers); // Thêm user lấy từ RTDB
+    } catch (e) {
+      print("Lỗi trong HomeController khi tải portal users: $e");
+      Get.snackbar('Lỗi', 'Không thể tải danh sách tài khoản portal.');
+      // userList sẽ chỉ chứa 'Không chọn' nếu có lỗi
+    } finally {
+      isLoadingUsers.value = false;
+      // Đảm bảo lựa chọn hiện tại hợp lệ sau khi tải xong
+    }
+  }
+
+  // Tải username đã chọn từ GetStorage và tìm UserInfo tương ứng trong list đã tải từ RTDB
+  void loadSelectedUserFromStorage() {
+    final String? selectedUsername =
+        GetStorage().read<String>(_selectedUserStorageKey);
+    if (selectedUsername != null) {
+      // Tìm user trong list (đã bao gồm 'Không chọn')
+      final user = userList.firstWhere((u) => u.username == selectedUsername,
+          orElse: () {
+        print(
+            "Username '$selectedUsername' đã lưu không tồn tại trong danh sách mới tải.");
+        return userList.firstWhere((u) =>
+            u.username.isEmpty); // Trả về 'Không chọn' nếu không tìm thấy
+      });
+      selectedUser.value = user;
+    } else {
+      // Nếu chưa có gì được lưu, mặc định là "Không chọn"
+      selectedUser.value = userList.firstWhere((u) => u.username.isEmpty,
+          orElse: () =>
+              UserInfo(name: 'Không chọn', username: '', password: ''));
+    }
+  }
+
+  void saveSelectedUserToStorage() {
+    final usernameToSave = selectedUser.value?.username;
+    if (usernameToSave != null) {
+      // Lưu cả username rỗng của 'Không chọn'
+      GetStorage().write(_selectedUserStorageKey, usernameToSave);
+      print("Đã lưu lựa chọn username: '$usernameToSave'");
+    } else {
+      _storage.remove(
+          _selectedUserStorageKey); // Xóa nếu selectedUser là null (hiếm khi)
+    }
+  }
+
+  // Kiểm tra xem user đang chọn có còn trong danh sách không (sau khi tải lại từ RTDB)
+
+  void listenForSelectedUserChanges() {
+    // Tự động lưu vào GetStorage khi lựa chọn thay đổi
+    ever(selectedUser, (_) => saveSelectedUserToStorage());
+  }
 
   void getPortalData() async {
     imageBytes.value = "";
@@ -138,8 +217,12 @@ class HomeController extends GetxController {
       } else {
         currentKH = temps[0];
       }
-      seKhachHangs.value = currentKH!;
-      checkHopDong(currentKH);
+      if (currentKH != null) {
+        seKhachHangs.value = currentKH;
+      } else {
+        seKhachHangs.value = temps[0];
+      }
+      checkHopDong(seKhachHangs.value);
       FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
 
       stateText.value = "Cập nhật dữ liệu thành công";
@@ -216,19 +299,21 @@ class HomeController extends GetxController {
   void goToDetail() {
     var detail = Get.find<DetailController>();
 
-    detail.setUp(seKhachHangs.value);
+    detail.setUp(seKhachHangs.value, selectedUser.value!.username,
+        selectedUser.value!.password);
 
     Get.toNamed("/detail");
   }
 
   void goToCreateNew() {
-    var detail = Get.find<CreatenewController>();
+    var createNew = Get.find<CreatenewController>();
 
     if (seKhachHangs.value.maKH == null) {
       FirebaseManager().showSnackBar("Chưa chọn khách hàng");
       return;
     }
-    detail.setUp(seKhachHangs.value, accountTE.text, passwordTE.text);
+    createNew.setUp(seKhachHangs.value, selectedUser.value!.username,
+        selectedUser.value!.password);
 
     Get.toNamed("/createnew");
   }
@@ -283,8 +368,8 @@ class HomeController extends GetxController {
         "khoitao",
         const JsonEncoder().convert({
           "maKH": seKhachHangs.value.maKH,
-          "account": accountTE.text,
-          "password": passwordTE.text
+          "account": selectedUser.value!.username,
+          "password": selectedUser.value!.password,
         })));
   }
 
