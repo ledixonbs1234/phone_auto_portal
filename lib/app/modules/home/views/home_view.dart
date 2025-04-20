@@ -147,14 +147,14 @@ class HomeView extends GetView<HomeController> {
                                     width: 1.5)),
                             labelText: "Tài khoản Portal",
                             prefixIcon: controller.isLoadingUsers.value
-                                ? Padding(
+                                ? const Padding(
                                     padding: EdgeInsets.all(10),
                                     child: SizedBox(
                                         width: 15,
                                         height: 15,
                                         child: CircularProgressIndicator(
                                             strokeWidth: 1.5)))
-                                : Icon(Icons.person_outline,
+                                : const Icon(Icons.person_outline,
                                     size: 20), // Icon hoặc loading
                             filled: controller.isLoadingUsers
                                 .value, // Tô màu nền khi đang tải
@@ -195,7 +195,7 @@ class HomeView extends GetView<HomeController> {
                       ),
                       _buildActionButton(
                         icon: Icons.add_box,
-                        label: 'Thêm Portal',
+                        label: 'Add Portal',
                         color: Colors.green,
                         onPressed: () {
                           controller.addPortalData();
@@ -222,11 +222,22 @@ class HomeView extends GetView<HomeController> {
                                     controller: controller.capcharController,
                                   ),
                                 ),
-                                ElevatedButton(
-                                    onPressed: () {
-                                      controller.loginPNS();
-                                    },
-                                    child: const Text('Login'))
+                                _buildActionButton(
+                                  icon: Icons.login,
+                                  label: 'Login PNS',
+                                  color: Colors.green,
+                                  onPressed: () {
+                                    controller.loginPNS();
+                                  },
+                                ),
+                                _buildActionButton(
+                                  icon: Icons.login_rounded,
+                                  label: 'Login GD',
+                                  color: Colors.purple,
+                                  onPressed: () {
+                                    controller.loginPNS(isGiaoDich: true);
+                                  },
+                                ),
                               ],
                             )
                           ],

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -296,11 +297,16 @@ class HomeController extends GetxController {
     }
   }
 
+
   void goToDetail() {
     var detail = Get.find<DetailController>();
+    //nếu lastSelectedMaKH khác null thì kiểm tra có trùng với Ma KH của selectedKH không
 
-    detail.setUp(seKhachHangs.value, selectedUser.value!.username,
-        selectedUser.value!.password);
+    detail.setUp(
+      seKhachHangs.value,
+      selectedUser.value!.username,
+      selectedUser.value!.password,
+    );
 
     Get.toNamed("/detail");
   }
@@ -385,13 +391,13 @@ class HomeController extends GetxController {
     FirebaseManager().setUp();
   }
 
-  Future<void> loginPNS() async {
+  Future<void> loginPNS({bool isGiaoDich = false}) async {
     // thực hiện send capchar to firebase
 
     imageBytes.value = "";
 
-    FirebaseManager()
-        .addMessage(MessageReceiveModel("loginpns", capcharController.text));
+    FirebaseManager().addMessage(MessageReceiveModel(
+        isGiaoDich ? "loginpnsgd" : "loginpns", capcharController.text));
 
     stateText.value = "Đang đăng nhập";
 
@@ -443,6 +449,26 @@ class HomeController extends GetxController {
     } else {
       FirebaseManager().addMessage(MessageReceiveModel(
           "addpns",
+          const JsonEncoder().convert(
+            {"day": "-2"},
+          )));
+    }
+    FirebaseManager().showSnackBar("Đang lấy dữ liệu");
+    stateText.value = "Đang lấy dữ liệu";
+  }
+
+  void getPortalGD() {
+    imageBytes.value = "";
+    //kiểm tra dayLastController có khác 2 không, nếu khác thì save key is day
+    if (dayLastController.text != "2" && dayLastController.value != "") {
+      GetStorage().write("day", dayLastController.text);
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "getpnsgd",
+          const JsonEncoder().convert(
+              {"day": (int.parse(dayLastController.text) * (-1)).toString()})));
+    } else {
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "getpnsgd",
           const JsonEncoder().convert(
             {"day": "-2"},
           )));

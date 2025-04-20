@@ -274,6 +274,8 @@ class CreatenewController extends GetxController {
     return count;
   }
 
+  String lastmaKH = "";
+
   void sendToPC() {
     printInfo(info: "Send to portal");
     if (iBuuGui.value == -1) {
@@ -281,12 +283,20 @@ class CreatenewController extends GetxController {
     }
     if (buuGuis.isEmpty) return;
     stateText.value = "Đang gửi thông tin";
+    bool isFirst = true;
+
+    if (lastmaKH.isNotEmpty) {
+      if (lastmaKH == khachHang.value.maKH) {
+        isFirst = false;
+      }
+    }
 
     FirebaseManager().sendListBDToPortal(buuGuis);
 
     Map<String, dynamic> messageData = {
       'maKH': khachHang.value.maKH,
       'maBG': buuGuis[iBuuGui.value].maBuuGui,
+      'isFirst': isFirst.toString(),
       'account': account,
       'password': password,
     };

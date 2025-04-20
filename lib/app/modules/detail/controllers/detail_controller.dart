@@ -18,7 +18,7 @@ class DetailController extends GetxController {
   final stateText = "".obs;
   String account = "";
   String password = "";
-  void setUp(KhachHangs kh,String account,String password) {
+  void setUp(KhachHangs kh, String account, String password) {
     khachHang.value = kh;
     this.account = account;
     this.password = password;
@@ -127,6 +127,8 @@ class DetailController extends GetxController {
     }
   }
 
+  String lastmaKH = "";
+
   void sendToPortal({bool isAuto = false}) {
     //thực hiện send to portal
     printInfo(info: "Send to portal");
@@ -135,18 +137,29 @@ class DetailController extends GetxController {
     }
     if (buuGuis.isEmpty) return;
     stateText.value = "Đang gửi thông tin";
+    bool isFirst = true;
+
+    if (lastmaKH.isNotEmpty) {
+      if (lastmaKH == khachHang.value.maKH) {
+        isFirst = false;
+      }
+    }
 
 //setListBG where buuGuis isBlackList = false
+    var list = buuGuis.where((element) => !element.isBlackList).toList();
+    if (list.isEmpty) {
+      stateText.value = "Không có mã nào để gửi";
+      return;
+    }
 
-    FirebaseManager().sendListBDToPortal(
-        // ignore: invalid_use_of_protected_member
-        buuGuis.value.where((element) => !element.isBlackList).toList());
+    FirebaseManager().sendListBDToPortal(list);
     final String maKHValue = khachHang.value.maKH!;
     final String maBGValue = buuGuis[iSeBuuGui.value].maBuuGui!;
 
     final Map<String, String> messageData = {
       'maKH': maKHValue,
       'maBG': maBGValue,
+      'isFirst': isFirst.toString(),
       'account': account,
       'password': password
     };
@@ -183,8 +196,11 @@ class DetailController extends GetxController {
   void printAll() {
     if (buuGuis.isEmpty) return;
 
-    // Collecting maHieu values from buuGuis
-    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+    // Collecting maHieu values from buuGuis khác blacklist
+    List<String?> maHieus = buuGuis
+        .where((element) => !element.isBlackList)
+        .map((buuGui) => buuGui.maBuuGui)
+        .toList();
 
     // Sending the list of maHieus as a message
     FirebaseManager()
