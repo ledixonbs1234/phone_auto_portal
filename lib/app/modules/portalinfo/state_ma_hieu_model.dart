@@ -27,7 +27,8 @@ class StateMaHieu {
     Name = json['Name'];
     Address = json['Address'];
     if (json['Date'] != null) {
-      DateTime parsedDate = DateTime.parse(json['Date']).add(const Duration(hours: 7));
+      DateTime parsedDate =
+          DateTime.parse(json['Date']).add(const Duration(hours: 7));
       Date =
           "${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}:${parsedDate.second.toString().padLeft(2, '0')}";
     }
@@ -38,6 +39,7 @@ class StateMaHieu {
     data['ID'] = iD;
     data['Code'] = code;
     data['State'] = state;
+    data['Weight'] = Weight;
     data['IDCODE'] = IDCODE;
     return data;
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter/material.dart'; // Import material.dart
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
@@ -70,8 +71,7 @@ class PortalinfoController extends GetxController {
   }
 
   test() {
-      FirebaseManager()
-          .addMessage(MessageReceiveModel("test", ""));
+    FirebaseManager().addMessage(MessageReceiveModel("test", ""));
   }
 
   Future<void> printPageSelected() async {
@@ -415,5 +415,27 @@ class PortalinfoController extends GetxController {
       FirebaseManager()
           .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(ids)));
     }
+  }
+
+  // Hàm cập nhật trọng lượng
+  void updateWeight(StateMaHieu item, String newWeight) {
+    // TODO: Implement logic to update weight (e.g., API call, update local list)
+    printInfo(info: "Cập nhật trọng lượng cho ${item.code} thành $newWeight");
+    // Cập nhật trọng lượng trong danh sách hiển thị tạm thời
+    final index = currentMaHieusInPortal
+        .indexWhere((element) => element.IDCODE == item.IDCODE);
+    //create new object to update
+
+    if (index != -1) {
+      currentMaHieusInPortal[index].Weight = newWeight;
+      FirebaseManager().addMessage(MessageReceiveModel(
+          "updatekl", jsonEncode(currentMaHieusInPortal[index])));
+    }
+
+    // Gửi yêu cầu cập nhật trọng lượng lên server/API
+    // FirebaseManager().addMessage(
+    //     MessageReceiveModel("updateWeight", jsonEncode({"id": item.IDCODE, "weight": newWeight})));
+
+    Get.snackbar("Thành công", "Đã cập nhật trọng lượng cho ${item.code}");
   }
 }

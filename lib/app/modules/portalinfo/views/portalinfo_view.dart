@@ -2,6 +2,7 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/portalinfo_controller.dart';
+import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart'; // Import StateMaHieu
 
 class PortalinfoView extends GetView<PortalinfoController> {
   const PortalinfoView({super.key});
@@ -393,8 +394,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        child: PopScope(
-          canPop: true,
+        child: WillPopScope(
+          onWillPop: () async => true,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.8,
@@ -434,7 +435,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 16),
                   // Danh sách Mã hiệu
                   Expanded(
                     child: Obx(() {
@@ -464,8 +465,24 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(item.Weight ?? 'N/A'),
-                                const SizedBox(width: 8),
-                                if (showDeleteButton)
+                                if (showDeleteButton) // Space after weight
+                                  const SizedBox(width: 4), // Reduced space
+                                if (showDeleteButton) // Nút thay đổi trọng lượng
+                                  IconButton(
+                                    icon: const Icon(Icons.scale,
+                                        color: Colors.blueAccent),
+                                    tooltip: 'Thay đổi trọng lượng',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    iconSize: 20,
+                                    onPressed: () {
+                                      _showChangeWeightDialog(
+                                          context, item, index);
+                                    },
+                                  ),
+                                if (showDeleteButton) // Space after scale icon
+                                  const SizedBox(width: 4), // Reduced space
+                                if (showDeleteButton) // Delete icon
                                   IconButton(
                                     icon: const Icon(Icons.delete,
                                         color: Colors.redAccent),
@@ -501,7 +518,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                             ),
                                           ],
                                         ),
-                                        barrierDismissible: false,
                                       );
                                     },
                                   ),
@@ -511,21 +527,46 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         },
                       );
                     }),
-                  ),
-                  const SizedBox(height: 16.0),
-                  // Nút Đóng
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Get.back(),
-                      child: const Text("Đóng"),
-                    ),
-                  ),
+                  )
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Hàm hiển thị dialog thay đổi trọng lượng
+  void _showChangeWeightDialog(
+      BuildContext context, StateMaHieu item, int index) {
+    final TextEditingController weightController =
+        TextEditingController(text: item.Weight ?? '');
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text("Thay đổi trọng lượng"),
+        content: TextField(
+          controller: weightController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: "Trọng lượng mới"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text("Hủy"),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              controller.updateWeight(item, weightController.text);
+              Future.delayed(const Duration(seconds: 6), () {
+                controller.getMaHieuToShow(index);
+              });
+            },
+            child: const Text("Lưu"),
+          ),
+        ],
       ),
     );
   }
