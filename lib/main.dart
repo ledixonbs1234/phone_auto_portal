@@ -9,6 +9,7 @@ import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_co
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
 import 'package:phone_auto_portal/app/routes/app_pages.dart';
+import 'package:phone_auto_portal/data/UpdateService.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/firebase_options.dart';
 import 'package:url_strategy/url_strategy.dart';
@@ -66,6 +67,7 @@ Future<void> main() async {
   // Get.put(WebController());
   // Get.put(SavedMHController());
   // Get.put(AutoBdController());
+  Get.put(UpdateService());
 
   runApp(
     GetMaterialApp(

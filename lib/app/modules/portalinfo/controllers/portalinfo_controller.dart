@@ -79,8 +79,8 @@ class PortalinfoController extends GetxController {
     List<String?> selecteds = getSelectedsIdPortal();
 
     if (selecteds.isNotEmpty) {
-      FirebaseManager()
-          .addMessage(MessageReceiveModel("printPage", jsonEncode(selecteds)));
+      FirebaseManager().addMessage(
+          MessageReceiveModel("printSortTinhVaNoiDung", jsonEncode(selecteds)));
     }
   }
 

@@ -362,7 +362,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   Expanded(
                     child: _buildActionButton(
                       icon: Icons.print_outlined,
-                      label: 'In',
+                      label: 'In Ra Vô',
                       color: Colors.red,
                       onPressed: () {
                         controller.printPageSelected();

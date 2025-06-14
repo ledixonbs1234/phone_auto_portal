@@ -8,6 +8,8 @@ import '../modules/edit_page/bindings/edit_page_binding.dart';
 import '../modules/edit_page/views/edit_page_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
+import '../modules/myview/bindings/myview_binding.dart';
+import '../modules/myview/views/myview_view.dart';
 import '../modules/portalinfo/bindings/portalinfo_binding.dart';
 import '../modules/portalinfo/views/portalinfo_view.dart';
 import '../modules/printPage/bindings/print_page_binding.dart';
@@ -50,6 +52,11 @@ class AppPages {
       name: _Paths.EDIT_PAGE,
       page: () => const EditPageView(),
       binding: EditPageBinding(),
+    ),
+    GetPage(
+      name: _Paths.MYVIEW,
+      page: () => const MyviewView(),
+      binding: MyviewBinding(),
     ),
   ];
 }

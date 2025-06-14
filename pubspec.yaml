@@ -1,5 +1,5 @@
 name: phone_auto_portal
-version: 1.0.0+1
+version: 1.2.0+14
 publish_to: none
 description: A new Flutter project.
 environment: 
@@ -10,9 +10,16 @@ dependencies:
   get: ^4.6.6
   firebase_core: 2.27.0
   data_table_2: 2.5.11
+  package_info_plus: ^8.3.0
+  dio: ^5.8.0+1            # Để tải file
+  path_provider: ^2.1.5    # Để lấy thư mục lưu file
+  open_file_plus: ^3.4.1+1        # Để mở file APK (Android)
+  device_info_plus: ^10.1.2 # Để kiểm tra nền tảng (Android/iOS)
+  permission_handler: ^11.3.1 # Để xin quyền cài đặt APK trên Android 8+
   firebase_database: 10.4.9
   group_button: 5.3.4
   get_storage: 2.1.1
+  archive: ^4.0.7
   msh_checkbox: 2.0.1
   autocomplete_textfield: 2.0.1
   url_strategy: 0.2.0

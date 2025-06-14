@@ -22,6 +22,7 @@ class CreatenewController extends GetxController {
   final buuGuis = <BuuGuis>[].obs;
   final diNgoaiStates = <DiNgoaiStateInfo>[].obs;
   final isChangeKL = false.obs;
+  final isNotCheckData = false.obs;
   final tenKH = "".obs;
   final isAutoWork = false.obs;
   final isDo = false.obs;
@@ -327,7 +328,7 @@ class CreatenewController extends GetxController {
     update();
   }
 
-  void onListenNotification(MessageReceiveModel message) {
+  Future<void> onListenNotification(MessageReceiveModel message) async {
     switch (message.Lenh) {
       case "checkstatemh":
         var splitText = message.DoiTuong.split("|");
@@ -341,6 +342,31 @@ class CreatenewController extends GetxController {
         break;
       case "message":
         stateText.value = message.DoiTuong;
+        break;
+      case "messageContinue":
+        //nếu barcode đang mở thì thoát ra
+        if (onListenBarcode != null) {
+          await onListenBarcode!.cancel();
+          onListenBarcode = null;
+          await Future.delayed(
+              const Duration(milliseconds: 1000)); // Tăng thời gian nếu cần
+        }
+        stateText.value = message.DoiTuong;
+        //Hiện thông báo có muốn tiếp tục không
+        Get.defaultDialog(
+          title: "Thông báo",
+          content: Text("${message.DoiTuong}\nBạn có muốn tiếp tục không?"),
+          onConfirm: () {
+            //Gửi yêu cầu tiếp tục
+            FirebaseManager().addMessage(
+                MessageReceiveModel("continueAuto", message.DoiTuong));
+            Get.back();
+          },
+          onCancel: () {
+            isAutoWork.value = false;
+            stateText.value = "Đã dừng tự động";
+          },
+        );
 
         break;
       case "showdetailmessage":
@@ -429,14 +455,20 @@ class CreatenewController extends GetxController {
 
   Future<void> _handleValidBarcode(
       String barcodeFilled, List<String> notMHs) async {
-    if (susggestMHs.contains(barcodeFilled)) {
-      await _processSuggestedBarcode(barcodeFilled, notMHs);
-    } else if (buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
-    } else if (!notMHs.contains(barcodeFilled)) {
-      notMHs.add(barcodeFilled);
-      await _playAudio("assets/kocobg.wav");
+    if (!isNotCheckData.value) {
+      if (susggestMHs.contains(barcodeFilled)) {
+        await _processSuggestedBarcode(barcodeFilled, notMHs);
+      } else if (buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
+      } else if (!notMHs.contains(barcodeFilled)) {
+        notMHs.add(barcodeFilled);
+        await _playAudio("assets/kocobg.wav");
+      } else {
+        // await _playAudio("assets/kocobg.wav");
+      }
     } else {
-      // await _playAudio("assets/kocobg.wav");
+      if (!buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
+        await _processSuggestedBarcode(barcodeFilled, notMHs);
+      }
     }
   }
 
@@ -453,11 +485,26 @@ class CreatenewController extends GetxController {
       );
 
 // Xử lý khối lượng
-      existingDiNgoais == null
-          ? bgTemp.khoiLuong = khachHang.value.buuGuis!
-              .firstWhere((element) => barcodeFilled == element.maBuuGui)
-              .khoiLuong
-          : bgTemp.khoiLuong = int.tryParse(existingDiNgoais.khoiLuong!) ?? 0;
+      // Sửa lại đoạn code gây lỗi:
+      if (existingDiNgoais == null) {
+        // Tìm bưu gửi trong danh sách khách hàng một cách an toàn
+        final buuGuiFromKhachHang = khachHang.value.buuGuis
+            ?.firstWhereOrNull((element) => barcodeFilled == element.maBuuGui);
+
+        if (buuGuiFromKhachHang != null) {
+          // Nếu tìm thấy, gán khối lượng
+          bgTemp.khoiLuong = buuGuiFromKhachHang.khoiLuong;
+        } else {
+          // Nếu KHÔNG tìm thấy, bạn phải quyết định làm gì
+          // Ví dụ: Gán một giá trị mặc định hoặc báo lỗi
+          bgTemp.khoiLuong = 0; // Gán mặc định là 0
+          // Hoặc có thể bạn muốn dừng xử lý ở đây
+          // await _playAudio("assets/error.wav");
+          // return;
+        }
+      } else {
+        bgTemp.khoiLuong = int.tryParse(existingDiNgoais.khoiLuong!) ?? 0;
+      }
       var existingBG =
           buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
 

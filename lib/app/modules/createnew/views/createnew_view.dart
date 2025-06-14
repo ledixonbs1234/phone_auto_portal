@@ -123,6 +123,12 @@ class CreatenewView extends GetView<CreatenewController> {
                               controller.isChangeKL.value = e!;
                             }),
                         const Text('KL'),
+                        Checkbox(
+                            value: controller.isNotCheckData.value,
+                            onChanged: (e) {
+                              controller.isNotCheckData.value = e!;
+                            }),
+                        const Text('NOT'),
                       ],
                     ),
                   )

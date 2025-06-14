@@ -18,6 +18,7 @@ import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 
 import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
+import 'package:phone_auto_portal/data/UpdateService.dart';
 
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 
@@ -48,6 +49,7 @@ class HomeController extends GetxController {
   var textMHController = TextEditingController();
   var accountTE = TextEditingController();
   var passwordTE = TextEditingController();
+  late final UpdateService _updateService;
 
   var addressController = TextEditingController();
 
@@ -109,6 +111,14 @@ class HomeController extends GetxController {
     // }
 
     super.onReady();
+    _updateService = Get.find<UpdateService>();
+    _checkAppUpdate();
+  }
+
+  Future<void> _checkAppUpdate() async {
+    // Có thể thêm một chút delay nếu cần, để tránh xung đột với các tác vụ khởi tạo khác
+    // await Future.delayed(Duration(seconds: 2));
+    await _updateService.checkForUpdate();
   }
 
   // Hàm khởi tạo gộp
@@ -296,7 +306,6 @@ class HomeController extends GetxController {
       FocusScope.of(Get.context!).unfocus();
     }
   }
-
 
   void goToDetail() {
     var detail = Get.find<DetailController>();
