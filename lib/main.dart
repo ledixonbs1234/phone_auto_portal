@@ -47,6 +47,10 @@ void onStart(ServiceInstance service) async {
   print("Background Service đã bắt đầu.");
   // Thêm GetStorage nếu bạn cần đọc key từ đó trong service
   await GetStorage.init();
+  service.on('stopService').listen((event) {
+    print("Nhận được lệnh dừng service...");
+    service.stopSelf();
+  });
   // Lắng nghe sự kiện từ Realtime Database
   // var keyData = FirebaseManager().readKey();
   var keyData = 'maytest';
@@ -134,7 +138,7 @@ Future<void> initializeService() async {
       onStart: onStart,
       foregroundServiceTypes: [AndroidForegroundType.connectedDevice],
       isForegroundMode: true, // Bắt buộc để chạy lâu dài
-      autoStart: true, // Tự khởi động service khi ứng dụng mở
+      autoStart: false, // Tự khởi động service khi ứng dụng mở
       notificationChannelId: 'my_app_service', // ID của kênh thông báo
       initialNotificationTitle: 'Ứng dụng đang chạy nền',
       initialNotificationContent: 'Đang lắng nghe yêu cầu gọi điện.',

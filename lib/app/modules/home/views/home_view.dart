@@ -11,7 +11,6 @@ import '../khach_hangs_model.dart';
 import '../user_info.dart';
 
 class HomeView extends GetView<HomeController> {
- 
   const HomeView({super.key});
   Widget _buildActionButton({
     required IconData icon,
@@ -300,7 +299,7 @@ class HomeView extends GetView<HomeController> {
                   ),
                   Row(
                     children: [
-                      const Text('Tìm kiếm dựa trên MH:'),
+                      const Text('Tìm kiếm MH:'),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -316,6 +315,26 @@ class HomeView extends GetView<HomeController> {
                             },
                           ),
                         ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          controller.toggleService();
+                        },
+                        icon: Icon(
+                          controller.isServiceRunning.value
+                              ? Icons.stop_circle_outlined
+                              : Icons.play_circle_outline,
+                          // Thêm màu sắc động
+                          color: controller.isServiceRunning.value
+                              ? Colors.redAccent
+                              : Colors.green,
+                          // Tăng kích thước icon
+                          size: 36.0,
+                        ),
+                        // Tooltip để người dùng biết chức năng khi giữ chuột/ngón tay
+                        tooltip: controller.isServiceRunning.value
+                            ? 'Tắt dịch vụ'
+                            : 'Bật dịch vụ',
                       )
                     ],
                   ),
