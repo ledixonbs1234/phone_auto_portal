@@ -47,16 +47,19 @@ class DetailController extends GetxController {
   void updateBuuguiFromCheck() {
     buuGuis.clear();
     if (isCheckedDangGom.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!
-          .where((element) => element.trangThai == 'Đang đi thu gom'));
+      buuGuis.addAll(khachHang.value.buuGuis!.where((element) =>
+          element.trangThai == 'Đang đi thu gom' ||
+          element.trangThai == 'Tạo đơn'));
     }
     if (isCheckNhanHang.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!
-          .where((element) => element.trangThai == 'Nhận hàng thành công'));
+      buuGuis.addAll(khachHang.value.buuGuis!.where((element) =>
+          element.trangThai == 'Nhận hàng thành công' ||
+          element.trangThai == 'Bưu tá nhận yêu cầu thu gom'));
     }
     if (isCheckPhanHuong.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!
-          .where((element) => element.trangThai == 'Đã phân hướng'));
+      buuGuis.addAll(khachHang.value.buuGuis!.where((element) =>
+          element.trangThai == 'Đã phân hướng' ||
+          element.trangThai == 'Đã lấy hàng'));
     }
     if (isCheckChapNhan.value) {
       buuGuis.addAll(khachHang.value.buuGuis!

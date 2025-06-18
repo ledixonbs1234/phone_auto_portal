@@ -81,13 +81,23 @@ class BuuGuis {
       this.index});
 
   BuuGuis.fromJson(Map<dynamic, dynamic> json) {
-    khoiLuong = json['KhoiLuong'];
+    if (json['KhoiLuong'] is int) {
+      khoiLuong = json['KhoiLuong'];
+    } else if (json['KhoiLuong'] is String) {
+      khoiLuong = int.tryParse(json['KhoiLuong']) ?? 0;
+    }
     maBuuGui = json['MaBuuGui'];
     id = json['Id'];
     isBlackList = json['IsBlackList'] ?? false;
     timeTrangThai = json['TimeTrangThai'];
     trangThai = json['TrangThai'];
-    money = json['Money'];
+    if (json['Money'] is String) {
+      money = json['Money'];
+    } else if (json['Money'] is int) {
+      money = json['Money'].toString();
+    } else if (json['Money'] is double) {
+      money = json['Money'].toStringAsFixed(0);
+    }
     listDo = json['ListDo'];
 
     trangThaiRequest = json['TrangThaiRequest'];

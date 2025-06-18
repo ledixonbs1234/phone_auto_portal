@@ -62,10 +62,9 @@ class UpdateService {
     try {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       int currentVersionCode = int.parse(packageInfo.buildNumber);
-      if (currentVersionCode > 2000) {
-        currentVersionCode -=
-            2000; // Giả sử bạn muốn giảm giá trị này xuống 2000
-      }
+      //tinh chỉnh thông tin phiên bản ví dụ 2015 thì thành 15, 3015 thành 15, 5015 thành 15
+      currentVersionCode = currentVersionCode % 100; // Lấy 2 chữ số cuối
+      
       printInfo(info: "Current version code: $currentVersionCode");
 
       String platformKey = Platform.isAndroid ? "android" : "ios";

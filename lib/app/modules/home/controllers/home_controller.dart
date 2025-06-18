@@ -16,6 +16,7 @@ import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
+import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
 import 'package:phone_auto_portal/data/UpdateService.dart';
@@ -484,5 +485,13 @@ class HomeController extends GetxController {
     }
     FirebaseManager().showSnackBar("Đang lấy dữ liệu");
     stateText.value = "Đang lấy dữ liệu";
+  }
+
+  void goToMyPost() {
+    Get.toNamed("/myview");
+
+    var portalInfo = Get.find<MyviewController>();
+
+    portalInfo.updateKhachHang();
   }
 }

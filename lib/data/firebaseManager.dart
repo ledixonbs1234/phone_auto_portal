@@ -10,8 +10,12 @@ import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.d
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
+import 'package:phone_auto_portal/app/modules/myview/bindings/myview_binding.dart';
+import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
+import 'package:phone_auto_portal/app/modules/myview/views/myview_view.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
@@ -24,6 +28,7 @@ class FirebaseManager with WidgetsBindingObserver {
   final database = FirebaseDatabase.instance.ref();
   late DatabaseReference rootPath = database;
   late HomeController? home;
+  late MyviewController? myView;
   late DetailController? detail;
   late CreatenewController? createNew;
   late PortalinfoController? portalInfo;
@@ -46,9 +51,10 @@ class FirebaseManager with WidgetsBindingObserver {
         colorText: Colors.white);
   }
 
-  void readKey() {
+  String readKey() {
     keyData = GetStorage().read('key') ?? "maychu";
     rootPath = database.child("PORTAL/CHILD/${keyData!}");
+    return keyData!;
   }
 
   void disposeFirebase() {
@@ -57,7 +63,8 @@ class FirebaseManager with WidgetsBindingObserver {
   }
 
   late StreamSubscription<DatabaseEvent>? streamTimeUpdate = null;
-
+  late StreamSubscription<DatabaseEvent>? streamTimeUpdateMyPost = null;
+  String lastCalledNumber = '';
   void setUp() async {
     readKey();
     if (streamTimeUpdate != null) streamTimeUpdate!.cancel();
@@ -73,6 +80,20 @@ class FirebaseManager with WidgetsBindingObserver {
       home = Get.find<HomeController>();
       home?.timeUpdate.value = time;
       await home?.updateKhachHang();
+    });
+    if (streamTimeUpdateMyPost != null) streamTimeUpdateMyPost!.cancel();
+    streamTimeUpdateMyPost =
+        database.child('MYVNPOST/TimeUpdate').onValue.listen((event) async {
+      if (event.snapshot.value == null) return;
+      // if (lastTimeUpdateStamp == "") {
+      //   lastTimeUpdateStamp = event.snapshot.value as String;
+      //   return;
+      // }
+      String time = event.snapshot.value as String;
+
+      myView = Get.find<MyviewController>();
+      myView?.timeUpdate.value = time;
+      await myView?.updateKhachHang();
     });
 
     database.child("PORTAL/MAINPAGE").onValue.listen((event) {
@@ -114,6 +135,20 @@ class FirebaseManager with WidgetsBindingObserver {
         }
         if (message.TimeStamp != lastTimeStamp) {
           lastTimeStamp = message.TimeStamp;
+          // if (message.Lenh == "phonecall") {
+          //   final phoneNumber = message.DoiTuong;
+          //   //xoa dấu . hoặc dấu cách trong số điện thoại
+          //   final cleanedPhoneNumber =
+          //       phoneNumber.replaceAll(RegExp(r'[.\s]'), '');
+          //   // if (cleanedPhoneNumber != lastCalledNumber) {
+          //   lastCalledNumber = cleanedPhoneNumber;
+          //   print("New call request received for: $cleanedPhoneNumber");
+          //   _makePhoneCall(cleanedPhoneNumber);
+
+          //   // (Tùy chọn) Xóa yêu cầu sau khi đã xử lý
+          //   // callRef.remove();
+          //   // }
+          // }
           //         GetStorage().write('getLastTimeStamp', lastTimeStamp);
           //         maHieu = Get.find<MaHieuController>();
           home = Get.find<HomeController>();
@@ -249,6 +284,19 @@ class FirebaseManager with WidgetsBindingObserver {
 //     }
 //   }
 
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      print('Could not launch $phoneNumber');
+      // Hiển thị thông báo lỗi cho người dùng
+    }
+  }
+
   factory FirebaseManager() {
     return _singleton;
   }
@@ -266,6 +314,30 @@ class FirebaseManager with WidgetsBindingObserver {
 
   Future<List<KhachHangs>> getKhachHangs() async {
     var datas = await database.child('PNS/KhachHangs').get();
+    List<KhachHangs> lans = [];
+
+    Iterable<DataSnapshot> childs = datas.children;
+    for (var child in childs) {
+      Map<dynamic, dynamic> mapChild = child.value as Map<dynamic, dynamic>;
+      var lan = KhachHangs.fromJson(mapChild);
+      lans.add(lan);
+      // if (thongTin.isSelected) {
+      //   var diNgoaiTemp = DiNgoaiInfo();
+      //   diNgoaiTemp.code = thongTin.maHieu;
+      //   diNgoaiTemp.maBuuCuc = "";
+      //   diNgoaiTemp.tenBuuCuc = "";
+      //   diNgoaiTemp.danhSachBuuCuc = [];
+      //   diNgoaiTemp.address = thongTin.diaChiNhan;
+      //   diNgoaiTemp.address ??= "";
+      //   diNgoaiTemps.add(diNgoaiTemp);
+      // }
+    }
+
+    return lans;
+  }
+
+  Future<List<KhachHangs>> getKhachHangsVnPost() async {
+    var datas = await database.child('MYVNPOST/KhachHangs').get();
     List<KhachHangs> lans = [];
 
     Iterable<DataSnapshot> childs = datas.children;

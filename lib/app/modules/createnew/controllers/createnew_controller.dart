@@ -196,11 +196,12 @@ class CreatenewController extends GetxController {
     // Lặp qua danh sách các đối tượng bưu gửi liên quan đến khách hàng
     for (var buugui in khachHang.value.buuGuis!) {
       // Kiểm tra xem trạng thái của đối tượng bưu gửi có khớp với bất kỳ trạng thái nào được chỉ định không
-      if (buugui.trangThai ==
-              "Đang đi thu gom" || // "In collection" (Đang đi thu gom)
-          buugui.trangThai ==
-              "Nhận hàng thành công" || // "Successful delivery" (Nhận hàng thành công)
-          buugui.trangThai == "Đã phân hướng") {
+      if (buugui.trangThai == "Đang đi thu gom" ||
+          buugui.trangThai == "Nhận hàng thành công" ||
+          buugui.trangThai == "Đã phân hướng" ||
+          buugui.trangThai == "Tạo đơn" ||
+          buugui.trangThai == "Bưu tá nhận yêu cầu thu gom" ||
+          buugui.trangThai == "Đã lấy hàng") {
         // "Directed" (Đã phân hướng)
         // Thêm mã bưu gửi vào danh sách gợi ý
         susggestMHs.add(buugui.maBuuGui!);
@@ -266,7 +267,10 @@ class CreatenewController extends GetxController {
     for (var buugui in khachHang.value.buuGuis!) {
       if (buugui.trangThai == "Đang đi thu gom" ||
           buugui.trangThai == "Nhận hàng thành công" ||
-          buugui.trangThai == "Đã phân hướng") {
+          buugui.trangThai == "Đã phân hướng" ||
+          buugui.trangThai == "Tạo đơn" ||
+          buugui.trangThai == "Bưu tá nhận yêu cầu thu gom" ||
+          buugui.trangThai == "Đã lấy hàng") {
         count++;
       }
     }

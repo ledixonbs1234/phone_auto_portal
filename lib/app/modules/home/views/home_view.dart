@@ -196,10 +196,10 @@ class HomeView extends GetView<HomeController> {
                       ),
                       _buildActionButton(
                         icon: Icons.add_box,
-                        label: 'Add Portal',
+                        label: 'Get My Post',
                         color: Colors.green,
                         onPressed: () {
-                          controller.addPortalData();
+                          controller.goToMyPost();
                         },
                       ),
                     ],
