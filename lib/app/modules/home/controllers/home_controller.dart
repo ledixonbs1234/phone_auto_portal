@@ -1,9 +1,6 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 
 import 'package:get/get.dart';
 
@@ -30,8 +27,6 @@ import '../khach_hangs_model.dart';
 import '../user_info.dart';
 
 class HomeController extends GetxController {
-  //TODO: Implement HomeController
-  final isServiceRunning = false.obs;
   final count = 0.obs;
 
   final timeUpdate = "".obs;
@@ -65,7 +60,6 @@ class HomeController extends GetxController {
   var capcharController = TextEditingController();
 
   final imageBytes = "".obs;
-  final service = FlutterBackgroundService();
   final selectedMayChu = HostInfo("maychu").obs;
 
   // --- Trạng thái Chọn Người dùng ---
@@ -115,48 +109,6 @@ class HomeController extends GetxController {
     super.onReady();
     _updateService = Get.find<UpdateService>();
     _checkAppUpdate();
-
-    checkServiceStatus();
-
-    // (Tùy chọn nhưng nên có) Lắng nghe sự thay đổi trạng thái của service
-    // để cập nhật UI ngay cả khi trạng thái thay đổi từ bên ngoài.
-    service.on('running').listen((event) {
-      isServiceRunning.value = true;
-    });
-
-    
-  }
-
-  /// Kiểm tra trạng thái của service khi khởi động
-  void checkServiceStatus() async {
-    isServiceRunning.value = await service.isRunning();
-  }
-
-  /// Bắt đầu service
-  void startService() {
-    service.startService();
-    // Cập nhật ngay trạng thái để UI thay đổi (dù listener cũng sẽ làm việc này)
-    isServiceRunning.value = true;
-
-  }
-
- void stopService() {
-    // Gửi lệnh 'stopService' đến service đang chạy
-    service.invoke('stopService'); 
-    
-    // Cập nhật ngay trạng thái UI
-    isServiceRunning.value = false;
-  }
-
-  /// Hàm gộp để bật/tắt
-  void toggleService() {
-    if (isServiceRunning.value) {
-      stopService();
-      Get.snackbar('Thông báo', 'Đã tắt dịch vụ lắng nghe cuộc gọi.');
-    } else {
-      startService();
-      Get.snackbar('Thông báo', 'Đã bật dịch vụ lắng nghe cuộc gọi.');
-    }
   }
 
   Future<void> _checkAppUpdate() async {

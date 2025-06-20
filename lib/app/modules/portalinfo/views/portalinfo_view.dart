@@ -465,62 +465,80 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(item.Weight ?? 'N/A'),
-                                if (showDeleteButton) // Space after weight
-                                  const SizedBox(width: 4), // Reduced space
-                                if (showDeleteButton) // Nút thay đổi trọng lượng
-                                  IconButton(
-                                    icon: const Icon(Icons.scale,
-                                        color: Colors.blueAccent),
-                                    tooltip: 'Thay đổi trọng lượng',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    iconSize: 20,
-                                    onPressed: () {
-                                      _showChangeWeightDialog(
-                                          context, item, index);
-                                    },
+                                if (showDeleteButton) ...[
+                                  // Sử dụng collection-if để code gọn hơn
+                                  const SizedBox(
+                                      width:
+                                          4), // Tăng một chút khoảng cách cho dễ nhìn
+
+                                  // Nút thay đổi trọng lượng
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 30, // Giới hạn chiều rộng
+                                      maxHeight: 30, // Giới hạn chiều cao
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.scale,
+                                          color: Colors.blueAccent),
+                                      tooltip: 'Thay đổi trọng lượng',
+                                      padding:
+                                          EdgeInsets.zero, // Giữ padding zero
+                                      iconSize: 20,
+                                      onPressed: () {
+                                        _showChangeWeightDialog(
+                                            context, item, index);
+                                      },
+                                    ),
                                   ),
-                                if (showDeleteButton) // Space after scale icon
-                                  const SizedBox(width: 4), // Reduced space
-                                if (showDeleteButton) // Delete icon
-                                  IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.redAccent),
-                                    tooltip: 'Xóa',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    iconSize: 20,
-                                    onPressed: () {
-                                      Get.dialog(
-                                        AlertDialog(
-                                          title: const Text("Xác nhận xóa"),
-                                          content: Text(
-                                              "Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Get.back(),
-                                              child: const Text("Hủy"),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Get.back();
-                                                controller.deleteBG(item);
-                                                Future.delayed(
-                                                    const Duration(seconds: 2),
-                                                    () {
-                                                  controller
-                                                      .getMaHieuToShow(index);
-                                                });
-                                              },
-                                              child: const Text("Xóa",
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
+
+                                  const SizedBox(width: 4),
+
+                                  // Nút Xóa
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 30, // Giới hạn chiều rộng
+                                      maxHeight: 30, // Giới hạn chiều cao
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.redAccent),
+                                      tooltip: 'Xóa',
+                                      padding:
+                                          EdgeInsets.zero, // Giữ padding zero
+                                      iconSize: 20,
+                                      onPressed: () {
+                                        Get.dialog(
+                                          AlertDialog(
+                                            title: const Text("Xác nhận xóa"),
+                                            content: Text(
+                                                "Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Get.back(),
+                                                child: const Text("Hủy"),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Get.back();
+                                                  controller.deleteBG(item);
+                                                  Future.delayed(
+                                                      const Duration(
+                                                          seconds: 1), () {
+                                                    controller
+                                                        .getMaHieuToShow(index);
+                                                  });
+                                                },
+                                                child: const Text("Xóa",
+                                                    style: TextStyle(
+                                                        color: Colors.red)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
+                                ]
                               ],
                             ),
                           );

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,12 +9,11 @@ import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.d
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
-import 'package:phone_auto_portal/app/modules/myview/bindings/myview_binding.dart';
 import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
-import 'package:phone_auto_portal/app/modules/myview/views/myview_view.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
@@ -135,20 +133,20 @@ class FirebaseManager with WidgetsBindingObserver {
         }
         if (message.TimeStamp != lastTimeStamp) {
           lastTimeStamp = message.TimeStamp;
-          // if (message.Lenh == "phonecall") {
-          //   final phoneNumber = message.DoiTuong;
-          //   //xoa dấu . hoặc dấu cách trong số điện thoại
-          //   final cleanedPhoneNumber =
-          //       phoneNumber.replaceAll(RegExp(r'[.\s]'), '');
-          //   // if (cleanedPhoneNumber != lastCalledNumber) {
-          //   lastCalledNumber = cleanedPhoneNumber;
-          //   print("New call request received for: $cleanedPhoneNumber");
-          //   _makePhoneCall(cleanedPhoneNumber);
+          if (message.Lenh == "phonecall") {
+            final phoneNumber = message.DoiTuong;
+            //xoa dấu . hoặc dấu cách trong số điện thoại
+            final cleanedPhoneNumber =
+                phoneNumber.replaceAll(RegExp(r'[.\s]'), '');
+            // if (cleanedPhoneNumber != lastCalledNumber) {
+            lastCalledNumber = cleanedPhoneNumber;
+            print("New call request received for: $cleanedPhoneNumber");
+            _makePhoneCall(cleanedPhoneNumber);
 
-          //   // (Tùy chọn) Xóa yêu cầu sau khi đã xử lý
-          //   // callRef.remove();
-          //   // }
-          // }
+            // (Tùy chọn) Xóa yêu cầu sau khi đã xử lý
+            // callRef.remove();
+            // }
+          }
           //         GetStorage().write('getLastTimeStamp', lastTimeStamp);
           //         maHieu = Get.find<MaHieuController>();
           home = Get.find<HomeController>();
