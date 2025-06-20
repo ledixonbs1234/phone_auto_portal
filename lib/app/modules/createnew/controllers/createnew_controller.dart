@@ -523,6 +523,7 @@ class CreatenewController extends GetxController {
           }
         }
         susggestMHs.remove(barcodeFilled);
+        HapticFeedback.lightImpact(); // Rung nhẹ để báo hiệu quét thành công
         buuGuis
           ..add(bgTemp)
           ..sort((a, b) => a.index!.compareTo(b.index!));

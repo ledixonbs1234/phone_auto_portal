@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart'; // Import material.dart
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
@@ -43,6 +46,80 @@ class PortalinfoController extends GetxController {
   var waitingCodes = "";
 
   final selectedDate = DateTime.now().obs;
+
+  // --- START: LOGIC MỚI CHO DIALOG ---
+  final selectedDialogItemCount = 0.obs;
+  StreamSubscription? _barcodeSubscription;
+
+  bool get isAnyItemSelectedInDialog =>
+      currentMaHieusInPortal.any((item) => item.selected);
+
+  void toggleItemSelectedInDialog(StateMaHieu item) {
+    item.selected = !item.selected;
+    _updateSelectedDialogItemCount(); // <<< THÊM DÒNG NÀY
+    update(); // Cập nhật UI để hiển thị/ẩn nút xóa và thay đổi màu
+  }
+
+  void _updateSelectedDialogItemCount() {
+    selectedDialogItemCount.value =
+        currentMaHieusInPortal.where((item) => item.selected).length;
+  }
+
+  void startBulkQRScanInDialog() {
+    _barcodeSubscription?.cancel(); // Hủy stream cũ nếu có
+
+    _barcodeSubscription = FlutterBarcodeScanner.getBarcodeStreamReceiver(
+            '#ff6666', 'Xong', true, ScanMode.QR)
+        ?.listen((barcode) {
+      if (barcode is String && barcode != '-1') {
+        final item = currentMaHieusInPortal
+            .firstWhereOrNull((element) => element.code == barcode);
+
+        if (item != null) {
+          if (!item.selected) {
+            item.selected = true;
+            HapticFeedback
+                .lightImpact(); // Rung nhẹ để báo hiệu quét thành công
+            _updateSelectedDialogItemCount();
+            update(); // Cập nhật UI
+          }
+        } else {
+          // Có thể thêm âm báo lỗi ở đây nếu muốn
+        }
+      }
+    });
+  }
+
+  void cancelBulkQRScanInDialog() {
+    _barcodeSubscription?.cancel();
+    _barcodeSubscription = null;
+  }
+
+  void deleteSelectedBGs() {
+    final itemsToDelete =
+        currentMaHieusInPortal.where((item) => item.selected).toList();
+    if (itemsToDelete.isEmpty) {
+      Get.snackbar("Thông báo", "Chưa có bưu gửi nào được chọn để xóa.");
+      return;
+    }
+
+    final idCodesToDelete = itemsToDelete.map((item) => item.IDCODE!).toList();
+    printInfo(info: "Yêu cầu xóa nhiều bưu gửi: $idCodesToDelete");
+
+    // Gửi yêu cầu xóa hàng loạt lên Firebase
+    FirebaseManager().addMessage(
+        MessageReceiveModel("xoanhieubg", jsonEncode(idCodesToDelete)));
+
+    // Cập nhật UI ngay lập tức
+    currentMaHieusInPortal.removeWhere((item) => item.selected);
+    _updateSelectedDialogItemCount();
+    update();
+
+    Get.snackbar(
+        "Thành công", "Đã gửi yêu cầu xóa ${itemsToDelete.length} bưu gửi.");
+  }
+
+  // --- END: LOGIC MỚI CHO DIALOG ---
 
   Future<void> refreshPortal(DateTime? time) async {
     await FirebaseManager().refreshPortal(time);

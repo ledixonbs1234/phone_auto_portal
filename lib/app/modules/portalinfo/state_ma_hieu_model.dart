@@ -7,7 +7,7 @@ class StateMaHieu {
   String? Name;
   String? Address;
   String? Date;
-
+bool selected = false;
   StateMaHieu(
       {this.iD,
       this.code,
