@@ -154,8 +154,10 @@ class FirebaseManager with WidgetsBindingObserver {
           createNew = Get.find<CreatenewController>();
           portalInfo = Get.find<PortalinfoController>();
           editPage = Get.find<EditPageController>();
+          myView = Get.find<MyviewController>();
           //         autoBDController = Get.find<AutoBdController>();
           //         detailController = Get.find<DetailController>();
+          myView?.onListenNotification(message);
           portalInfo?.onListenNotification(message);
           detail?.onListenNotification(message);
           home?.onListenNotification(message);
