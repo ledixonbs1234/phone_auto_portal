@@ -1,6 +1,7 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 import '../controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart'; // Import StateMaHieu
 
@@ -39,28 +40,13 @@ class PortalinfoView extends GetView<PortalinfoController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Portal Page'),
+        title: const HostSelectionWidget(),
         centerTitle: true,
-        actions: [
-          // Toggle button for barcode scanning section
-          Obx(() => IconButton(
-                icon: Icon(
-                  controller.isScanSectionVisible.value
-                      ? Icons.search_off
-                      : Icons.search,
-                ),
-                tooltip: controller.isScanSectionVisible.value
-                    ? 'Ẩn tìm kiếm'
-                    : 'Hiện tìm kiếm',
-                onPressed: () {
-                  controller.toggleScanSection();
-                },
-              )),
-        ],
       ),
       body: Center(
         child: Column(
           children: [
+            // Host Selection Widget at the top
             // Row chứa các button Refresh và Chọn Ngày
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -97,6 +83,19 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       },
                     ),
                   ),
+                  Obx(() => IconButton(
+                        icon: Icon(
+                          controller.isScanSectionVisible.value
+                              ? Icons.search_off
+                              : Icons.search,
+                        ),
+                        tooltip: controller.isScanSectionVisible.value
+                            ? 'Ẩn tìm kiếm'
+                            : 'Hiện tìm kiếm',
+                        onPressed: () {
+                          controller.toggleScanSection();
+                        },
+                      ))
                 ],
               ),
             ),
@@ -208,7 +207,21 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
                     children: [
-                      const Text('Trạng Thái : '),
+                      Row(
+                        children: [
+                          const Text('SL : '),
+                          Obx(
+                            () => Text(
+                              '${controller.countPortalSelected.value}',
+                              style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Text('   TT : '),
                       Obx(
                         () => Text(
                           '${controller.stateText}',
@@ -224,27 +237,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
               ],
             ),
             // Row hiển thị số lượng
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      const Text('Số Lượng : '),
-                      Obx(
-                        () => Text(
-                          '${controller.countPortalSelected.value}',
-                          style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
             // DataTable hiển thị danh sách portal
             Expanded(
               child: GetBuilder<PortalinfoController>(

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
-import 'package:phone_auto_portal/app/modules/home/host_info.dart';
+import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 import '../controllers/home_controller.dart';
 
@@ -40,68 +40,8 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: SizedBox(
-            child: Obx(
-              () => Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton.outlined(
-                      onPressed: () {
-                        controller.sendPing();
-                      },
-                      icon: const Icon(
-                        Icons.refresh_outlined,
-                        size: 20,
-                      )),
-                  SizedBox(
-                    child: DropdownButton<HostInfo>(
-                      value: controller.selectedMayChu.value,
-                      onChanged: (value) {
-                        controller.selectedMayChu.value = value!;
-
-                        controller.saveKey(value.hostName);
-                      },
-                      onTap: () {
-                        controller.sendPing();
-                      },
-                      items: controller.maychus.map((HostInfo e) {
-                        return DropdownMenuItem<HostInfo>(
-                          value: e,
-                          child: Row(
-                            children: [
-                              Text(e.hostName),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                child: Icon(Icons.circle,
-                                    color: e.isOnline.value
-                                        ? Colors.green
-                                        : Colors.red,
-                                    size: 10),
-                              )
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'cách',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                  ),
-                  SizedBox(
-                      width: 30,
-                      child: TextField(
-                        controller: controller.dayLastController,
-                      ))
-                ],
-              ),
-            ),
-          ),
           centerTitle: true,
+          title: const HostSelectionWidget(),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
@@ -114,6 +54,7 @@ class HomeView extends GetView<HomeController> {
             child: Obx(
               () => Column(
                 children: [
+                  // Host Selection Widget at the top
                   Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Obx(() {

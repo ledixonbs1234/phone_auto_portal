@@ -2,6 +2,7 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
+import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 import '../controllers/detail_controller.dart';
 
@@ -41,15 +42,19 @@ class DetailView extends GetView<DetailController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(controller.khachHang.value.tenKH!,
-            style: const TextStyle(
-                color: Colors.teal, fontSize: 20, fontWeight: FontWeight.bold)),
-        centerTitle: true,
+        title: const HostSelectionWidget(),
+        centerTitle: false,
       ),
       body: Center(
         child: Obx(
           () => Column(
             children: [
+              // Host Selection Widget at the top
+              Text(controller.khachHang.value.tenKH!,
+                  style: const TextStyle(
+                      color: Colors.teal,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold)),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(

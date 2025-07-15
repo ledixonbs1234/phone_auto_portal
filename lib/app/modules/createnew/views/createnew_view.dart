@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 import 'package:group_button/group_button.dart';
+import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 import '../controllers/createnew_controller.dart';
 import 'option_view.dart';
@@ -16,13 +17,7 @@ class CreatenewView extends GetView<CreatenewController> {
     var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
     return Scaffold(
       appBar: AppBar(
-        title: Obx(
-          () => Text(controller.tenKH.value,
-              style: const TextStyle(
-                  color: Colors.teal,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold)),
-        ),
+        title: const HostSelectionWidget(),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -30,6 +25,13 @@ class CreatenewView extends GetView<CreatenewController> {
           height: MediaQuery.of(context).size.height,
           child: Column(
             children: [
+              Obx(
+                () => Text(controller.tenKH.value,
+                    style: const TextStyle(
+                        color: Colors.teal,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold)),
+              ),
               Obx(
                 () => Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

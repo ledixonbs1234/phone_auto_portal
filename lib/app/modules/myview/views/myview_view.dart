@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
+import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 import '../controllers/myview_controller.dart';
 
@@ -41,6 +42,8 @@ class MyviewView extends GetView<MyviewController> {
         () => Center(
           child: Column(
             children: [
+              // Host Selection Widget at the top
+              const HostSelectionWidget(),
               _buildActionButton(
                 icon: Icons.cloud_download,
                 label: 'Get Portal Data',
