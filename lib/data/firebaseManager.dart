@@ -438,14 +438,25 @@ class FirebaseManager with WidgetsBindingObserver {
     });
   }
 
-  refreshPortal(DateTime? time) {
-    if (time == null) {
-      addMessage(MessageReceiveModel("getPortal", ""));
-    } else {
+  refreshPortal(DateTime? time, {String? maHieus}) {
+    String content = "";
+
+    if (time != null) {
       String formattedDate =
           "${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}/${time.year}";
-      addMessage(MessageReceiveModel("getPortal", formattedDate));
+      content = formattedDate;
     }
+
+    // If maHieus is provided, append it to the content
+    if (maHieus != null && maHieus.isNotEmpty) {
+      if (content.isNotEmpty) {
+        content += "|$maHieus"; // Use pipe separator between date and maHieus
+      } else {
+        content = "|$maHieus";
+      }
+    }
+
+    addMessage(MessageReceiveModel("getPortal", content));
   }
 
   Future<List<UserInfo>> getPortalUsers() async {

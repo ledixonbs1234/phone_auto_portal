@@ -47,6 +47,13 @@ class PortalinfoController extends GetxController {
 
   final selectedDate = DateTime.now().obs;
 
+  // Barcode scanning functionality
+  final TextEditingController barcodeInputController = TextEditingController();
+  final isScanning = false.obs;
+  final isScanSectionVisible = false.obs;
+  final Set<String> _scannedBarcodes =
+      <String>{}; // Track unique barcodes during scanning session
+
   // --- START: LOGIC MỚI CHO DIALOG ---
   final selectedDialogItemCount = 0.obs;
   StreamSubscription? _barcodeSubscription;
@@ -121,10 +128,163 @@ class PortalinfoController extends GetxController {
 
   // --- END: LOGIC MỚI CHO DIALOG ---
 
-  Future<void> refreshPortal(DateTime? time) async {
-    await FirebaseManager().refreshPortal(time);
+  /// Scans barcodes continuously using the device camera
+  /// Supports multiple barcode scanning with duplicate prevention
+  /// Automatically converts to uppercase and joins with commas
+  Future<void> scanBarcode() async {
+    try {
+      isScanning.value = true;
+      _scannedBarcodes.clear(); // Clear previous session
+      barcodeInputController.clear(); // Clear input field
 
-    stateText.value = "Đang cập nhật dữ liệu";
+      // Start continuous scanning using getBarcodeStreamReceiver
+      _barcodeSubscription?.cancel(); // Cancel any existing subscription
+
+      _barcodeSubscription = FlutterBarcodeScanner.getBarcodeStreamReceiver(
+        '#ff6666', // Color for scan line
+        'Hoàn thành', // Cancel button text
+        true, // Show flash icon
+        ScanMode.DEFAULT, // Scan mode
+      )?.listen((barcode) {
+        if (barcode is String && barcode != '-1') {
+          _processScanResult(barcode);
+        }
+      }, onDone: () {
+        // Called when user cancels/exits scanning
+        _onScanningComplete();
+      }, onError: (error) {
+        Get.snackbar(
+          'Lỗi quét mã',
+          'Lỗi trong quá trình quét: ${error.toString()}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        isScanning.value = false;
+      });
+
+      // Show initial scanning message
+      Get.snackbar(
+        'Quét mã liên tục',
+        'Quét nhiều mã barcode. Nhấn "Hoàn thành" để kết thúc.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.blue,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Lỗi quét mã',
+        'Không thể khởi động quét mã: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      isScanning.value = false;
+    }
+  }
+
+  /// Processes individual scan results during continuous scanning
+  void _processScanResult(String barcode) {
+    // Convert to uppercase and trim whitespace
+    String processedBarcode = barcode.trim().toUpperCase();
+
+    if (processedBarcode.isEmpty) return;
+
+    // Check for duplicates
+    if (_scannedBarcodes.contains(processedBarcode)) {
+      // Show brief feedback for duplicate
+      return;
+    }
+
+    // Add to unique set
+    _scannedBarcodes.add(processedBarcode);
+
+    // Update input field with comma-separated list
+    barcodeInputController.text = _scannedBarcodes.join(',');
+
+    // Provide haptic feedback for successful scan
+    HapticFeedback.mediumImpact();
+
+    // Optional: Show brief success indicator
+    if (_scannedBarcodes.length % 5 == 0) {
+      Get.snackbar(
+        'Quét thành công',
+        'Đã quét ${_scannedBarcodes.length} mã',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 1),
+      );
+    }
+  }
+
+  /// Called when continuous scanning is completed (user cancels/exits)
+  void _onScanningComplete() {
+    isScanning.value = false;
+    _barcodeSubscription?.cancel();
+
+    if (_scannedBarcodes.isNotEmpty) {
+      String scannedCodesString = _scannedBarcodes.join(',');
+      barcodeInputController.text = scannedCodesString;
+
+      Get.snackbar(
+        'Quét hoàn thành',
+        'Đã quét ${_scannedBarcodes.length} mã. Đang cập nhật dữ liệu...',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+
+      // Trigger refreshPortal with scanned barcodes
+      refreshPortal(null);
+    } else {
+      Get.snackbar(
+        'Quét hủy',
+        'Không có mã nào được quét',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 1),
+      );
+    }
+  }
+
+  /// Manually stops continuous scanning
+  void stopScanning() {
+    if (isScanning.value) {
+      _onScanningComplete();
+    }
+  }
+
+  /// Toggles the visibility of the barcode scanning section
+  void toggleScanSection() {
+    isScanSectionVisible.value = !isScanSectionVisible.value;
+    // Clear input when hiding the section
+    if (!isScanSectionVisible.value) {
+      barcodeInputController.clear();
+    }
+  }
+
+  @override
+  void onClose() {
+    barcodeInputController.dispose();
+    _barcodeSubscription?.cancel(); // Cancel continuous scanning subscription
+    cancelBulkQRScanInDialog();
+    super.onClose();
+  }
+
+  Future<void> refreshPortal(DateTime? time) async {
+    await FirebaseManager()
+        .refreshPortal(time, maHieus: barcodeInputController.text);
+
+    if (barcodeInputController.text.isNotEmpty) {
+      stateText.value =
+          "Đang cập nhật dữ liệu với ${barcodeInputController.text.split(',').length} mã đã quét";
+    } else {
+      stateText.value = "Đang cập nhật dữ liệu";
+    }
   }
 
   List<Portal> getSelectedsPortal() {
@@ -133,6 +293,16 @@ class PortalinfoController extends GetxController {
 
   List<String?> getSelectedsIdPortal() {
     return getSelectedsPortal().map((e) => e.id).toList();
+  }
+
+  xacNhansPortal() {
+    isAutoRunBD = false;
+
+    List<String?> selecteds = getSelectedsIdPortal();
+    if (selecteds.isNotEmpty) {
+      FirebaseManager().addMessage(
+          MessageReceiveModel("xacnhanportal", jsonEncode(selecteds)));
+    }
   }
 
   sendDiNgoai() {
@@ -195,6 +365,8 @@ class PortalinfoController extends GetxController {
                       isSorted: isSortDiNgoai.value,
                       isPrinted: isPrinted.value)),
                   nameMay: FirebaseManager().keyData!));
+          break;
+        case "XACNHANPORTAL":
           break;
         case "WAITINGCHECKDINGOAI":
           waitingCodes = "";

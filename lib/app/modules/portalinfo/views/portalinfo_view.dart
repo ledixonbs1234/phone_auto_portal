@@ -41,6 +41,22 @@ class PortalinfoView extends GetView<PortalinfoController> {
       appBar: AppBar(
         title: const Text('Portal Page'),
         centerTitle: true,
+        actions: [
+          // Toggle button for barcode scanning section
+          Obx(() => IconButton(
+                icon: Icon(
+                  controller.isScanSectionVisible.value
+                      ? Icons.search_off
+                      : Icons.search,
+                ),
+                tooltip: controller.isScanSectionVisible.value
+                    ? 'Ẩn tìm kiếm'
+                    : 'Hiện tìm kiếm',
+                onPressed: () {
+                  controller.toggleScanSection();
+                },
+              )),
+        ],
       ),
       body: Center(
         child: Column(
@@ -84,6 +100,107 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ],
               ),
             ),
+            // Collapsible barcode scanning section
+            Obx(() => AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  height: controller.isScanSectionVisible.value ? 50 : 0,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: const BoxDecoration(),
+                  child: controller.isScanSectionVisible.value
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 4.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height:
+                                      40, // Reduced height for compact design
+                                  child: TextField(
+                                    controller:
+                                        controller.barcodeInputController,
+                                    style: const TextStyle(
+                                        fontSize: 14), // Smaller font
+                                    decoration: InputDecoration(
+                                      labelText: 'Mã sản phẩm',
+                                      hintText: 'Nhập hoặc quét mã',
+                                      labelStyle: const TextStyle(fontSize: 12),
+                                      hintStyle: const TextStyle(fontSize: 12),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 8),
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(6.0),
+                                      ),
+                                      prefixIcon:
+                                          const Icon(Icons.qr_code, size: 18),
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(Icons.clear, size: 16),
+                                        onPressed: () {
+                                          controller.barcodeInputController
+                                              .clear();
+                                        },
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                            minWidth: 24, minHeight: 24),
+                                      ),
+                                    ),
+                                    onSubmitted: (value) {
+                                      if (value.isNotEmpty) {
+                                        controller.refreshPortal(null);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                flex: 1,
+                                child: SizedBox(
+                                  height: 40, // Matching height with text field
+                                  child: Obx(() => ElevatedButton.icon(
+                                        icon: Icon(
+                                          controller.isScanning.value
+                                              ? Icons.hourglass_empty
+                                              : Icons.qr_code_scanner,
+                                          color: Colors.purple,
+                                          size: 16, // Smaller icon
+                                        ),
+                                        label: Text(
+                                          controller.isScanning.value
+                                              ? "Quét..."
+                                              : "Quét",
+                                          style: const TextStyle(
+                                            color: Colors.purple,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12, // Smaller font
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          side: BorderSide(
+                                              color: Colors.purple
+                                                  .withOpacity(0.5)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(6.0)),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 4, horizontal: 8),
+                                        ),
+                                        onPressed: () {
+                                          controller.scanBarcode();
+                                        },
+                                      )),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                )),
             // Row hiển thị trạng thái
             Row(
               children: [
@@ -303,10 +420,10 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         Expanded(
                           child: _buildActionButton(
                             icon: Icons.save,
-                            label: 'Lưu BD1',
-                            color: Colors.orange,
+                            label: 'Xác Nhận',
+                            color: Colors.red,
                             onPressed: () {
-                              controller.test();
+                              _showConfirmProcessDialog(context);
                             },
                           ),
                         ),
@@ -390,11 +507,10 @@ class PortalinfoView extends GetView<PortalinfoController> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        child: WillPopScope(
-          onWillPop: () async {
+        child: PopScope(
+          onPopInvoked: (didPop) {
             // Hủy stream quét khi đóng dialog
             controller.cancelBulkQRScanInDialog();
-            return true;
           },
           child: GetBuilder<PortalinfoController>(
             builder: (dx) => ConstrainedBox(
@@ -614,8 +730,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
     Get.dialog(
       AlertDialog(
         title: const Text("Xác nhận xóa"),
-        content:
-            Text("Bạn có chắc chắn muốn xóa tất cả các bưu gửi đã chọn không?"),
+        content: const Text(
+            "Bạn có chắc chắn muốn xóa tất cả các bưu gửi đã chọn không?"),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
@@ -662,6 +778,80 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   () => controller.getMaHieuToShow(index));
             },
             child: const Text("Lưu"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Dialog xác nhận xử lý portal
+  void _showConfirmProcessDialog(BuildContext context) {
+    // First check if any portals are selected
+    final selectedPortals = controller.getSelectedsPortal();
+
+    if (selectedPortals.isEmpty) {
+      // Show warning if no portals are selected
+      Get.snackbar(
+        'Cảnh báo',
+        'Vui lòng chọn ít nhất một khách hàng để xác nhận xử lý',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    // Prepare the list of selected portal names
+    final selectedNames =
+        selectedPortals.map((portal) => portal.name ?? 'N/A').toList();
+    final count = selectedPortals.length;
+
+    // Create the content message
+    String contentMessage = count == 1
+        ? "Bạn có muốn xác nhận xử lý khách hàng này không?\n\n"
+        : "Bạn có muốn xác nhận xử lý $count khách hàng này không?\n\n";
+
+    contentMessage += count == 1 ? "Khách hàng:\n" : "Danh sách khách hàng:\n";
+
+    // Limit display to first 10 items to prevent dialog overflow
+    final displayCount = selectedNames.length > 10 ? 10 : selectedNames.length;
+    for (int i = 0; i < displayCount; i++) {
+      contentMessage += "${i + 1}. ${selectedNames[i]}\n";
+    }
+
+    if (selectedNames.length > 10) {
+      contentMessage += "... và ${selectedNames.length - 10} khách hàng khác";
+    }
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text("Xác nhận xử lý"),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxWidth: 400,
+          ),
+          child: SingleChildScrollView(
+            child: Text(
+              contentMessage.trim(),
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text("Hủy"),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back(); // Đóng dialog xác nhận
+              controller.xacNhansPortal();
+            },
+            child: const Text("Xác nhận",
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
