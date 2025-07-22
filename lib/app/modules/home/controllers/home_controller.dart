@@ -75,10 +75,12 @@ class HomeController extends GetxController {
     HostInfo("maychu"),
     HostInfo("mayphu"),
     HostInfo("mayphusan"),
-    HostInfo("maytest"),
     HostInfo("maygiaodich 1"),
     HostInfo("maygiaodich 2"),
     HostInfo("maygiaodich 3"),
+    HostInfo("maygiaodich 4"),
+    HostInfo("maygiaodich 5"),
+    HostInfo("maytest"),
   ].obs;
   var lastSelectKH = "";
 
@@ -86,7 +88,7 @@ class HomeController extends GetxController {
   Future<void> onReady() async {
     // khachHangs.clear();
 
-    keyController.text = GetStorage().read("key") ?? "maychu";
+    keyController.text = GetStorage().read("key") ?? "mayphu";
     dayLastController.text = GetStorage().read("day") ?? 2.toString();
     selectedMayChu.value = HostInfo(keyController.text);
 

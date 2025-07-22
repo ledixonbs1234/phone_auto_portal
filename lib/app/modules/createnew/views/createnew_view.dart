@@ -338,6 +338,23 @@ class CreatenewView extends GetView<CreatenewController> {
                         ),
                       ),
                       const SizedBox(width: 10),
+                      Obx(
+                        () => Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Checkbox(
+                              value: controller.isDeletePhone.value,
+                              onChanged: (s) => {
+                                controller.isDeletePhone.value = s!,
+                              },
+                            ),
+                            const Text(
+                              'Xóa SĐT',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       _buildActionButton(
                         icon: Icons.send_and_archive_rounded,
                         label: 'Send End',

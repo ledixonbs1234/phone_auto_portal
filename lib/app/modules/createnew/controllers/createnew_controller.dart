@@ -27,6 +27,7 @@ class CreatenewController extends GetxController {
   final isAutoWork = false.obs;
   final isDo = false.obs;
   final is1KG = false.obs;
+  final isDeletePhone = true.obs;
   late FocusNode focusKL = FocusNode();
   late FocusNode focusK1 = FocusNode();
   late FocusNode focusK2 = FocusNode();
@@ -233,7 +234,8 @@ class CreatenewController extends GetxController {
         const JsonEncoder().convert({
           "maKH": khachHang.value.maKH,
           "account": account,
-          "password": password
+          "password": password,
+          "isDeletePhone": isDeletePhone.value.toString()
         })));
   }
 
@@ -304,6 +306,7 @@ class CreatenewController extends GetxController {
       'isFirst': isFirst.toString(),
       'account': account,
       'password': password,
+      'isDeletePhone': isDeletePhone.value,
     };
 
     if (useOptions.value) {
@@ -731,6 +734,7 @@ class CreatenewController extends GetxController {
       'maKH': khachHang.value.maKH,
       'account': account,
       'password': password,
+      'isDeletePhone': isDeletePhone.value.toString(),
     };
 
     if (useOptions.value) {

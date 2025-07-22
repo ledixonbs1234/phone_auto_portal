@@ -181,6 +181,32 @@ class DetailView extends GetView<DetailController> {
                   ),
                 ],
               ),
+              Obx(
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          activeColor: Colors.green,
+                          checkColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                          value: controller.isDeletePhone.value,
+                          onChanged: (e) {
+                            controller.isDeletePhone.value = e!;
+                          },
+                        ),
+                        const SizedBox(
+                          width: 150,
+                          child: Text('Xóa số điện thoại'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               Row(
                 children: [
                   Padding(

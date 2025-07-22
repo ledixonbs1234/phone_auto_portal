@@ -11,6 +11,7 @@ class DetailController extends GetxController {
   final isCheckPhanHuong = false.obs;
   final isCheckNhanHang = false.obs;
   final isCheckChapNhan = false.obs;
+  final isDeletePhone = true.obs;
   final buuGuis = <BuuGuis>[].obs;
   final isEnableRunBtn = true.obs;
   final iSeBuuGui = (-1).obs;
@@ -159,12 +160,13 @@ class DetailController extends GetxController {
     final String maKHValue = khachHang.value.maKH!;
     final String maBGValue = buuGuis[iSeBuuGui.value].maBuuGui!;
 
-    final Map<String, String> messageData = {
+    final Map<String, dynamic> messageData = {
       'maKH': maKHValue,
       'maBG': maBGValue,
       'isFirst': isFirst.toString(),
       'account': account,
-      'password': password
+      'password': password,
+      'isDeletePhone': isDeletePhone.value
     };
 // Truyền thẳng Map vào, không cần encode/decode
     FirebaseManager().addMessage(MessageReceiveModel(
