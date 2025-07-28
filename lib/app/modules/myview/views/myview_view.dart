@@ -44,14 +44,6 @@ class MyviewView extends GetView<MyviewController> {
             children: [
               // Host Selection Widget at the top
               const HostSelectionWidget(),
-              _buildActionButton(
-                icon: Icons.cloud_download,
-                label: 'Get Portal Data',
-                color: Colors.blue,
-                onPressed: () {
-                  controller.getMyPostData();
-                },
-              ),
               DropdownButton(
                   style: const TextStyle(fontSize: 15, color: Colors.black),
                   value: controller.seKhachHangs.value,
@@ -95,6 +87,15 @@ class MyviewView extends GetView<MyviewController> {
                     controller.seKhachHangs.value = value;
                     controller.lastSelectKH = value.maKH!;
                   }),
+
+              _buildActionButton(
+                icon: Icons.cloud_download,
+                label: 'Get Portal Data',
+                color: Colors.blue,
+                onPressed: () {
+                  controller.getMyPostData();
+                },
+              ),
               Row(
                 children: [
                   Padding(

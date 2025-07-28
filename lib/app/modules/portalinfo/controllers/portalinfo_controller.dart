@@ -41,6 +41,47 @@ class PortalinfoController extends GetxController {
 
   final countPortalSelected = 0.obs;
 
+  // Sort state management
+  final sortColumnIndex = 1.obs; // Default sort by name column
+  final sortAscending = false.obs; // Default descending order
+
+  // Method to handle sorting of portals
+  void sortPortals(int columnIndex, bool ascending) {
+    sortColumnIndex.value = columnIndex;
+    sortAscending.value = ascending;
+
+    switch (columnIndex) {
+      case 0: // Thứ Tự (Index) - not really sortable as it's just index
+        break;
+      case 1: // Tên (Name)
+        portals.sort((a, b) {
+          final aName = a.name ?? '';
+          final bName = b.name ?? '';
+          return ascending ? aName.compareTo(bName) : bName.compareTo(aName);
+        });
+        break;
+      case 2: // SL (Số Lượng)
+        portals.sort((a, b) {
+          final aCount = a.soLuong ?? 0;
+          final bCount = b.soLuong ?? 0;
+          return ascending
+              ? aCount.compareTo(bCount)
+              : bCount.compareTo(aCount);
+        });
+        break;
+      case 3: // State (Trạng Thái)
+        portals.sort((a, b) {
+          final aState = a.trangThai ?? '';
+          final bState = b.trangThai ?? '';
+          return ascending
+              ? aState.compareTo(bState)
+              : bState.compareTo(aState);
+        });
+        break;
+    }
+    update(); // Trigger UI update
+  }
+
   final isPrinted = true.obs;
 
   var waitingCodes = "";
@@ -127,6 +168,117 @@ class PortalinfoController extends GetxController {
   }
 
   // --- END: LOGIC MỚI CHO DIALOG ---
+
+  // Province counting variables
+  Map<String, dynamic>? _provinceData;
+  final provinceCounts = <String, Map<String, int>>{}.obs;
+
+  // Load province data from JSON
+  Future<void> _loadProvinceData() async {
+    if (_provinceData == null) {
+      try {
+        final String jsonString =
+            await rootBundle.loadString('assets/tinhthanh.json');
+        _provinceData = jsonDecode(jsonString);
+      } catch (e) {
+        print('Error loading province data: $e');
+        _provinceData = {'vo': [], 'ra': []};
+      }
+    }
+  }
+
+  // Count packages by categories using province codes
+  Future<Map<String, int>> countPackagesByCategories() async {
+    await _loadProvinceData();
+
+    final counts = <String, int>{
+      'RA': 0,
+      'VÔ': 0,
+      'Quảng Nam': 0,
+      'Quảng Ngãi': 0,
+    };
+
+    if (_provinceData == null) return counts;
+
+    // Extract province codes from the JSON structure
+    final Set<String> voCodes = <String>{};
+    final Set<String> raCodes = <String>{};
+    final Set<String> quangNamCodes = <String>{};
+    final Set<String> quangNgaiCodes = <String>{};
+
+    // Process VO provinces
+    if (_provinceData!['vo'] != null) {
+      for (final province in _provinceData!['vo']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            voCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    // Process RA provinces
+    if (_provinceData!['ra'] != null) {
+      for (final province in _provinceData!['ra']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            raCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    // Process Quảng Nam codes
+    if (_provinceData!['quangnam'] != null) {
+      for (final province in _provinceData!['quangnam']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            quangNamCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    // Process Quảng Ngãi codes
+    if (_provinceData!['quangngai'] != null) {
+      for (final province in _provinceData!['quangngai']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            quangNgaiCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    // Count packages based on province codes
+    for (final item in currentMaHieusInPortal) {
+      if (item.provinceCode == null || item.provinceCode!.isEmpty) continue;
+
+      final provinceCode = item.provinceCode!.trim();
+
+      // Count RA (outbound) packages
+      if (raCodes.contains(provinceCode)) {
+        counts['RA'] = counts['RA']! + 1;
+      }
+
+      // Count VÔ (inbound) packages
+      if (voCodes.contains(provinceCode)) {
+        counts['VÔ'] = counts['VÔ']! + 1;
+      }
+
+      // Count Quảng Nam packages (regardless of direction)
+      if (quangNamCodes.contains(provinceCode)) {
+        counts['Quảng Nam'] = counts['Quảng Nam']! + 1;
+      }
+
+      // Count Quảng Ngãi packages (regardless of direction)
+      if (quangNgaiCodes.contains(provinceCode)) {
+        counts['Quảng Ngãi'] = counts['Quảng Ngãi']! + 1;
+      }
+    }
+
+    return counts;
+  }
 
   /// Scans barcodes continuously using the device camera
   /// Supports multiple barcode scanning with duplicate prevention
@@ -366,6 +518,9 @@ class PortalinfoController extends GetxController {
                       isPrinted: isPrinted.value)),
                   nameMay: FirebaseManager().keyData!));
           break;
+        case "THONGKE":
+          showProvinceStatistics(codes);
+          break;
         case "XACNHANPORTAL":
           break;
         case "WAITINGCHECKDINGOAI":
@@ -522,12 +677,229 @@ class PortalinfoController extends GetxController {
             nameMay: FirebaseManager().keyData!));
   }
 
-  void editHangHoas() {
-    String? id = getSelectedsIdPortal()[0];
+  sendThongKe() {
+    stateText.value = "Đang gửi đi ngoài và chạy Thống Kê";
 
-    if (id?.isNotEmpty == true) {
-      FirebaseManager().addMessage(MessageReceiveModel("edithanghoa", id!));
+    var selectedPortals = getSelectedsIdPortal();
+
+    if (selectedPortals.isEmpty) {
+      FirebaseManager().showSnackBar("Chưa chọn portal nào để xem thống kê");
     }
+
+    if (selectedPortals.isNotEmpty) {
+      waitingCodes = "THONGKE";
+
+      FirebaseManager().addMessage(
+          MessageReceiveModel("getMaHieus", jsonEncode(selectedPortals)));
+    }
+  }
+
+  // Show province statistics for selected portals
+  Future<void> showProvinceStatistics(List<StateMaHieu> codes) async {
+    // Aggregate statistics from all selected portals
+    final aggregatedCounts = <String, int>{
+      'RA': 0,
+      'VÔ': 0,
+      'Quảng Nam': 0,
+      'Quảng Ngãi': 0,
+    };
+
+    await _loadProvinceData();
+    if (_provinceData == null) return;
+
+    // Extract province codes from the JSON structure
+    final Set<String> voCodes = <String>{};
+    final Set<String> raCodes = <String>{};
+    final Set<String> quangNamCodes = <String>{};
+    final Set<String> quangNgaiCodes = <String>{};
+
+    // Process province codes (same logic as countPackagesByCategories)
+    if (_provinceData!['vo'] != null) {
+      for (final province in _provinceData!['vo']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            voCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    if (_provinceData!['ra'] != null) {
+      for (final province in _provinceData!['ra']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            raCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    if (_provinceData!['quangnam'] != null) {
+      for (final province in _provinceData!['quangnam']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            quangNamCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    if (_provinceData!['quangngai'] != null) {
+      for (final province in _provinceData!['quangngai']) {
+        if (province['ma_tinh'] != null) {
+          for (final code in province['ma_tinh']) {
+            quangNgaiCodes.add(code.toString());
+          }
+        }
+      }
+    }
+
+    final portalPackages = codes; // This should be portal-specific
+
+    for (final item in portalPackages) {
+      if (item.provinceCode == null || item.provinceCode!.isEmpty) continue;
+
+      final provinceCode = item.provinceCode!.trim();
+
+      if (raCodes.contains(provinceCode)) {
+        aggregatedCounts['RA'] = aggregatedCounts['RA']! + 1;
+      }
+      if (voCodes.contains(provinceCode)) {
+        aggregatedCounts['VÔ'] = aggregatedCounts['VÔ']! + 1;
+      }
+      if (quangNamCodes.contains(provinceCode)) {
+        aggregatedCounts['Quảng Nam'] = aggregatedCounts['Quảng Nam']! + 1;
+      }
+      if (quangNgaiCodes.contains(provinceCode)) {
+        aggregatedCounts['Quảng Ngãi'] = aggregatedCounts['Quảng Ngãi']! + 1;
+      }
+    }
+
+    // Show statistics dialog
+    _showProvinceStatisticsDialog(portalPackages.length, aggregatedCounts);
+  }
+
+  void _showProvinceStatisticsDialog(int portalCount, Map<String, int> counts) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.analytics, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            const Text(
+              'Thống kê',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tổng hợp từ $portalCount portal đã chọn',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Only show RA row if count > 0
+            if (counts['RA']! > 0) ...[
+              _buildStatisticRow('RA (Đi ra)', counts['RA']!, Colors.red),
+              const SizedBox(height: 8),
+            ],
+            // Only show VÔ row if count > 0
+            if (counts['VÔ']! > 0) ...[
+              _buildStatisticRow('VÔ (Đi vào)', counts['VÔ']!, Colors.green),
+              const SizedBox(height: 8),
+            ],
+            // Only show Quảng Nam row if count > 0
+            if (counts['Quảng Nam']! > 0) ...[
+              _buildStatisticRow(
+                  'Quảng Nam', counts['Quảng Nam']!, Colors.orange),
+              const SizedBox(height: 8),
+            ],
+            // Only show Quảng Ngãi row if count > 0
+            if (counts['Quảng Ngãi']! > 0) ...[
+              _buildStatisticRow(
+                  'Quảng Ngãi', counts['Quảng Ngãi']!, Colors.purple),
+              const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Tổng cộng:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '${counts.values.reduce((a, b) => a + b)} bưu gửi',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticRow(String label, int count, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(fontSize: 14)),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Text(
+            count.toString(),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color.withOpacity(0.8),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void sendDiNgoaiAndRunBD() {

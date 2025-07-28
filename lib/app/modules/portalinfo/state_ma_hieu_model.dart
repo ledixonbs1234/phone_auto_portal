@@ -1,16 +1,18 @@
 class StateMaHieu {
   String? iD;
   String? code;
+  String? provinceCode;
   String? state;
   String? IDCODE;
   String? Weight;
   String? Name;
   String? Address;
   String? Date;
-bool selected = false;
+  bool selected = false;
   StateMaHieu(
       {this.iD,
       this.code,
+      this.provinceCode,
       this.state,
       this.IDCODE,
       this.Weight,
@@ -22,6 +24,7 @@ bool selected = false;
     iD = json['ID'];
     code = json['Code'];
     state = json['State'];
+    provinceCode = json['ProvinceCode'];
     IDCODE = json['IDCODE'];
     Weight = json['Weight'];
     Name = json['Name'];

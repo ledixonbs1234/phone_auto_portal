@@ -1,5 +1,5 @@
 name: phone_auto_portal
-version: 1.2.3+35
+version: 1.2.3+40
 publish_to: none
 description: A new Flutter project.
 environment: 
@@ -39,6 +39,7 @@ flutter:
   uses-material-design: true
   assets: 
     - assets/beep.mp3
+    - assets/tinhthanh.json
     - assets/hang_duoi_2kg.wav
     - assets/dusoluong.wav
     - assets/lachuong.mp3

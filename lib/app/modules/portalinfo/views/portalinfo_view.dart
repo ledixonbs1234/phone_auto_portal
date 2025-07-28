@@ -242,8 +242,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
               child: GetBuilder<PortalinfoController>(
                 builder: (dx) => DataTable2(
                   showCheckboxColumn: true,
-                  sortAscending: false,
-                  sortColumnIndex: 1,
+                  sortAscending: controller.sortAscending.value,
+                  sortColumnIndex: controller.sortColumnIndex.value,
                   onSelectAll: (value) {
                     for (var row in dx.portals) {
                       row.selected = value!;
@@ -252,16 +252,34 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   },
                   columnSpacing: 5,
                   horizontalMargin: 10,
-                  columns: const [
-                    DataColumn2(
+                  columns: [
+                    const DataColumn2(
                       label: Text('Thứ Tự'),
                       fixedWidth: 30,
                       size: ColumnSize.L,
                     ),
-                    DataColumn2(label: Text('Tên'), numeric: false),
                     DataColumn2(
-                        label: Text('SL'), fixedWidth: 30, numeric: true),
-                    DataColumn2(label: Text('State'), fixedWidth: 70),
+                      label: const Text('Tên'),
+                      numeric: false,
+                      onSort: (columnIndex, ascending) {
+                        controller.sortPortals(columnIndex, ascending);
+                      },
+                    ),
+                    DataColumn2(
+                      label: const Text('SL'),
+                      fixedWidth: 30,
+                      numeric: true,
+                      onSort: (columnIndex, ascending) {
+                        controller.sortPortals(columnIndex, ascending);
+                      },
+                    ),
+                    DataColumn2(
+                      label: const Text('State'),
+                      fixedWidth: 70,
+                      onSort: (columnIndex, ascending) {
+                        controller.sortPortals(columnIndex, ascending);
+                      },
+                    ),
                   ],
                   rows: List<DataRow>.generate(
                       dx.portals.length,
@@ -447,11 +465,11 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 children: [
                   Expanded(
                     child: _buildActionButton(
-                      icon: Icons.edit,
-                      label: 'Sửa',
+                      icon: Icons.analytics,
+                      label: 'Thống kê',
                       color: Colors.purple,
                       onPressed: () {
-                        controller.editHangHoas();
+                        controller.sendThongKe();
                       },
                     ),
                   ),
@@ -487,7 +505,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
   }
 
   void showImprovedDialog(BuildContext context, int index) {
-    controller.getMaHieuToShow(index);
+    // controller.getMaHieuToShow(index);
 
     final String? currentPortalStatus = controller.portals[index].trangThai;
     final bool showDeleteButton = currentPortalStatus == "2";
@@ -579,6 +597,122 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    // Package counting section - Updates dynamically with dialog data
+                    if (dx.isShowEdit.value &&
+                        dx.currentMaHieusInPortal.isNotEmpty)
+                      FutureBuilder<Map<String, int>>(
+                        future: controller.countPackagesByCategories(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Đang tính toán thống kê...',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          if (snapshot.hasError || !snapshot.hasData) {
+                            return Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.red.shade200),
+                              ),
+                              child: const Text(
+                                'Lỗi khi tính toán thống kê',
+                                style:
+                                    TextStyle(color: Colors.red, fontSize: 11),
+                              ),
+                            );
+                          }
+
+                          final counts = snapshot.data!;
+                          final totalPackages =
+                              dx.currentMaHieusInPortal.length;
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Thống kê bưu gửi:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Tổng: $totalPackages',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.blue.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: [
+                                    // Only show RA badge if count > 0
+                                    if (counts['RA']! > 0)
+                                      _buildCategoryCount(
+                                          'RA', counts['RA']!, Colors.red),
+                                    // Only show VÔ badge if count > 0
+                                    if (counts['VÔ']! > 0)
+                                      _buildCategoryCount(
+                                          'VÔ', counts['VÔ']!, Colors.green),
+                                    // Only show Quảng Nam badge if count > 0
+                                    if (counts['Quảng Nam']! > 0)
+                                      _buildCategoryCount('Quảng Nam',
+                                          counts['Quảng Nam']!, Colors.orange),
+                                    // Only show Quảng Ngãi badge if count > 0
+                                    if (counts['Quảng Ngãi']! > 0)
+                                      _buildCategoryCount('Quảng Ngãi',
+                                          counts['Quảng Ngãi']!, Colors.purple),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     const SizedBox(height: 16),
                     // Danh sách Mã hiệu
                     Expanded(
@@ -846,6 +980,26 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper method to build category count display
+  Widget _buildCategoryCount(String categoryName, int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        '$categoryName: $count',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: color.withOpacity(0.8),
+        ),
       ),
     );
   }
