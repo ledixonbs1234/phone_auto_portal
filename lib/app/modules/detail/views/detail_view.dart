@@ -1,5 +1,6 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
@@ -209,6 +210,26 @@ class DetailView extends GetView<DetailController> {
                         ),
                       ],
                     ),
+                    const SizedBox(width: 10),
+                    Row(
+                      children: [
+                        Checkbox(
+                          activeColor: Colors.green,
+                          checkColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                          value: controller.isShowTimeTrangThai.value,
+                          onChanged: (e) {
+                            controller.isShowTimeTrangThai.value = e!;
+                            controller.update(); // Trigger DataTable2 rebuild
+                          },
+                        ),
+                        const SizedBox(
+                          child: Text('Thời gian'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -240,108 +261,30 @@ class DetailView extends GetView<DetailController> {
                     sortColumnIndex: 1,
                     columnSpacing: 5,
                     horizontalMargin: 10,
-                    columns: const [
-                      DataColumn2(
-                        label: Text('STT'),
-                        fixedWidth: 30,
-                        size: ColumnSize.L,
-                      ),
-                      DataColumn2(
-                          label: Text('Code'), fixedWidth: 120, numeric: false),
-                      DataColumn2(
-                          label: Text('KL'), fixedWidth: 50, numeric: true),
-                      DataColumn2(label: Text('COD'), numeric: true),
-                      DataColumn2(label: Text('State'), fixedWidth: 40),
-                      DataColumn2(label: Text('?'), fixedWidth: 20),
-                    ],
+                    columns: _buildColumns(),
                     rows: List<DataRow>.generate(
-                        dx.buuGuis.length,
-                        (index) => DataRow(
-                                selected: dx.iSeBuuGui.value == index,
-                                onSelectChanged: (value) {
-                                  dx.iSeBuuGui.value = index;
-                                  dx.update();
-                                },
-                                onLongPress: () {
-                                  _showWeightDialog(context, index);
-                                },
-                                color: WidgetStateProperty.resolveWith<Color?>(
-                                    (Set<WidgetState> states) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withOpacity(0.6);
-                                  }
-                                  return null; // Use the default value.
-                                }),
-                                cells: [
-                                  DataCell(Text(
-                                    dx.buuGuis[index].index.toString(),
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        color:
-                                            Color.fromARGB(255, 102, 102, 96),
-                                        fontWeight: FontWeight.bold),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].maBuuGui!,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        color: dx.buuGuis[index].isBlackList
-                                            ? Colors.red
-                                            : Colors.black,
-                                        fontStyle: FontStyle.italic),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].khoiLuong == null
-                                        ? ""
-                                        : dx.buuGuis[index].khoiLuong!
-                                            .toString(),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].money == null
-                                        ? ""
-                                        : dx.buuGuis[index].money!.toString(),
-                                  )),
-                                  DataCell(Text(
-                                    dx.buuGuis[index].trangThaiRequest == null
-                                        ? ""
-                                        : dx.buuGuis[index].trangThaiRequest!
-                                            .toString(),
-                                    style: const TextStyle(color: Colors.teal),
-                                  )),
-                                  DataCell(
-                                    PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        // Handle menu item selection.
-                                      },
-                                      itemBuilder: (BuildContext context) =>
-                                          <PopupMenuEntry<String>>[
-                                        dx.buuGuis[index].isBlackList
-                                            ? PopupMenuItem<String>(
-                                                value: 'Xóa khỏi Blacklist',
-                                                child: const Text(
-                                                    'Xóa khỏi Blacklist'),
-                                                onTap: () => {
-                                                  controller
-                                                      .removeMHFromBlackList(
-                                                          index)
-                                                },
-                                              )
-                                            : PopupMenuItem<String>(
-                                                value: 'Thêm vào Blacklist',
-                                                child: const Text(
-                                                    'Thêm vào Blacklist'),
-                                                onTap: () => {
-                                                  controller
-                                                      .addMHToBlackList(index)
-                                                },
-                                              ),
-                                      ],
-                                    ),
-                                  ),
-                                ])),
+                      dx.buuGuis.length,
+                      (index) => DataRow(
+                          selected: dx.iSeBuuGui.value == index,
+                          onSelectChanged: (value) {
+                            dx.iSeBuuGui.value = index;
+                            dx.update();
+                          },
+                          onLongPress: () {
+                            _showWeightDialog(context, index);
+                          },
+                          color: WidgetStateProperty.resolveWith<Color?>(
+                              (Set<WidgetState> states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.6);
+                            }
+                            return null; // Use the default value.
+                          }),
+                          cells: _buildCells(dx, index)),
+                    ),
                   ),
                 ),
               ),
@@ -434,5 +377,120 @@ class DetailView extends GetView<DetailController> {
         );
       },
     );
+  }
+
+  List<DataColumn2> _buildColumns() {
+    List<DataColumn2> columns = [
+      const DataColumn2(
+        label: Text('STT'),
+        fixedWidth: 25,
+        size: ColumnSize.S,
+      ),
+      const DataColumn2(label: Text('Code'), fixedWidth: 115, numeric: false),
+      const DataColumn2(label: Text('KL'), fixedWidth: 48, numeric: true),
+      const DataColumn2(label: Text('COD'), numeric: true), // Flexible width
+      const DataColumn2(label: Text('State'), fixedWidth: 35),
+    ];
+
+    // Add time column if checkbox is checked
+    if (controller.isShowTimeTrangThai.value) {
+      columns.add(const DataColumn2(
+          label: Text('Thời gian'), fixedWidth: 80, numeric: false));
+    }
+
+    // Add the menu column at the end
+    columns.add(const DataColumn2(label: Text('?'), fixedWidth: 15));
+
+    return columns;
+  }
+
+  List<DataCell> _buildCells(dynamic dx, int index) {
+    List<DataCell> cells = [
+      DataCell(Text(
+        dx.buuGuis[index].index.toString(),
+        style: const TextStyle(
+            fontSize: 15,
+            color: Color.fromARGB(255, 102, 102, 96),
+            fontWeight: FontWeight.bold),
+      )),
+      DataCell(Text(
+        dx.buuGuis[index].maBuuGui!,
+        style: TextStyle(
+            fontWeight: FontWeight.w400,
+            color: dx.buuGuis[index].isBlackList ? Colors.red : Colors.black,
+            fontStyle: FontStyle.italic),
+      )),
+      DataCell(Text(
+        dx.buuGuis[index].khoiLuong == null
+            ? ""
+            : dx.buuGuis[index].khoiLuong!.toString(),
+      )),
+      DataCell(Text(
+        dx.buuGuis[index].money == null
+            ? ""
+            : dx.buuGuis[index].money!.toString(),
+      )),
+      DataCell(Text(
+        dx.buuGuis[index].trangThaiRequest == null
+            ? ""
+            : dx.buuGuis[index].trangThaiRequest!.toString(),
+        style: const TextStyle(color: Colors.teal),
+      )),
+    ];
+
+    // Add time cell if checkbox is checked
+    if (controller.isShowTimeTrangThai.value) {
+      cells.add(DataCell(Text(
+        dx.buuGuis[index].timeTrangThai ?? "",
+        style: const TextStyle(
+            fontSize: 12, color: Colors.blue, fontStyle: FontStyle.italic),
+      )));
+    }
+
+    // Add the menu cell at the end
+    cells.add(DataCell(
+      PopupMenuButton<String>(
+        onSelected: (value) async {
+          if (value == 'Copy mã hiệu') {
+            await Clipboard.setData(
+                ClipboardData(text: dx.buuGuis[index].maBuuGui ?? ''));
+            Get.snackbar(
+              'Thành công',
+              'Đã copy mã hiệu: ${dx.buuGuis[index].maBuuGui}',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.green.withOpacity(0.8),
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2),
+            );
+          }
+        },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+          const PopupMenuItem<String>(
+            value: 'Copy mã hiệu',
+            child: Row(
+              children: [
+                Icon(Icons.copy, size: 16),
+                SizedBox(width: 8),
+                Text('Copy mã hiệu'),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          dx.buuGuis[index].isBlackList
+              ? PopupMenuItem<String>(
+                  value: 'Xóa khỏi Blacklist',
+                  child: const Text('Xóa khỏi Blacklist'),
+                  onTap: () => {controller.removeMHFromBlackList(index)},
+                )
+              : PopupMenuItem<String>(
+                  value: 'Thêm vào Blacklist',
+                  child: const Text('Thêm vào Blacklist'),
+                  onTap: () => {controller.addMHToBlackList(index)},
+                ),
+        ],
+      ),
+    ));
+
+    return cells;
   }
 }

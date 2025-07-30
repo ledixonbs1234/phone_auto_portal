@@ -12,6 +12,7 @@ class DetailController extends GetxController {
   final isCheckNhanHang = false.obs;
   final isCheckChapNhan = false.obs;
   final isDeletePhone = true.obs;
+  final isShowTimeTrangThai = false.obs;
   final buuGuis = <BuuGuis>[].obs;
   final isEnableRunBtn = true.obs;
   final iSeBuuGui = (-1).obs;
