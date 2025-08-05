@@ -19,6 +19,8 @@ import '../../home/messageReceiveModel.dart';
 
 class CreatenewController extends GetxController {
   final khachHang = KhachHangs().obs;
+  String? hdrId; // Biến lưu hdrId lấy từ Firebase
+  final hdrIdText = "".obs; // Biến observable để bind ra view
   final buuGuis = <BuuGuis>[].obs;
   final diNgoaiStates = <DiNgoaiStateInfo>[].obs;
   final isChangeKL = false.obs;
@@ -179,6 +181,8 @@ class CreatenewController extends GetxController {
 
   deleteAll() {
     buuGuis.clear();
+    hdrIdText.value = "";
+    hdrId = null;
     if (isAutoWork.value) {
       FirebaseManager().sendListScannedToPortal([]);
     }
@@ -249,6 +253,8 @@ class CreatenewController extends GetxController {
       if (lastKH != kh.tenKH) {
         lastKH = kh.tenKH!;
         isAutoWork.value = false;
+        hdrIdText.value = "";
+        hdrId = null;
       }
       this.account = account;
       this.password = password;
@@ -303,6 +309,7 @@ class CreatenewController extends GetxController {
     Map<String, dynamic> messageData = {
       'maKH': khachHang.value.maKH,
       'maBG': buuGuis[iBuuGui.value].maBuuGui,
+      'hdrId': hdrId ?? "",
       'isFirst': isFirst.toString(),
       'account': account,
       'password': password,
@@ -381,6 +388,21 @@ class CreatenewController extends GetxController {
         break;
       case "printDone":
         stateText.value = "In xong";
+        break;
+      case "sendhdr":
+        // Lấy dữ liệu hdrId từ message.DoiTuong (dạng JSON)
+        try {
+          final data = jsonDecode(message.DoiTuong);
+          if (khachHang.value.maKH == data['maKH']) {
+            hdrId = data['hdrId']?.toString();
+            hdrIdText.value = hdrId ?? "";
+          }
+          // Nếu muốn cập nhật ra view, có thể dùng hdrIdText.value
+          stateText.value = "Đã nhận HDR: ${hdrIdText.value}";
+        } catch (e) {
+          stateText.value = "Lỗi nhận HDR";
+        }
+        update();
         break;
       default:
     }
@@ -540,7 +562,14 @@ class CreatenewController extends GetxController {
             length < 100 ? "assets/$length.wav" : "assets/beep.mp3";
         await _playAudio(audioPath);
       } else {
-        if (existingBG == null) await _playAudio("assets/lachuong.mp3");
+        if (existingBG == null) {
+          await _playAudio("assets/lachuong.mp3");
+        } else {
+          //nếu vị trí tồn tại bg nhỏ hơn vị trí cuối cùng trừ 5 thì phát âm thanh trùng đơn
+          if (existingBG.index! < buuGuis.length - 5) {
+            await _playAudio("assets/trungdon.wav");
+          }
+        }
       }
     } else {
       if (existingDiNgoais == null) {

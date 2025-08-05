@@ -26,11 +26,23 @@ class CreatenewView extends GetView<CreatenewController> {
           child: Column(
             children: [
               Obx(
-                () => Text(controller.tenKH.value,
-                    style: const TextStyle(
-                        color: Colors.teal,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold)),
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(controller.tenKH.value,
+                        style: const TextStyle(
+                            color: Colors.teal,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold)),
+                    Text(
+                      controller.hdrIdText.value,
+                      style: const TextStyle(
+                          color: Colors.deepPurple,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    )
+                  ],
+                ),
               ),
               Obx(
                 () => Row(
@@ -202,8 +214,8 @@ class CreatenewView extends GetView<CreatenewController> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const SizedBox(width: 20),
                         const Text('Info: '),
                         Obx(
                           () => Text(
@@ -212,6 +224,8 @@ class CreatenewView extends GetView<CreatenewController> {
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blue),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         )
                       ],
