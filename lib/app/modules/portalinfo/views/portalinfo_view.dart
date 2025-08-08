@@ -64,24 +64,31 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.calendar_today,
-                      label: "Chọn Ngày",
-                      color: Colors.green,
-                      onPressed: () async {
-                        DateTime? pickedDate = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime.now());
-                        if (pickedDate != null) {
-                          controller.selectedDate.value = pickedDate;
-                          controller
-                              .refreshPortal(controller.selectedDate.value);
-                        }
-                      },
-                    ),
+                  //Checking
+                  _buildActionButton(
+                    icon: Icons.check_circle,
+                    label: "",
+                    color: Colors.orange,
+                    onPressed: () {
+                      controller.checkPortal();
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildActionButton(
+                    icon: Icons.calendar_today,
+                    color: Colors.green,
+                    label: "",
+                    onPressed: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now());
+                      if (pickedDate != null) {
+                        controller.selectedDate.value = pickedDate;
+                        controller.refreshPortal(controller.selectedDate.value);
+                      }
+                    },
                   ),
                   Obx(() => IconButton(
                         icon: Icon(

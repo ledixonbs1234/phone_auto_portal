@@ -1059,4 +1059,8 @@ class PortalinfoController extends GetxController {
 
     Get.snackbar("Thành công", "Đã cập nhật trọng lượng cho ${item.code}");
   }
+
+  void checkPortal() {
+    FirebaseManager().addMessage(MessageReceiveModel("checkportal", ""));
+  }
 }
