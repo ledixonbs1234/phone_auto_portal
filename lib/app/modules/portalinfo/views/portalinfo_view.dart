@@ -55,22 +55,22 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 children: [
                   Expanded(
                     child: _buildActionButton(
-                      icon: Icons.refresh,
-                      label: "Refresh",
-                      color: Colors.blue,
+                      icon: Icons.check_circle,
+                      label: "Check",
+                      color: Colors.orange,
                       onPressed: () {
-                        controller.refreshPortal(null);
+                        controller.checkPortal();
                       },
                     ),
                   ),
                   const SizedBox(width: 8),
-                  //Checking
+                  // Swapped: REFRESH moved to the right
                   _buildActionButton(
-                    icon: Icons.check_circle,
+                    icon: Icons.refresh,
                     label: "",
-                    color: Colors.orange,
+                    color: Colors.blue,
                     onPressed: () {
-                      controller.checkPortal();
+                      controller.refreshPortal(null);
                     },
                   ),
                   const SizedBox(width: 8),
@@ -863,8 +863,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
     Get.dialog(
       AlertDialog(
         title: const Text("Xác nhận xóa"),
-        content: const Text(
-            "Bạn có chắc chắn muốn xóa tất cả các bưu gửi đã chọn không?"),
+        content:
+            const Text("Bạn có chắc chắn muốn xóa các bưu gửi đã chọn không?"),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
@@ -876,7 +876,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
               controller.deleteSelectedBGs();
             },
             child:
-                const Text("Xóa tất cả", style: TextStyle(color: Colors.red)),
+                const Text("Xóa đã chọn", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

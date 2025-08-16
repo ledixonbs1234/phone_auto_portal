@@ -420,7 +420,8 @@ class HomeController extends GetxController {
 
     var portalInfo = Get.find<PortalinfoController>();
 
-    portalInfo.refreshPortal(null);
+    // Mỗi lần vào portal: chạy checkPortal thay vì refresh
+    portalInfo.checkPortal();
   }
 
   void saveAccount() {
@@ -491,4 +492,6 @@ class HomeController extends GetxController {
 
     portalInfo.updateKhachHang();
   }
+
+  void goToQuetThu() {}
 }

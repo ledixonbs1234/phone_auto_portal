@@ -430,122 +430,69 @@ class HomeView extends GetView<HomeController> {
                       ),
                     ),
                   ),
-                  // TextButton(
-                  //   onPressed: () => showDialog<String>(
-                  //     context: context,
-                  //     builder: (BuildContext context) => Dialog(
-                  //       child: Padding(
-                  //         padding: const EdgeInsets.all(8.0),
-                  //         child: Column(
-                  //           mainAxisSize: MainAxisSize.min,
-                  //           mainAxisAlignment: MainAxisAlignment.center,
-                  //           children: <Widget>[
-                  //             Padding(
-                  //                 padding: const EdgeInsets.symmetric(
-                  //                     vertical: 8.0, horizontal: 16.0),
-                  //                 child: Column(
-                  //                   children: [
-                  //                     SizedBox(
-                  //                       width: Get.width - 140,
-                  //                       child: TextField(
-                  //                         onChanged: (s) {},
-                  //                         controller: controller.accountTE,
-                  //                         decoration: const InputDecoration(
-                  //                           hintText: 'Tài khoản',
-                  //                         ),
-                  //                         style: const TextStyle(
-                  //                           fontSize: 14,
-                  //                           color: Colors.black,
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                     TextField(
-                  //                       onChanged: (s) {},
-                  //                       controller: controller.passwordTE,
-                  //                       obscureText: true,
-                  //                       decoration: const InputDecoration(
-                  //                         hintText: 'Mật khẩu',
-                  //                       ),
-                  //                       style: const TextStyle(
-                  //                         fontSize: 14,
-                  //                         color: Colors.black,
-                  //                       ),
-                  //                     ),
-                  //                   ],
-                  //                 )),
-                  //             const SizedBox(height: 15),
-                  //             Row(
-                  //               mainAxisAlignment:
-                  //                   MainAxisAlignment.spaceBetween,
-                  //               children: [
-                  //                 Padding(
-                  //                   padding: const EdgeInsets.all(8.0),
-                  //                   child: _buildActionButton(
-                  //                     icon: Icons.save,
-                  //                     label: 'Lưu',
-                  //                     color: Colors.lightBlue,
-                  //                     onPressed: () {
-                  //                       controller.saveAccount();
-                  //                       Navigator.pop(context);
-                  //                     },
-                  //                   ),
-                  //                 ),
-                  //                 TextButton(
-                  //                   onPressed: () {
-                  //                     Navigator.pop(context);
-                  //                   },
-                  //                   child: const Text('Close'),
-                  //                 ),
-                  //               ],
-                  //             ),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  //   child: const Text('Tài khoản'),
-                  // ),
                   Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            child: _buildActionButton(
-                              icon: Icons.info_outline,
-                              label: 'Chi Tiết',
-                              color: Colors.indigo,
-                              onPressed: () {
-                                controller.goToDetail();
-                              },
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: SizedBox(
+                      height: 40,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 100,
+                              child: _buildActionButton(
+                                icon: Icons.info_outline,
+                                label: 'Chi Tiết',
+                                color: Colors.indigo,
+                                onPressed: () {
+                                  controller.goToDetail();
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(
-                              width:
-                                  8), // khoảng cách giữa các button (nếu cần)
-                          Expanded(
-                            child: _buildActionButton(
-                              icon: Icons.print,
-                              label: 'In MH',
-                              color: Colors.orange,
-                              onPressed: () {
-                                controller.goToPrintPage();
-                              },
+                            const SizedBox(
+                                width:
+                                    8), // khoảng cách giữa các button (nếu cần)
+                            SizedBox(
+                              width: 100,
+                              child: _buildActionButton(
+                                icon: Icons.print,
+                                label: 'In MH',
+                                color: Colors.orange,
+                                onPressed: () {
+                                  controller.goToPrintPage();
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildActionButton(
-                              icon: Icons.create,
-                              label: 'Tạo Mới',
-                              color: Colors.purple,
-                              onPressed: () {
-                                controller.goToCreateNew();
-                              },
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 100,
+                              child: _buildActionButton(
+                                icon: Icons.create,
+                                label: 'Tạo Mới',
+                                color: Colors.purple,
+                                onPressed: () {
+                                  controller.goToCreateNew();
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      )),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 130,
+                              child: _buildActionButton(
+                                icon: Icons.create,
+                                label: 'Quét Thư',
+                                color: Colors.blue,
+                                onPressed: () {
+                                  controller.goToQuetThu();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(
                     height: 60,
                   )
