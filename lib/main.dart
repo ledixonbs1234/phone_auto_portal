@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:camera/camera.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +29,14 @@ String lastTimeStamp = "";
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize cameras early to ensure plugin is ready
+  try {
+    await availableCameras();
+  } catch (e) {
+    print('Camera initialization warning: $e');
+  }
+
   AwesomeNotifications().initialize(
       // set the icon to null if you want to use the default app icon
       null,
@@ -63,6 +73,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   FirebaseManager().setUp();
   // FirebaseDatabase.instance.setLoggingEnabled(true);
 

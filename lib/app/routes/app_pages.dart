@@ -14,6 +14,8 @@ import '../modules/portalinfo/bindings/portalinfo_binding.dart';
 import '../modules/portalinfo/views/portalinfo_view.dart';
 import '../modules/printPage/bindings/print_page_binding.dart';
 import '../modules/printPage/views/print_page_view.dart';
+import '../modules/quetthu/bindings/quetthu_binding.dart';
+import '../modules/quetthu/views/quetthu_view.dart';
 
 part 'app_routes.dart';
 
@@ -57,6 +59,11 @@ class AppPages {
       name: _Paths.MYVIEW,
       page: () => const MyviewView(),
       binding: MyviewBinding(),
+    ),
+    GetPage(
+      name: _Paths.QUETTHU,
+      page: () => const QuetThuView(),
+      binding: QuetThuBinding(),
     ),
   ];
 }

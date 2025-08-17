@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
@@ -68,7 +68,14 @@ class CreatenewController extends GetxController {
   var contentChangeKL = 0.obs;
   var increaseKL = 0.obs;
   var useOptions = false.obs;
+
+  // Mobile Scanner Controller
+  late MobileScannerController mobileScannerController;
+  StreamSubscription<BarcodeCapture>? onListenBarcode;
   final contentChanges = <ContentChangeInfo>[].obs;
+
+  // Audio Player
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void onReady() {
@@ -458,7 +465,6 @@ class CreatenewController extends GetxController {
     return regExp.hasMatch(maHieu);
   }
 
-  StreamSubscription? onListenBarcode;
   void addKhachHangAsQR() {
     try {
       printInfo(info: "Scan multi code");
@@ -468,18 +474,90 @@ class CreatenewController extends GetxController {
 
       List<String> notMHs = [];
 
-      onListenBarcode = FlutterBarcodeScanner.getBarcodeStreamReceiver(
-              "#ff6666", 'Cancel', true, ScanMode.DEFAULT)
-          ?.listen((barcode) async {
-        String barcodeFilled = barcode.trim().toUpperCase();
+      // Khởi tạo mobile scanner controller
+      mobileScannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        formats: [
+          BarcodeFormat.qrCode,
+          BarcodeFormat.code128,
+          BarcodeFormat.code39
+        ],
+      );
 
-        if (isValidMaHieu(barcodeFilled)) {
-          await _handleValidBarcode(barcodeFilled, notMHs);
+      onListenBarcode = mobileScannerController.barcodes
+          .listen((BarcodeCapture capture) async {
+        final List<Barcode> barcodes = capture.barcodes;
+        for (final barcode in barcodes) {
+          final String? code = barcode.rawValue;
+          if (code != null && code.isNotEmpty) {
+            String barcodeFilled = code.trim().toUpperCase();
+
+            if (isValidMaHieu(barcodeFilled)) {
+              await _handleValidBarcode(barcodeFilled, notMHs);
+            }
+          }
         }
       });
+
+      // Hiển thị scanner dialog
+      _showMobileScannerDialogForCreatenew();
     } on PlatformException {
       Get.snackbar("Thông báo", "Lỗi barcode");
+    } catch (e) {
+      Get.snackbar("Thông báo", "Lỗi khi khởi tạo scanner: ${e.toString()}");
     }
+  }
+
+  void _showMobileScannerDialogForCreatenew() {
+    Get.dialog(
+      Dialog(
+        child: Container(
+          width: 300,
+          height: 500,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text(
+                'Quét mã QR/Barcode',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Obx(() => Text(
+                    'Đã quét: ${buuGuis.length} bưu gửi',
+                    style: const TextStyle(fontSize: 14),
+                  )),
+              const SizedBox(height: 16),
+              Expanded(
+                child: MobileScanner(
+                  controller: mobileScannerController,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      onListenBarcode?.cancel();
+                      mobileScannerController.dispose();
+                      Get.back();
+                    },
+                    child: const Text('Dừng'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      mobileScannerController.toggleTorch();
+                    },
+                    child: const Text('Đèn flash'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
   Future<void> _handleValidBarcode(
@@ -580,8 +658,11 @@ class CreatenewController extends GetxController {
 
   Future<void> _playAudio(String path) async {
     try {
-      await AssetsAudioPlayer.newPlayer().open(Audio(path));
-    } catch (e) {}
+      await _audioPlayer.setAsset(path);
+      await _audioPlayer.play();
+    } catch (e) {
+      // Ignore audio errors
+    }
   }
 
   void dieuTin() {
@@ -693,7 +774,7 @@ class CreatenewController extends GetxController {
   }
 
   Future<void> deleteBuuGuisOnFirebase() async {
-    await FirebaseManager().deleteBuuGuis(buuGuis.value);
+    await FirebaseManager().deleteBuuGuis(buuGuis);
     if (susggestMHs.isEmpty) {
       _playAudio("assets/dusoluong.wav");
     }
@@ -792,6 +873,18 @@ class CreatenewController extends GetxController {
       "sendtoendandprint",
       "",
     ));
+  }
+
+  @override
+  void onClose() {
+    onListenBarcode?.cancel();
+    try {
+      mobileScannerController.dispose();
+    } catch (e) {
+      // Controller might not be initialized
+    }
+    _audioPlayer.dispose();
+    super.onClose();
   }
 }
 

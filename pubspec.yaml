@@ -4,30 +4,34 @@ publish_to: none
 description: A new Flutter project.
 environment: 
   sdk: '>=3.3.0-174.3.beta <4.0.0'
-
+dependency_overrides:
+  meta: ^1.15.0
 dependencies: 
   cupertino_icons: ^1.0.6
   get: ^4.6.6
-  firebase_core: 2.27.0
+  firebase_core: ^4.0.0
   data_table_2: 2.5.11
   package_info_plus: ^8.3.0
   dio: ^5.8.0+1            # Để tải file
   path_provider: ^2.1.5    # Để lấy thư mục lưu file
-  open_file_plus: ^3.4.1+1        # Để mở file APK (Android)
+  open_filex: ^4.5.0        # Để mở file APK (Android)
   device_info_plus: ^10.1.2 # Để kiểm tra nền tảng (Android/iOS)
   permission_handler: ^11.3.1 # Để xin quyền cài đặt APK trên Android 8+
-  firebase_database: 10.4.9
+  firebase_database: 12.0.0
   group_button: 5.3.4
   get_storage: 2.1.1
   archive: ^4.0.7
   msh_checkbox: 2.0.1
   autocomplete_textfield: 2.0.1
   url_strategy: 0.2.0
-  awesome_notifications: 0.9.3+1
+  awesome_notifications: ^0.10.1
+  camera: ^0.10.5+9
+  image_picker: ^1.0.7
+  firebase_ai: ^3.1.0
   flutter: 
     sdk: flutter
-  flutter_barcode_scanner: ^2.0.0
-  assets_audio_player: ^3.1.1
+  mobile_scanner: ^5.0.0
+  just_audio: ^0.9.39
   url_launcher: ^6.3.1
 
 dev_dependencies: 

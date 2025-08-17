@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart'; // Import material.dart
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
@@ -95,9 +95,12 @@ class PortalinfoController extends GetxController {
   final Set<String> _scannedBarcodes =
       <String>{}; // Track unique barcodes during scanning session
 
+  // Mobile Scanner Controller
+  late MobileScannerController mobileScannerController;
+  StreamSubscription<BarcodeCapture>? _barcodeSubscription;
+
   // --- START: LOGIC MỚI CHO DIALOG ---
   final selectedDialogItemCount = 0.obs;
-  StreamSubscription? _barcodeSubscription;
 
   bool get isAnyItemSelectedInDialog =>
       currentMaHieusInPortal.any((item) => item.selected);
@@ -116,31 +119,95 @@ class PortalinfoController extends GetxController {
   void startBulkQRScanInDialog() {
     _barcodeSubscription?.cancel(); // Hủy stream cũ nếu có
 
-    _barcodeSubscription = FlutterBarcodeScanner.getBarcodeStreamReceiver(
-            '#ff6666', 'Xong', true, ScanMode.QR)
-        ?.listen((barcode) {
-      if (barcode is String && barcode != '-1') {
-        final item = currentMaHieusInPortal
-            .firstWhereOrNull((element) => element.code == barcode);
+    // Khởi tạo mobile scanner controller nếu chưa có
+    mobileScannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      formats: [
+        BarcodeFormat.qrCode,
+        BarcodeFormat.code128,
+        BarcodeFormat.code39
+      ],
+    );
 
-        if (item != null) {
-          if (!item.selected) {
-            item.selected = true;
-            HapticFeedback
-                .lightImpact(); // Rung nhẹ để báo hiệu quét thành công
-            _updateSelectedDialogItemCount();
-            update(); // Cập nhật UI
+    // Lắng nghe barcode từ mobile scanner
+    _barcodeSubscription =
+        mobileScannerController.barcodes.listen((BarcodeCapture capture) {
+      final List<Barcode> barcodes = capture.barcodes;
+      for (final barcode in barcodes) {
+        final String? code = barcode.rawValue;
+        if (code != null && code.isNotEmpty) {
+          final item = currentMaHieusInPortal
+              .firstWhereOrNull((element) => element.code == code);
+
+          if (item != null) {
+            if (!item.selected) {
+              item.selected = true;
+              HapticFeedback
+                  .lightImpact(); // Rung nhẹ để báo hiệu quét thành công
+              _updateSelectedDialogItemCount();
+              update(); // Cập nhật UI
+            }
+          } else {
+            // Có thể thêm âm báo lỗi ở đây nếu muốn
           }
-        } else {
-          // Có thể thêm âm báo lỗi ở đây nếu muốn
         }
       }
     });
+
+    // Hiển thị scanner dialog
+    _showMobileScannerDialog();
   }
 
   void cancelBulkQRScanInDialog() {
     _barcodeSubscription?.cancel();
     _barcodeSubscription = null;
+    mobileScannerController.dispose();
+  }
+
+  void _showMobileScannerDialog() {
+    Get.dialog(
+      Dialog(
+        child: Container(
+          width: 300,
+          height: 400,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text(
+                'Quét mã QR/Barcode',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: MobileScanner(
+                  controller: mobileScannerController,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      cancelBulkQRScanInDialog();
+                      Get.back();
+                    },
+                    child: const Text('Đóng'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      mobileScannerController.toggleTorch();
+                    },
+                    child: const Text('Đèn flash'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
   void deleteSelectedBGs() {
@@ -289,21 +356,28 @@ class PortalinfoController extends GetxController {
       _scannedBarcodes.clear(); // Clear previous session
       barcodeInputController.clear(); // Clear input field
 
-      // Start continuous scanning using getBarcodeStreamReceiver
+      // Start continuous scanning using mobile scanner
       _barcodeSubscription?.cancel(); // Cancel any existing subscription
 
-      _barcodeSubscription = FlutterBarcodeScanner.getBarcodeStreamReceiver(
-        '#ff6666', // Color for scan line
-        'Hoàn thành', // Cancel button text
-        true, // Show flash icon
-        ScanMode.DEFAULT, // Scan mode
-      )?.listen((barcode) {
-        if (barcode is String && barcode != '-1') {
-          _processScanResult(barcode);
+      // Khởi tạo mobile scanner controller
+      mobileScannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        formats: [
+          BarcodeFormat.qrCode,
+          BarcodeFormat.code128,
+          BarcodeFormat.code39
+        ],
+      );
+
+      _barcodeSubscription =
+          mobileScannerController.barcodes.listen((BarcodeCapture capture) {
+        final List<Barcode> barcodes = capture.barcodes;
+        for (final barcode in barcodes) {
+          final String? code = barcode.rawValue;
+          if (code != null && code.isNotEmpty) {
+            _processScanResult(code);
+          }
         }
-      }, onDone: () {
-        // Called when user cancels/exits scanning
-        _onScanningComplete();
       }, onError: (error) {
         Get.snackbar(
           'Lỗi quét mã',
@@ -315,15 +389,8 @@ class PortalinfoController extends GetxController {
         isScanning.value = false;
       });
 
-      // Show initial scanning message
-      Get.snackbar(
-        'Quét mã liên tục',
-        'Quét nhiều mã barcode. Nhấn "Hoàn thành" để kết thúc.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      // Hiển thị scanner dialog cho continuous scanning
+      _showContinuousScannerDialog();
     } catch (e) {
       Get.snackbar(
         'Lỗi quét mã',
@@ -334,6 +401,66 @@ class PortalinfoController extends GetxController {
       );
       isScanning.value = false;
     }
+  }
+
+  void _showContinuousScannerDialog() {
+    Get.dialog(
+      Dialog(
+        child: Container(
+          width: 300,
+          height: 500,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text(
+                'Quét mã liên tục',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Obx(() => Text(
+                    'Đã quét: ${_scannedBarcodes.length} mã',
+                    style: const TextStyle(fontSize: 14),
+                  )),
+              const SizedBox(height: 16),
+              Expanded(
+                child: MobileScanner(
+                  controller: mobileScannerController,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      _onScanningComplete();
+                      Get.back();
+                    },
+                    child: const Text('Hoàn thành'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      mobileScannerController.toggleTorch();
+                    },
+                    child: const Text('Đèn flash'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    Get.snackbar(
+      'Quét mã liên tục',
+      'Quét nhiều mã barcode. Nhấn "Hoàn thành" để kết thúc.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.blue,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
   }
 
   /// Processes individual scan results during continuous scanning
@@ -424,6 +551,11 @@ class PortalinfoController extends GetxController {
     barcodeInputController.dispose();
     _barcodeSubscription?.cancel(); // Cancel continuous scanning subscription
     cancelBulkQRScanInDialog();
+    try {
+      mobileScannerController.dispose();
+    } catch (e) {
+      // Controller might not be initialized
+    }
     super.onClose();
   }
 
@@ -546,7 +678,6 @@ class PortalinfoController extends GetxController {
         case "SPLITADDRESS":
           waitingCodes = "";
           stateText.value = "Đã lấy được mã hiệu và đang gửi";
-          List<String> maHieus = codes.map((e) => e.code!).toList();
           //codeids
           var splits = codes.map<SplitAddress>((e) {
             return SplitAddress(e.code!, e.Address!, e.Name!);

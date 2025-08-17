@@ -11,6 +11,7 @@ abstract class Routes {
   static const PRINT_PAGE = _Paths.PRINT_PAGE;
   static const EDIT_PAGE = _Paths.EDIT_PAGE;
   static const MYVIEW = _Paths.MYVIEW;
+  static const QUETTHU = _Paths.QUETTHU;
 }
 
 abstract class _Paths {
@@ -23,4 +24,5 @@ abstract class _Paths {
   static const PRINT_PAGE = '/print-page';
   static const EDIT_PAGE = '/edit-page';
   static const MYVIEW = '/myview';
+  static const QUETTHU = '/quetthu';
 }

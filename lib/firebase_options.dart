@@ -67,4 +67,5 @@ class DefaultFirebaseOptions {
     databaseURL: 'https://xonapp-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'xonapp.appspot.com',
   );
+
 }

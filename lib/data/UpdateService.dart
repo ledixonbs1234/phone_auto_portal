@@ -5,7 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:open_file_plus/open_file_plus.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:get/get.dart';
@@ -64,7 +64,7 @@ class UpdateService {
       int currentVersionCode = int.parse(packageInfo.buildNumber);
       //tinh chỉnh thông tin phiên bản ví dụ 2015 thì thành 15, 3015 thành 15, 5015 thành 15
       currentVersionCode = currentVersionCode % 100; // Lấy 2 chữ số cuối
-      
+
       printInfo(info: "Current version code: $currentVersionCode");
 
       String platformKey = Platform.isAndroid ? "android" : "ios";
@@ -257,7 +257,7 @@ class UpdateService {
             snackPosition: SnackPosition.BOTTOM);
         await Future.delayed(
             const Duration(milliseconds: 500)); // Ví dụ: 0.5 giây
-        final OpenResult result = await OpenFile.open(apkFileToInstall.path);
+        final OpenResult result = await OpenFilex.open(apkFileToInstall.path);
         print('OpenFile result: ${result.type} - ${result.message}');
 
         if (result.type != ResultType.done &&
