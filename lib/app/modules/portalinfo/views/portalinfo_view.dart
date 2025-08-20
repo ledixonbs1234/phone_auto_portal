@@ -208,40 +208,37 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       : const SizedBox.shrink(),
                 )),
             // Row hiển thị trạng thái
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      Row(
-                        children: [
-                          const Text('SL : '),
-                          Obx(
-                            () => Text(
-                              '${controller.countPortalSelected.value}',
-                              style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Text('   TT : '),
-                      Obx(
-                        () => Text(
-                          '${controller.stateText}',
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue),
-                        ),
-                      )
-                    ],
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              width: double.infinity,
+              child: Row(
+                children: [
+                  const Text('SL : '),
+                  Obx(
+                    () => Text(
+                      '${controller.countPortalSelected.value}',
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  const Text('TT : '),
+                  Expanded(
+                    child: Obx(
+                      () => Text(
+                        '${controller.stateText}',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             // Row hiển thị số lượng
             // DataTable hiển thị danh sách portal

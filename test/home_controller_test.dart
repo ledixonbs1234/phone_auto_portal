@@ -7,17 +7,17 @@ import 'package:image_picker/image_picker.dart';
 class TestImagePicker extends ImagePicker {
   XFile? _mockResult;
   Exception? _mockException;
-  
+
   void setMockResult(XFile? result) {
     _mockResult = result;
     _mockException = null;
   }
-  
+
   void setMockException(Exception exception) {
     _mockException = exception;
     _mockResult = null;
   }
-  
+
   @override
   Future<XFile?> pickImage({
     required ImageSource source,
@@ -37,9 +37,9 @@ class TestImagePicker extends ImagePicker {
 // Simple controller for testing goToQuetThu functionality
 class SimpleTestController {
   final TestImagePicker _picker;
-  
+
   SimpleTestController(this._picker);
-  
+
   Future<File?> pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -47,13 +47,13 @@ class SimpleTestController {
     }
     return null;
   }
-  
+
   Future<Map<String, String>?> extractInfoFromImage(File imageFile) async {
     // Simple test implementation that returns null
     // In real implementation, this would call Gemini API
     return null;
   }
-  
+
   void goToQuetThu() async {
     final image = await pickImage();
     if (image != null) {
@@ -71,7 +71,7 @@ void main() {
     setUp(() {
       testImagePicker = TestImagePicker();
       controller = SimpleTestController(testImagePicker);
-      
+
       // Initialize GetX in test mode
       Get.testMode = true;
     });
@@ -159,7 +159,8 @@ void main() {
         testImagePicker.setMockResult(mockXFile);
 
         // Act
-        final result = await testImagePicker.pickImage(source: ImageSource.gallery);
+        final result =
+            await testImagePicker.pickImage(source: ImageSource.gallery);
 
         // Assert
         expect(result, equals(mockXFile));
@@ -183,7 +184,8 @@ void main() {
         testImagePicker.setMockResult(null);
 
         // Act
-        final result = await testImagePicker.pickImage(source: ImageSource.gallery);
+        final result =
+            await testImagePicker.pickImage(source: ImageSource.gallery);
 
         // Assert
         expect(result, isNull);

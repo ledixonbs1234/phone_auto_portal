@@ -96,7 +96,7 @@ class PortalinfoController extends GetxController {
       <String>{}; // Track unique barcodes during scanning session
 
   // Mobile Scanner Controller
-  late MobileScannerController mobileScannerController;
+  MobileScannerController? mobileScannerController;
   StreamSubscription<BarcodeCapture>? _barcodeSubscription;
 
   // --- START: LOGIC MỚI CHO DIALOG ---
@@ -131,7 +131,7 @@ class PortalinfoController extends GetxController {
 
     // Lắng nghe barcode từ mobile scanner
     _barcodeSubscription =
-        mobileScannerController.barcodes.listen((BarcodeCapture capture) {
+        mobileScannerController?.barcodes.listen((BarcodeCapture capture) {
       final List<Barcode> barcodes = capture.barcodes;
       for (final barcode in barcodes) {
         final String? code = barcode.rawValue;
@@ -161,7 +161,8 @@ class PortalinfoController extends GetxController {
   void cancelBulkQRScanInDialog() {
     _barcodeSubscription?.cancel();
     _barcodeSubscription = null;
-    mobileScannerController.dispose();
+    mobileScannerController?.dispose();
+    mobileScannerController = null;
   }
 
   void _showMobileScannerDialog() {
@@ -179,9 +180,13 @@ class PortalinfoController extends GetxController {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: MobileScanner(
-                  controller: mobileScannerController,
-                ),
+                child: mobileScannerController != null
+                    ? MobileScanner(
+                        controller: mobileScannerController!,
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(),
+                      ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -196,7 +201,7 @@ class PortalinfoController extends GetxController {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      mobileScannerController.toggleTorch();
+                      mobileScannerController?.toggleTorch();
                     },
                     child: const Text('Đèn flash'),
                   ),
@@ -370,7 +375,7 @@ class PortalinfoController extends GetxController {
       );
 
       _barcodeSubscription =
-          mobileScannerController.barcodes.listen((BarcodeCapture capture) {
+          mobileScannerController?.barcodes.listen((BarcodeCapture capture) {
         final List<Barcode> barcodes = capture.barcodes;
         for (final barcode in barcodes) {
           final String? code = barcode.rawValue;
@@ -423,9 +428,13 @@ class PortalinfoController extends GetxController {
                   )),
               const SizedBox(height: 16),
               Expanded(
-                child: MobileScanner(
-                  controller: mobileScannerController,
-                ),
+                child: mobileScannerController != null
+                    ? MobileScanner(
+                        controller: mobileScannerController!,
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(),
+                      ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -440,7 +449,7 @@ class PortalinfoController extends GetxController {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      mobileScannerController.toggleTorch();
+                      mobileScannerController?.toggleTorch();
                     },
                     child: const Text('Đèn flash'),
                   ),
@@ -552,7 +561,7 @@ class PortalinfoController extends GetxController {
     _barcodeSubscription?.cancel(); // Cancel continuous scanning subscription
     cancelBulkQRScanInDialog();
     try {
-      mobileScannerController.dispose();
+      mobileScannerController?.dispose();
     } catch (e) {
       // Controller might not be initialized
     }

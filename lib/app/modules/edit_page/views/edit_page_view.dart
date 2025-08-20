@@ -1,4 +1,3 @@
-import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +11,7 @@ class EditPageView extends GetView<EditPageController> {
   const EditPageView({super.key});
   @override
   Widget build(BuildContext context) {
-    var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
+    // var keys = GlobalKey<AutoCompleteTextFieldState<String>>();
     return Scaffold(
       appBar: AppBar(
         title: Text(controller.portal.value.name!),
@@ -296,9 +295,8 @@ class EditPageView extends GetView<EditPageController> {
                                   dx.checkSelected();
                                   dx.update();
                                 },
-                                color:
-                                    WidgetStateProperty.resolveWith<Color?>(
-                                        (Set<WidgetState> states) {
+                                color: WidgetStateProperty.resolveWith<Color?>(
+                                    (Set<WidgetState> states) {
                                   if (states.contains(WidgetState.selected)) {
                                     return Theme.of(context)
                                         .colorScheme

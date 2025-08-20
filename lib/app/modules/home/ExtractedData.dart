@@ -16,6 +16,14 @@ class ExtractedData {
       soDienThoai: json['soDienThoai'],
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'maHieu': maHieu,
+      'tenNguoiNhan': tenNguoiNhan,
+      'diaChi': diaChi,
+      'soDienThoai': soDienThoai,
+    };
+  }
 
   @override
   String toString() {

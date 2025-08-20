@@ -93,7 +93,7 @@ class GeminiChatService {
       },
       {
         "text":
-            "Lấy mã hiệu, tên người nhận, địa chỉ nhận, số điện thoại từ hình ảnh được cung cấp, mã hiệu và số điện thoại không có dấu cách, địa chỉ không xuống hàng. Phản hồi phải là một đối tượng JSON. Ví dụ: ```json{\"maHieu\": \"...\", \"tenNguoiNhan\": \"...\", \"diaChi\": \"...\", \"soDienThoai\": \"...\"}```"
+            "Lấy mã hiệu, tên người nhận, địa chỉ nhận, số điện thoại từ hình ảnh được cung cấp, mã hiệu và số điện thoại không có khoảng trống, địa chỉ không xuống hàng. Phản hồi phải là một đối tượng JSON. Ví dụ: ```json{\"maHieu\": \"...\", \"tenNguoiNhan\": \"...\", \"diaChi\": \"...\", \"soDienThoai\": \"...\"}```"
       },
     ];
 

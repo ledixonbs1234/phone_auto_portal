@@ -4,14 +4,17 @@ import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_ai/firebase_ai.dart';
 import 'package:phone_auto_portal/app/modules/home/GeminiChatService.dart';
+import 'package:phone_auto_portal/data/firebaseManager.dart';
+import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
+import 'package:phone_auto_portal/app/modules/home/ExtractedData.dart';
 
 class QuetThuController extends GetxController {
   CameraController? cameraController;
   final isInitialized = false.obs;
   final isProcessing = false.obs;
   final capturedImagePath = ''.obs;
+  final capturedImageCount = 0.obs; // Đếm số ảnh đã chụp
 
   List<CameraDescription> cameras = [];
   late GeminiChatService geminiSevice;
@@ -96,11 +99,6 @@ class QuetThuController extends GetxController {
     }
   }
 
-  Future<void> _requestCameraPermission() async {
-    // Camera permissions are handled automatically by the camera plugin
-    // This is just a placeholder for any future permission handling
-  }
-
   Future<void> captureImage() async {
     if (cameraController == null || !cameraController!.value.isInitialized) {
       Get.snackbar(
@@ -119,13 +117,43 @@ class QuetThuController extends GetxController {
       capturedImagePath.value = image.path;
       //convert image to file
       final File imageFile = File(capturedImagePath.value);
+      ExtractedData? result;
 
       if (isGeminiRunFirst) {
         isGeminiRunFirst = false;
-        await geminiSevice.extractInfoFromImage(imageFile);
+        result = await geminiSevice.extractInfoFromImage(imageFile);
       } else {
-        geminiSevice.askFollowUp(imageFile);
+        result = await geminiSevice.askFollowUp(imageFile);
       }
+
+      // Loại bỏ khoảng trắng trong mã hiệu và số điện thoại
+      if (result != null) {
+        result = ExtractedData(
+          maHieu: result.maHieu?.replaceAll(RegExp(r'\s+'), ''),
+          tenNguoiNhan: result.tenNguoiNhan,
+          diaChi: result.diaChi,
+          soDienThoai: result.soDienThoai?.replaceAll(RegExp(r'\s+'), ''),
+        );
+      }
+
+      FirebaseManager()
+          .addMessage(MessageReceiveModel("guiAiLe", jsonEncode(result)));
+
+      // Tăng số lượng ảnh đã chụp
+      capturedImageCount.value++;
+
+      // Hiển thị thông báo thành công và tự động quay lại chế độ chụp
+      Get.snackbar(
+        'Thành công',
+        'Đã chụp và xử lý ảnh thứ ${capturedImageCount.value}',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+
+      // Tự động reset để có thể chụp tiếp
+      await Future.delayed(const Duration(milliseconds: 500));
+      capturedImagePath.value = '';
     } catch (e) {
       Get.snackbar(
         'Lỗi chụp ảnh',
@@ -140,6 +168,39 @@ class QuetThuController extends GetxController {
 
   void retakePhoto() {
     capturedImagePath.value = '';
+  }
+
+  void resetCaptureCount() {
+    capturedImageCount.value = 0;
+    Get.snackbar(
+      'Đã reset',
+      'Đã reset bộ đếm ảnh',
+      backgroundColor: Colors.blue,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  void sendSubmitMessage() {
+    try {
+      // Gửi message theo đúng format như trong project
+      FirebaseManager().addMessage(MessageReceiveModel("sendSubmit", ""));
+
+      Get.snackbar(
+        'Thành công',
+        'Đã gửi message sendSubmit',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Lỗi',
+        'Không thể gửi message: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   void switchCamera() async {
@@ -184,33 +245,52 @@ class QuetThuController extends GetxController {
       );
 
       if (image != null) {
-        capturedImagePath.value = image.path;
         isProcessing.value = true;
+        capturedImagePath.value = image.path;
         File imageFile = File(capturedImagePath.value);
+        ExtractedData? result = null;
 
         if (isGeminiRunFirst) {
           isGeminiRunFirst = false;
-          await geminiSevice.extractInfoFromImage(imageFile);
+          result = await geminiSevice.extractInfoFromImage(imageFile);
         } else {
-          geminiSevice.askFollowUp(imageFile);
+          result = await geminiSevice.askFollowUp(imageFile);
         }
-        isProcessing.value = false;
+
+        // Loại bỏ khoảng trắng trong mã hiệu và số điện thoại
+        if (result != null) {
+          result = ExtractedData(
+            maHieu: result.maHieu?.replaceAll(RegExp(r'\s+'), ''),
+            tenNguoiNhan: result.tenNguoiNhan,
+            diaChi: result.diaChi,
+            soDienThoai: result.soDienThoai?.replaceAll(RegExp(r'\s+'), ''),
+          );
+        }
+
+        FirebaseManager().addMessage(
+            MessageReceiveModel("guiAiLe", jsonEncode(result!.toJson())));
 
         Get.snackbar(
           'Thành công',
           'Đã xử lý ảnh từ thư viện',
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          duration: const Duration(seconds: 2),
         );
+
+        // Tự động reset để có thể chụp tiếp
+        await Future.delayed(const Duration(milliseconds: 500));
+        capturedImagePath.value = '';
       }
     } catch (e) {
-      isProcessing.value = false;
       Get.snackbar(
         'Lỗi',
         'Không thể chọn ảnh: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      isProcessing.value = false;
     }
   }
 
@@ -228,35 +308,53 @@ class QuetThuController extends GetxController {
       );
 
       if (image != null) {
-        capturedImagePath.value = image.path;
         isProcessing.value = true;
+        capturedImagePath.value = image.path;
 
         final File imageFile = File(capturedImagePath.value);
+        ExtractedData? result;
 
         if (isGeminiRunFirst) {
           isGeminiRunFirst = false;
-          await geminiSevice.extractInfoFromImage(imageFile);
+          result = await geminiSevice.extractInfoFromImage(imageFile);
         } else {
-          geminiSevice.askFollowUp(imageFile);
+          result = await geminiSevice.askFollowUp(imageFile);
         }
-        // Process image with AI (for now, using mock data)
-        isProcessing.value = false;
 
+        // Loại bỏ khoảng trắng trong mã hiệu và số điện thoại
+        if (result != null) {
+          result = ExtractedData(
+            maHieu: result.maHieu?.replaceAll(RegExp(r'\s+'), ''),
+            tenNguoiNhan: result.tenNguoiNhan,
+            diaChi: result.diaChi,
+            soDienThoai: result.soDienThoai?.replaceAll(RegExp(r'\s+'), ''),
+          );
+        }
+
+        // Process image with AI (for now, using mock data)
+        FirebaseManager()
+            .addMessage(MessageReceiveModel("guiAiLe", jsonEncode(result)));
         Get.snackbar(
           'Thành công',
           'Đã chụp và xử lý ảnh',
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          duration: const Duration(seconds: 2),
         );
+
+        // Tự động reset để có thể chụp tiếp
+        await Future.delayed(const Duration(milliseconds: 500));
+        capturedImagePath.value = '';
       }
     } catch (e) {
-      isProcessing.value = false;
       Get.snackbar(
         'Lỗi',
         'Không thể chụp ảnh: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      isProcessing.value = false;
     }
   }
 }

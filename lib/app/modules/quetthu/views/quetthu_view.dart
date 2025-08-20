@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/quetthu_controller.dart';
@@ -15,6 +14,34 @@ class QuetThuView extends GetView<QuetThuController> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
+          // Hiển thị số lượng ảnh đã chụp
+          Obx(() => Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Center(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Đã chụp: ${controller.capturedImageCount.value}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              )),
+          // Nút reset bộ đếm
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: controller.resetCaptureCount,
+            tooltip: 'Reset bộ đếm',
+          ),
           if (controller.cameras.length > 1)
             IconButton(
               icon: const Icon(Icons.flip_camera_android),
@@ -36,10 +63,7 @@ class QuetThuView extends GetView<QuetThuController> {
           );
         }
 
-        if (controller.capturedImagePath.value.isNotEmpty) {
-          return _buildImagePreview();
-        }
-
+        // Luôn hiển thị camera preview, không hiển thị image preview nữa
         return _buildCameraPreview();
       }),
     );
@@ -49,7 +73,7 @@ class QuetThuView extends GetView<QuetThuController> {
     return Stack(
       children: [
         // Camera preview
-        Container(
+        SizedBox(
           width: double.infinity,
           height: double.infinity,
           child: controller.cameraController?.buildPreview() ?? Container(),
@@ -60,8 +84,9 @@ class QuetThuView extends GetView<QuetThuController> {
           left: 0,
           right: 0,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              // Nút chụp ảnh
               Obx(() => FloatingActionButton.extended(
                     onPressed: controller.isProcessing.value
                         ? null
@@ -82,6 +107,14 @@ class QuetThuView extends GetView<QuetThuController> {
                         ? 'Đang xử lý...'
                         : 'Chụp ảnh'),
                   )),
+              // Nút gửi message
+              FloatingActionButton.extended(
+                onPressed: controller.sendSubmitMessage,
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.send),
+                label: const Text('Gửi Submit'),
+              ),
             ],
           ),
         ),
@@ -93,11 +126,11 @@ class QuetThuView extends GetView<QuetThuController> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
-              'Đưa camera về phía thư/bưu phẩm để quét thông tin',
+              'Đưa camera về phía thư/bưu phẩm để quét thông tin.\nSau khi chụp, ảnh sẽ được xử lý tự động và bạn có thể tiếp tục chụp ảnh khác.',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -105,48 +138,6 @@ class QuetThuView extends GetView<QuetThuController> {
               ),
               textAlign: TextAlign.center,
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImagePreview() {
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            child: Image.file(
-              File(controller.capturedImagePath.value),
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton.icon(
-                onPressed: controller.retakePhoto,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Chụp lại'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => Get.back(),
-                icon: const Icon(Icons.check),
-                label: const Text('Xong'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
           ),
         ),
       ],

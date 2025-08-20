@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:camera/camera.dart';
-import 'package:firebase_ai/firebase_ai.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -20,7 +17,6 @@ import 'package:phone_auto_portal/data/UpdateService.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/firebase_options.dart';
 import 'package:url_strategy/url_strategy.dart';
-import 'package:flutter/services.dart';
 
 import 'app/modules/home/controllers/home_controller.dart';
 
@@ -34,7 +30,7 @@ Future<void> main() async {
   try {
     await availableCameras();
   } catch (e) {
-    print('Camera initialization warning: $e');
+    // Camera initialization warning: $e
   }
 
   AwesomeNotifications().initialize(
