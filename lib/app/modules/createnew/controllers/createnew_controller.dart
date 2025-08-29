@@ -96,6 +96,12 @@ class CreatenewController extends GetxController {
     // saveOptionsTest();
 
     loadOptions();
+
+    // Chỉ tải danh sách bưu gửi nếu có khách hàng hợp lệ và không rỗng
+    // Việc tải dữ liệu sẽ được thực hiện trong setUp() khi khách hàng được thiết lập
+    printInfo(
+        info:
+            "CreatenewController onReady - Current customer: ${khachHang.value.maKH}");
   }
 
   void printAll() {
@@ -163,6 +169,10 @@ class CreatenewController extends GetxController {
       }
     }
     buuGuis.sort((a, b) => a.index!.compareTo(b.index!));
+
+    // Lưu danh sách bưu gửi cho khách hàng hiện tại
+    saveBuuGuisForCurrentCustomer();
+
     textMHController.text = "";
     textKLController.text = "";
     textHintController.text = "";
@@ -182,12 +192,20 @@ class CreatenewController extends GetxController {
     if (iBuuGui.value != -1) {
       buuGuis.removeAt(iBuuGui.value);
     }
+
+    // Lưu danh sách bưu gửi sau khi xóa
+    saveBuuGuisForCurrentCustomer();
+
     refreshSussgest();
     update();
   }
 
   deleteAll() {
     buuGuis.clear();
+
+    // Lưu danh sách trống cho khách hàng hiện tại
+    saveBuuGuisForCurrentCustomer();
+
     hdrIdText.value = "";
     hdrId = null;
     if (isAutoWork.value) {
@@ -255,6 +273,14 @@ class CreatenewController extends GetxController {
   void setUp(KhachHangs kh, String account, String password) {
     // if (kh.tenKH != khachHang.value.tenKH) {
     if (selectedState.value == "CC") {
+      // Lưu danh sách bưu gửi của khách hàng trước đó (nếu có)
+      if (khachHang.value.maKH != null && khachHang.value.maKH!.isNotEmpty) {
+        saveBuuGuisForCurrentCustomer();
+      }
+
+      // Xóa danh sách bưu gửi hiện tại trước khi thiết lập khách hàng mới
+      buuGuis.clear();
+
       khachHang.value = kh;
       tenKH.value = kh.tenKH!;
       if (lastKH != kh.tenKH) {
@@ -265,6 +291,10 @@ class CreatenewController extends GetxController {
       }
       this.account = account;
       this.password = password;
+
+      // Tải danh sách bưu gửi đã lưu của khách hàng mới (chỉ sau khi đã set khách hàng mới)
+      loadBuuGuisForCurrentCustomer();
+
       refreshSussgest();
       selectedState.value = "CC";
       loadOptions();
@@ -633,6 +663,10 @@ class CreatenewController extends GetxController {
         if (isAutoWork.value) {
           FirebaseManager().sendListScannedToPortal(buuGuis);
         }
+
+        // Lưu danh sách bưu gửi sau khi thêm mới
+        saveBuuGuisForCurrentCustomer();
+
         update();
 
         final length = buuGuis.length;
@@ -875,8 +909,111 @@ class CreatenewController extends GetxController {
     ));
   }
 
+  /// Lưu danh sách bưu gửi của khách hàng hiện tại vào GetStorage
+  void saveBuuGuisForCurrentCustomer() {
+    if (khachHang.value.maKH != null && khachHang.value.maKH!.isNotEmpty) {
+      final buuGuisData = buuGuis
+          .map((bg) => {
+                'index': bg.index,
+                'maBuuGui': bg.maBuuGui,
+                'khoiLuong': bg.khoiLuong,
+                'trangThai': bg.trangThai,
+                'trangThaiRequest': bg.trangThaiRequest,
+                'money': bg.money,
+                'listDo': bg.listDo,
+              })
+          .toList();
+
+      final String storageKey = 'buuGuis_${khachHang.value.maKH}';
+      GetStorage().write(storageKey, buuGuisData);
+
+      printInfo(
+          info:
+              "Saved ${buuGuis.length} buuGuis for customer: ${khachHang.value.maKH} - ${khachHang.value.tenKH}");
+    } else {
+      printInfo(info: "Cannot save buuGuis: No customer selected");
+    }
+  }
+
+  /// Tải danh sách bưu gửi đã lưu của khách hàng hiện tại từ GetStorage
+  void loadBuuGuisForCurrentCustomer() {
+    if (khachHang.value.maKH != null && khachHang.value.maKH!.isNotEmpty) {
+      final String storageKey = 'buuGuis_${khachHang.value.maKH}';
+      final savedData = GetStorage().read<List<dynamic>>(storageKey);
+
+      printInfo(
+          info:
+              "Loading buuGuis for customer: ${khachHang.value.maKH} - ${khachHang.value.tenKH}");
+
+      if (savedData != null && savedData.isNotEmpty) {
+        printInfo(
+            info:
+                "Found ${savedData.length} saved buuGuis for customer ${khachHang.value.maKH}");
+
+        // Đảm bảo xóa danh sách cũ trước khi tải dữ liệu mới
+        buuGuis.clear();
+
+        for (var item in savedData) {
+          final bg = BuuGuis(
+            index: item['index'],
+            maBuuGui: item['maBuuGui'],
+          );
+
+          bg.khoiLuong = item['khoiLuong'];
+          bg.trangThai = item['trangThai'];
+          bg.trangThaiRequest = item['trangThaiRequest'];
+          bg.money = item['money'];
+
+          if (item['listDo'] != null) {
+            bg.listDo = List<String>.from(item['listDo']);
+          }
+
+          buuGuis.add(bg);
+        }
+
+        // Sắp xếp lại theo index
+        buuGuis.sort((a, b) => a.index!.compareTo(b.index!));
+        printInfo(
+            info:
+                "Successfully loaded ${buuGuis.length} buuGuis for customer ${khachHang.value.maKH}");
+        update();
+      } else {
+        printInfo(
+            info:
+                "No saved buuGuis found for customer ${khachHang.value.maKH}");
+        // Đảm bảo danh sách trống nếu không có dữ liệu đã lưu
+        buuGuis.clear();
+        update();
+      }
+    } else {
+      printInfo(info: "No customer selected, clearing buuGuis list");
+      buuGuis.clear();
+      update();
+    }
+  }
+
+  /// Xóa danh sách bưu gửi đã lưu của khách hàng cụ thể
+  void clearSavedBuuGuisForCustomer(String maKH) {
+    GetStorage().remove('buuGuis_$maKH');
+  }
+
+  /// Xóa tất cả dữ liệu bưu gửi đã lưu của tất cả khách hàng
+  void clearAllSavedBuuGuis() {
+    final storage = GetStorage();
+    final keys = storage.getKeys();
+
+    for (String key in keys) {
+      if (key.startsWith('buuGuis_')) {
+        storage.remove(key);
+      }
+    }
+  }
+
   @override
   void onClose() {
+    // Lưu danh sách bưu gửi trước khi đóng controller
+    saveBuuGuisForCurrentCustomer();
+
     onListenBarcode?.cancel();
     try {
       mobileScannerController.dispose();
