@@ -44,466 +44,468 @@ class PortalinfoView extends GetView<PortalinfoController> {
         centerTitle: true,
       ),
       body: Center(
-        child: Column(
-          children: [
-            // Host Selection Widget at the top
-            // Row chứa các button Refresh và Chọn Ngày
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.check_circle,
-                      label: "Check",
-                      color: Colors.orange,
-                      onPressed: () {
-                        controller.checkPortal();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Swapped: REFRESH moved to the right
-                  _buildActionButton(
-                    icon: Icons.refresh,
-                    label: "",
-                    color: Colors.blue,
+        child: Column(children: [
+          // Host Selection Widget at the top
+          // Row chứa các button Refresh và Chọn Ngày
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    icon: Icons.check_circle,
+                    label: "Check",
+                    color: Colors.orange,
                     onPressed: () {
-                      controller.refreshPortal(null);
+                      controller.checkPortal();
                     },
                   ),
-                  const SizedBox(width: 8),
-                  _buildActionButton(
-                    icon: Icons.calendar_today,
-                    color: Colors.green,
-                    label: "",
-                    onPressed: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime.now());
-                      if (pickedDate != null) {
-                        controller.selectedDate.value = pickedDate;
-                        controller.refreshPortal(controller.selectedDate.value);
-                      }
-                    },
-                  ),
-                  Obx(() => IconButton(
-                        icon: Icon(
-                          controller.isScanSectionVisible.value
-                              ? Icons.search_off
-                              : Icons.search,
-                        ),
-                        tooltip: controller.isScanSectionVisible.value
-                            ? 'Ẩn tìm kiếm'
-                            : 'Hiện tìm kiếm',
-                        onPressed: () {
-                          controller.toggleScanSection();
-                        },
-                      ))
-                ],
-              ),
-            ),
-            // Collapsible barcode scanning section
-            Obx(() => AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  height: controller.isScanSectionVisible.value ? 50 : 0,
-                  clipBehavior: Clip.hardEdge,
-                  decoration: const BoxDecoration(),
-                  child: controller.isScanSectionVisible.value
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 4.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: SizedBox(
-                                  height:
-                                      40, // Reduced height for compact design
-                                  child: TextField(
-                                    controller:
-                                        controller.barcodeInputController,
-                                    style: const TextStyle(
-                                        fontSize: 14), // Smaller font
-                                    decoration: InputDecoration(
-                                      labelText: 'Mã sản phẩm',
-                                      hintText: 'Nhập hoặc quét mã',
-                                      labelStyle: const TextStyle(fontSize: 12),
-                                      hintStyle: const TextStyle(fontSize: 12),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 8),
-                                      border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(6.0),
-                                      ),
-                                      prefixIcon:
-                                          const Icon(Icons.qr_code, size: 18),
-                                      suffixIcon: IconButton(
-                                        icon: const Icon(Icons.clear, size: 16),
-                                        onPressed: () {
-                                          controller.barcodeInputController
-                                              .clear();
-                                        },
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                            minWidth: 24, minHeight: 24),
-                                      ),
-                                    ),
-                                    onSubmitted: (value) {
-                                      if (value.isNotEmpty) {
-                                        controller.refreshPortal(null);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                flex: 1,
-                                child: SizedBox(
-                                  height: 40, // Matching height with text field
-                                  child: Obx(() => ElevatedButton.icon(
-                                        icon: Icon(
-                                          controller.isScanning.value
-                                              ? Icons.hourglass_empty
-                                              : Icons.qr_code_scanner,
-                                          color: Colors.purple,
-                                          size: 16, // Smaller icon
-                                        ),
-                                        label: Text(
-                                          controller.isScanning.value
-                                              ? "Quét..."
-                                              : "Quét",
-                                          style: const TextStyle(
-                                            color: Colors.purple,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12, // Smaller font
-                                          ),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          side: BorderSide(
-                                              color: Colors.purple
-                                                  .withOpacity(0.5)),
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(6.0)),
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 4, horizontal: 8),
-                                        ),
-                                        onPressed: () {
-                                          controller.scanBarcode();
-                                        },
-                                      )),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                )),
-            // Row hiển thị trạng thái
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              width: double.infinity,
-              child: Row(
-                children: [
-                  const Text('SL : '),
-                  Obx(
-                    () => Text(
-                      '${controller.countPortalSelected.value}',
-                      style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Text('TT : '),
-                  Expanded(
-                    child: Obx(
-                      () => Text(
-                        '${controller.stateText}',
-                        style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Row hiển thị số lượng
-            // DataTable hiển thị danh sách portal
-            Expanded(
-              child: GetBuilder<PortalinfoController>(
-                builder: (dx) => DataTable2(
-                  showCheckboxColumn: true,
-                  sortAscending: controller.sortAscending.value,
-                  sortColumnIndex: controller.sortColumnIndex.value,
-                  onSelectAll: (value) {
-                    for (var row in dx.portals) {
-                      row.selected = value!;
-                    }
-                    dx.update();
-                  },
-                  columnSpacing: 5,
-                  horizontalMargin: 10,
-                  columns: [
-                    const DataColumn2(
-                      label: Text('Thứ Tự'),
-                      fixedWidth: 30,
-                      size: ColumnSize.L,
-                    ),
-                    DataColumn2(
-                      label: const Text('Tên'),
-                      numeric: false,
-                      onSort: (columnIndex, ascending) {
-                        controller.sortPortals(columnIndex, ascending);
-                      },
-                    ),
-                    DataColumn2(
-                      label: const Text('SL'),
-                      fixedWidth: 30,
-                      numeric: true,
-                      onSort: (columnIndex, ascending) {
-                        controller.sortPortals(columnIndex, ascending);
-                      },
-                    ),
-                    DataColumn2(
-                      label: const Text('State'),
-                      fixedWidth: 70,
-                      onSort: (columnIndex, ascending) {
-                        controller.sortPortals(columnIndex, ascending);
-                      },
-                    ),
-                  ],
-                  rows: List<DataRow>.generate(
-                      dx.portals.length,
-                      (index) => DataRow(
-                              selected: dx.portals[index].selected,
-                              onLongPress: () {
-                                controller.isShowEdit.value = false;
-                                controller.getMaHieuToShow(index);
-                                showImprovedDialog(context, index);
-                              },
-                              onSelectChanged: (value) {
-                                dx.iPotal.value = index;
-                                if (dx.portals[index].selected != value) {
-                                  dx.portals[index].selected = value!;
-                                }
-                                // Cập nhật số lượng portal được chọn
-                                dx.countPortalSelected.value = dx.portals
-                                    .where((element) => element.selected)
-                                    .length;
-                                dx.update();
-                              },
-                              color: WidgetStateProperty.resolveWith<Color?>(
-                                  (Set<WidgetState> states) {
-                                if (states.contains(WidgetState.selected)) {
-                                  return Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.6);
-                                }
-                                return null;
-                              }),
-                              cells: [
-                                DataCell(Text(
-                                  index.toString(),
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      color: Color.fromARGB(255, 102, 102, 96),
-                                      fontWeight: FontWeight.bold),
-                                )),
-                                DataCell(Text(
-                                  dx.portals[index].name!,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: !dx.portals[index].isXuLyDiNgoai
-                                          ? const Color(0xff008DDA)
-                                          : Colors.orange,
-                                      fontStyle: FontStyle.italic),
-                                )),
-                                DataCell(Text(
-                                  dx.portals[index].soLuong == null
-                                      ? ""
-                                      : dx.portals[index].soLuong.toString(),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red),
-                                )),
-                                DataCell(
-                                  dx.portals[index].trangThai == null
-                                      ? const Text("")
-                                      : dx.portals[index].trangThai == "2"
-                                          ? const Text(
-                                              "Đang xử lý",
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.green),
-                                            )
-                                          : dx.portals[index].trangThai == "3"
-                                              ? const Text("Chấp Nhận",
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Color(0xff5356FF)))
-                                              : const Text(""),
-                                ),
-                              ])),
                 ),
+                const SizedBox(width: 8),
+                // Swapped: REFRESH moved to the right
+                _buildActionButton(
+                  icon: Icons.refresh,
+                  label: "",
+                  color: Colors.blue,
+                  onPressed: () {
+                    controller.refreshPortal(null);
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildActionButton(
+                  icon: Icons.calendar_today,
+                  color: Colors.green,
+                  label: "",
+                  onPressed: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now());
+                    if (pickedDate != null) {
+                      controller.selectedDate.value = pickedDate;
+                      controller.refreshPortal(controller.selectedDate.value);
+                    }
+                  },
+                ),
+                Obx(() => IconButton(
+                      icon: Icon(
+                        controller.isScanSectionVisible.value
+                            ? Icons.search_off
+                            : Icons.search,
+                      ),
+                      tooltip: controller.isScanSectionVisible.value
+                          ? 'Ẩn tìm kiếm'
+                          : 'Hiện tìm kiếm',
+                      onPressed: () {
+                        controller.toggleScanSection();
+                      },
+                    ))
+              ],
+            ),
+          ),
+          // Collapsible barcode scanning section
+          Obx(() => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: controller.isScanSectionVisible.value ? 50 : 0,
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(),
+                child: controller.isScanSectionVisible.value
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8.0, vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: SizedBox(
+                                height: 40, // Reduced height for compact design
+                                child: TextField(
+                                  controller: controller.barcodeInputController,
+                                  style: const TextStyle(
+                                      fontSize: 14), // Smaller font
+                                  decoration: InputDecoration(
+                                    labelText: 'Mã sản phẩm',
+                                    hintText: 'Nhập hoặc quét mã',
+                                    labelStyle: const TextStyle(fontSize: 12),
+                                    hintStyle: const TextStyle(fontSize: 12),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 8),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6.0),
+                                    ),
+                                    prefixIcon:
+                                        const Icon(Icons.qr_code, size: 18),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.clear, size: 16),
+                                      onPressed: () {
+                                        controller.barcodeInputController
+                                            .clear();
+                                      },
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 24, minHeight: 24),
+                                    ),
+                                  ),
+                                  onSubmitted: (value) {
+                                    if (value.isNotEmpty) {
+                                      controller.refreshPortal(null);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              flex: 1,
+                              child: SizedBox(
+                                height: 40, // Matching height with text field
+                                child: Obx(() => ElevatedButton.icon(
+                                      icon: Icon(
+                                        controller.isScanning.value
+                                            ? Icons.hourglass_empty
+                                            : Icons.qr_code_scanner,
+                                        color: Colors.purple,
+                                        size: 16, // Smaller icon
+                                      ),
+                                      label: Text(
+                                        controller.isScanning.value
+                                            ? "Quét..."
+                                            : "Quét",
+                                        style: const TextStyle(
+                                          color: Colors.purple,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12, // Smaller font
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        side: BorderSide(
+                                            color:
+                                                Colors.purple.withOpacity(0.5)),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(6.0)),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 4, horizontal: 8),
+                                      ),
+                                      onPressed: () {
+                                        controller.scanBarcode();
+                                      },
+                                    )),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              )),
+          // Row hiển thị trạng thái
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            width: double.infinity,
+            child: Row(
+              children: [
+                const Text('SL : '),
+                Obx(
+                  () => Text(
+                    '${controller.countPortalSelected.value}',
+                    style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Text('TT : '),
+                Expanded(
+                  child: Obx(
+                    () => Text(
+                      '${controller.stateText}',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Row hiển thị số lượng
+          // DataTable hiển thị danh sách portal
+          Expanded(
+            child: GetBuilder<PortalinfoController>(
+              builder: (dx) => DataTable2(
+                showCheckboxColumn: true,
+                sortAscending: controller.sortAscending.value,
+                sortColumnIndex: controller.sortColumnIndex.value,
+                onSelectAll: (value) {
+                  for (var row in dx.portals) {
+                    row.selected = value!;
+                  }
+                  dx.update();
+                },
+                columnSpacing: 5,
+                horizontalMargin: 10,
+                columns: [
+                  const DataColumn2(
+                    label: Text('Thứ Tự'),
+                    fixedWidth: 30,
+                    size: ColumnSize.L,
+                  ),
+                  DataColumn2(
+                    label: const Text('Tên'),
+                    numeric: false,
+                    onSort: (columnIndex, ascending) {
+                      controller.sortPortals(columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn2(
+                    label: const Text('SL'),
+                    fixedWidth: 30,
+                    numeric: true,
+                    onSort: (columnIndex, ascending) {
+                      controller.sortPortals(columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn2(
+                    label: const Text('State'),
+                    fixedWidth: 70,
+                    onSort: (columnIndex, ascending) {
+                      controller.sortPortals(columnIndex, ascending);
+                    },
+                  ),
+                ],
+                rows: List<DataRow>.generate(
+                    dx.portals.length,
+                    (index) => DataRow(
+                            selected: dx.portals[index].selected,
+                            onLongPress: () {
+                              controller.isShowEdit.value = false;
+                              controller.getMaHieuToShow(index);
+                              showImprovedDialog(context, index);
+                            },
+                            onSelectChanged: (value) {
+                              dx.iPotal.value = index;
+                              if (dx.portals[index].selected != value) {
+                                dx.portals[index].selected = value!;
+                              }
+                              // Cập nhật số lượng portal được chọn
+                              dx.countPortalSelected.value = dx.portals
+                                  .where((element) => element.selected)
+                                  .length;
+                              dx.update();
+                            },
+                            color: WidgetStateProperty.resolveWith<Color?>(
+                                (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.6);
+                              }
+                              return null;
+                            }),
+                            cells: [
+                              DataCell(Text(
+                                index.toString(),
+                                style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color.fromARGB(255, 102, 102, 96),
+                                    fontWeight: FontWeight.bold),
+                              )),
+                              DataCell(Text(
+                                dx.portals[index].name!,
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: !dx.portals[index].isXuLyDiNgoai
+                                        ? const Color(0xff008DDA)
+                                        : Colors.orange,
+                                    fontStyle: FontStyle.italic),
+                              )),
+                              DataCell(Text(
+                                dx.portals[index].soLuong == null
+                                    ? ""
+                                    : dx.portals[index].soLuong.toString(),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red),
+                              )),
+                              DataCell(
+                                dx.portals[index].trangThai == null
+                                    ? const Text("")
+                                    : dx.portals[index].trangThai == "2"
+                                        ? const Text(
+                                            "Đang xử lý",
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.green),
+                                          )
+                                        : dx.portals[index].trangThai == "3"
+                                            ? const Text("Chấp Nhận",
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Color(0xff5356FF)))
+                                            : const Text(""),
+                              ),
+                            ])),
               ),
             ),
-            // Card chứa row với các tuỳ chọn và button xử lý portal
-            Obx(
-              () => Card(
-                child: Column(children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          // Card chứa row với các tuỳ chọn và button xử lý portal
+          Obx(
+            () => Card(
+              child: Column(children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Dropdown chọn may chủ
+                    DropdownButton<String>(
+                      value: controller.selectedMayChu.value,
+                      onChanged: (value) {
+                        controller.selectedMayChu.value = value!;
+                      },
+                      items: controller.maychus.map((e) {
+                        return DropdownMenuItem<String>(
+                          value: e,
+                          child: Text(e),
+                        );
+                      }).toList(),
+                    ),
+                    // Checkbox sắp xếp
+                    Checkbox(
+                      value: controller.isSortDiNgoai.value,
+                      activeColor: Colors
+                          .deepPurple, // Ví dụ: sử dụng màu sâu cho checkbox
+                      checkColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      onChanged: (e) {
+                        controller.isSortDiNgoai.value = e!;
+                      },
+                    ),
+                    const Text("Sắp xếp"),
+                    // Checkbox In
+                    Checkbox(
+                      value: controller.isPrinted.value,
+                      activeColor: Colors.orange,
+                      checkColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      onChanged: (e) {
+                        controller.isPrinted.value = e!;
+                      },
+                    ),
+                    const Text("In"),
+                  ],
+                ),
+                // Row chứa các button xử lý dữ liệu portal
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      // Dropdown chọn may chủ
-                      DropdownButton<String>(
-                        value: controller.selectedMayChu.value,
-                        onChanged: (value) {
-                          controller.selectedMayChu.value = value!;
-                        },
-                        items: controller.maychus.map((e) {
-                          return DropdownMenuItem<String>(
-                            value: e,
-                            child: Text(e),
-                          );
-                        }).toList(),
-                      ),
-                      // Checkbox sắp xếp
-                      Checkbox(
-                        value: controller.isSortDiNgoai.value,
-                        activeColor: Colors
-                            .deepPurple, // Ví dụ: sử dụng màu sâu cho checkbox
-                        checkColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4.0),
+                      Expanded(
+                        child: _buildActionButton(
+                          icon: Icons.download,
+                          label: 'Lấy DL',
+                          color: Colors.blue,
+                          onPressed: () {
+                            controller.layDuLieu();
+                          },
+                          onLongPress: () {
+                            controller.layDuLieuLo();
+                          },
                         ),
-                        onChanged: (e) {
-                          controller.isSortDiNgoai.value = e!;
-                        },
                       ),
-                      const Text("Sắp xếp"),
-                      // Checkbox In
-                      Checkbox(
-                        value: controller.isPrinted.value,
-                        activeColor: Colors.orange,
-                        checkColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4.0),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildActionButton(
+                          icon: Icons.save,
+                          label: 'Xác Nhận',
+                          color: Colors.red,
+                          onPressed: () {
+                            _showConfirmProcessDialog(context);
+                          },
                         ),
-                        onChanged: (e) {
-                          controller.isPrinted.value = e!;
-                        },
                       ),
-                      const Text("In"),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildActionButton(
+                          icon: Icons.send,
+                          label: 'Đi Ngoài',
+                          color: Colors.green,
+                          onPressed: () {
+                            controller.sendDiNgoai();
+                          },
+                          onLongPress: () {
+                            controller.sendDiNgoaiAndRunBD();
+                          },
+                        ),
+                      ),
                     ],
                   ),
-                  // Row chứa các button xử lý dữ liệu portal
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            icon: Icons.download,
-                            label: 'Lấy DL',
-                            color: Colors.blue,
-                            onPressed: () {
-                              controller.layDuLieu();
-                            },
-                            onLongPress: () {
-                              controller.layDuLieuLo();
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildActionButton(
-                            icon: Icons.save,
-                            label: 'Xác Nhận',
-                            color: Colors.red,
-                            onPressed: () {
-                              _showConfirmProcessDialog(context);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildActionButton(
-                            icon: Icons.send,
-                            label: 'Đi Ngoài',
-                            color: Colors.green,
-                            onPressed: () {
-                              controller.sendDiNgoai();
-                            },
-                            onLongPress: () {
-                              controller.sendDiNgoaiAndRunBD();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ]),
-              ),
+                ),
+              ]),
             ),
-            // Row chứa các button cuối: Sửa, In Sắp Xếp, In
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.analytics,
-                      label: 'Thống kê',
-                      color: Colors.purple,
-                      onPressed: () {
-                        controller.sendThongKe();
-                      },
-                    ),
+          ),
+          // Row chứa các button cuối: Sửa, In Sắp Xếp, In
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: SizedBox(
+                width: 400,
+                height: 40,
+                child: ListView(scrollDirection: Axis.horizontal, children: [
+                  Row(
+                    children: [
+                      _buildActionButton(
+                        icon: Icons.analytics,
+                        label: 'Thống kê',
+                        color: Colors.purple,
+                        onPressed: () {
+                          controller.sendThongKe();
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildActionButton(
+                        icon: Icons.print,
+                        label: 'In Sort',
+                        color: Colors.teal,
+                        onPressed: () {
+                          controller.printPageSelectedAndSort();
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildActionButton(
+                        icon: Icons.print_outlined,
+                        label: 'In Ra Vô',
+                        color: Colors.red,
+                        onPressed: () {
+                          controller.printPageSelected();
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      // Check Direction Button
+                      _buildActionButton(
+                        icon: Icons.qr_code_scanner,
+                        label: 'Check Hướng',
+                        color: Colors.purple,
+                        onPressed: () {
+                          controller.goToDirectionScanning();
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.print,
-                      label: 'In Sort',
-                      color: Colors.teal,
-                      onPressed: () {
-                        controller.printPageSelectedAndSort();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.print_outlined,
-                      label: 'In Ra Vô',
-                      color: Colors.red,
-                      onPressed: () {
-                        controller.printPageSelected();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+                ])),
+          ),
+        ]),
       ),
     );
   }

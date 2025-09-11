@@ -18,6 +18,7 @@ import 'package:phone_auto_portal/app/modules/portalinfo/portal_check_model.dart
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/split_address.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
+
 import 'package:phone_auto_portal/app/routes/app_pages.dart';
 
 import 'package:phone_auto_portal/data/firebaseManager.dart';
@@ -352,6 +353,34 @@ class PortalinfoController extends GetxController {
     return counts;
   }
 
+  // === DIRECTION SCANNING NAVIGATION ===
+
+  /// Điều hướng đến trang Direction Scanning
+  void goToDirectionScanning() {
+    // Kiểm tra có portal nào được chọn không
+    final selectedPortals = getSelectedsPortal();
+    if (selectedPortals.isEmpty) {
+      Get.snackbar(
+        'Cảnh báo',
+        'Vui lòng chọn ít nhất một portal trước khi check hướng',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // Lấy tất cả mã hiệu từ các portal đã chọn
+    final selectedPortalIds = getSelectedsIdPortal();
+
+    // Gửi request để lấy dữ liệu mã hiệu
+    waitingCodes = "TODIRECTIONSCAN";
+    stateText.value = "Đang lấy dữ liệu cho Direction Scanning...";
+
+    FirebaseManager().addMessage(
+        MessageReceiveModel("getMaHieus", jsonEncode(selectedPortalIds)));
+  }
+
   /// Scans barcodes continuously using the device camera
   /// Supports multiple barcode scanning with duplicate prevention
   /// Automatically converts to uppercase and joins with commas
@@ -559,6 +588,7 @@ class PortalinfoController extends GetxController {
   void onClose() {
     barcodeInputController.dispose();
     _barcodeSubscription?.cancel(); // Cancel continuous scanning subscription
+
     cancelBulkQRScanInDialog();
     try {
       mobileScannerController?.dispose();
@@ -640,6 +670,19 @@ class PortalinfoController extends GetxController {
           .map((element) => StateMaHieu.fromJson(element))
           .toList();
       switch (waitingCodes) {
+        case "TODIRECTIONSCAN":
+          waitingCodes = "";
+          stateText.value = "Chuẩn bị dữ liệu cho Direction Scanning...";
+
+          // Cung cấp dữ liệu cho Direction Scanning module
+          Get.toNamed(
+            Routes.DIRECTION_SCANNING,
+            arguments: {
+              'packages': codes,
+              'selectedPortals': getSelectedsPortal(),
+            },
+          );
+          break;
         case "DONGDINGOAI":
           waitingCodes = "";
           stateText.value = "Đang gửi đi ngoài tới PC ${selectedMayChu.value}";

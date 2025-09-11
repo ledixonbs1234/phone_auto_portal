@@ -4,6 +4,8 @@ import '../modules/createnew/bindings/createnew_binding.dart';
 import '../modules/createnew/views/createnew_view.dart';
 import '../modules/detail/bindings/detail_binding.dart';
 import '../modules/detail/views/detail_view.dart';
+import '../modules/direction_scanning/bindings/direction_scanning_binding.dart';
+import '../modules/direction_scanning/views/direction_scanning_view.dart';
 import '../modules/edit_page/bindings/edit_page_binding.dart';
 import '../modules/edit_page/views/edit_page_view.dart';
 import '../modules/home/bindings/home_binding.dart';
@@ -64,6 +66,11 @@ class AppPages {
       name: _Paths.QUETTHU,
       page: () => const QuetThuView(),
       binding: QuetThuBinding(),
+    ),
+    GetPage(
+      name: _Paths.DIRECTION_SCANNING,
+      page: () => const DirectionScanningView(),
+      binding: DirectionScanningBinding(),
     ),
   ];
 }
