@@ -440,6 +440,13 @@ class DirectionScanningController extends GetxController {
 
       // Feedback tích cực
       HapticFeedback.lightImpact();
+
+      // Phát âm thanh đọc số dựa vào số lượng đã xử lý
+      final processedCount = currentScanSession.value?.processedCount ?? 0;
+      final audioPath = processedCount < 100
+          ? "assets/$processedCount.wav"
+          : "assets/beep.mp3";
+      await _playAudio(audioPath);
     } else {
       // Feedback cho trường hợp không tìm thấy hoặc sai hướng
       HapticFeedback.heavyImpact();
