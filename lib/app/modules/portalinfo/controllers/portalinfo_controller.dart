@@ -95,6 +95,8 @@ class PortalinfoController extends GetxController {
   final isScanSectionVisible = false.obs;
   final Set<String> _scannedBarcodes =
       <String>{}; // Track unique barcodes during scanning session
+  
+  final scannedBarcodeCount = 0.obs; // Observable count for UI
 
   // Mobile Scanner Controller
   MobileScannerController? mobileScannerController;
@@ -388,6 +390,7 @@ class PortalinfoController extends GetxController {
     try {
       isScanning.value = true;
       _scannedBarcodes.clear(); // Clear previous session
+      scannedBarcodeCount.value = 0; // Reset count
       barcodeInputController.clear(); // Clear input field
 
       // Start continuous scanning using mobile scanner
@@ -452,7 +455,7 @@ class PortalinfoController extends GetxController {
               ),
               const SizedBox(height: 8),
               Obx(() => Text(
-                    'Đã quét: ${_scannedBarcodes.length} mã',
+                    'Đã quét: ${scannedBarcodeCount.value} mã',
                     style: const TextStyle(fontSize: 14),
                   )),
               const SizedBox(height: 16),
@@ -516,6 +519,7 @@ class PortalinfoController extends GetxController {
 
     // Add to unique set
     _scannedBarcodes.add(processedBarcode);
+    scannedBarcodeCount.value = _scannedBarcodes.length; // Update count
 
     // Update input field with comma-separated list
     barcodeInputController.text = _scannedBarcodes.join(',');
@@ -547,7 +551,7 @@ class PortalinfoController extends GetxController {
 
       Get.snackbar(
         'Quét hoàn thành',
-        'Đã quét ${_scannedBarcodes.length} mã. Đang cập nhật dữ liệu...',
+        'Đã quét ${scannedBarcodeCount.value} mã. Đang cập nhật dữ liệu...',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,

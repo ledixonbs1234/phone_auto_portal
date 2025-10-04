@@ -341,6 +341,19 @@ class CreatenewController extends GetxController {
       }
     }
 
+    // Kiểm tra bưu gửi có khối lượng dưới 100g
+    final under100gItems = buuGuis.where((bg) => bg.khoiLuong != null && bg.khoiLuong! < 100).toList();
+    
+    if (under100gItems.isNotEmpty) {
+      printInfo(info: "Found ${under100gItems.length} items under 100g, showing dialog");
+      _showWeightModificationDialog(under100gItems, isFirst);
+      return; // Dừng việc gửi cho đến khi người dùng xác nhận
+    }
+
+    _continueSendToPC(isFirst);
+  }
+
+  void _continueSendToPC(bool isFirst) {
     FirebaseManager().sendListBDToPortal(buuGuis);
 
     Map<String, dynamic> messageData = {
@@ -629,8 +642,13 @@ class CreatenewController extends GetxController {
             ?.firstWhereOrNull((element) => barcodeFilled == element.maBuuGui);
 
         if (buuGuiFromKhachHang != null) {
-          // Nếu tìm thấy, gán khối lượng
-          bgTemp.khoiLuong = buuGuiFromKhachHang.khoiLuong;
+          //nếu khối lượng là 10 thì thay đổi thành 3000
+          if (buuGuiFromKhachHang.khoiLuong == 10) {
+            buuGuiFromKhachHang.khoiLuong = 3000;
+          } else {
+            // Nếu tìm thấy, gán khối lượng
+            bgTemp.khoiLuong = buuGuiFromKhachHang.khoiLuong;
+          }
         } else {
           // Nếu KHÔNG tìm thấy, bạn phải quyết định làm gì
           // Ví dụ: Gán một giá trị mặc định hoặc báo lỗi
@@ -1009,6 +1027,36 @@ class CreatenewController extends GetxController {
     }
   }
 
+  void _showWeightModificationDialog(List<BuuGuis> under100gItems, bool isFirst) {
+    Get.dialog(
+      _WeightModificationDialog(
+        under100gItems: under100gItems,
+        onConfirm: (updatedItems) {
+          // Cập nhật khối lượng cho các items
+          for (int i = 0; i < under100gItems.length; i++) {
+            if (updatedItems.containsKey(i)) {
+              final newWeight = updatedItems[i];
+              if (newWeight != null && newWeight > 0) {
+                printInfo(info: "Updating ${under100gItems[i].maBuuGui} weight from ${under100gItems[i].khoiLuong} to $newWeight");
+                under100gItems[i].khoiLuong = newWeight;
+              }
+            }
+          }
+          
+          printInfo(info: "User confirmed weight changes, continuing to send");
+          Get.back(); // Đóng dialog
+          _continueSendToPC(isFirst); // Tiếp tục gửi
+        },
+        onCancel: () {
+          printInfo(info: "User chose not to change weights, continuing to send");
+          Get.back(); // Đóng dialog
+          _continueSendToPC(isFirst); // Tiếp tục gửi mà không thay đổi
+        },
+      ),
+      barrierDismissible: false,
+    );
+  }
+
   @override
   void onClose() {
     // Lưu danh sách bưu gửi trước khi đóng controller
@@ -1022,6 +1070,304 @@ class CreatenewController extends GetxController {
     }
     _audioPlayer.dispose();
     super.onClose();
+  }
+}
+
+class _WeightModificationDialog extends StatefulWidget {
+  final List<BuuGuis> under100gItems;
+  final Function(Map<int, int>) onConfirm;
+  final VoidCallback onCancel;
+
+  const _WeightModificationDialog({
+    required this.under100gItems,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  @override
+  _WeightModificationDialogState createState() => _WeightModificationDialogState();
+}
+
+class _WeightModificationDialogState extends State<_WeightModificationDialog> {
+  late List<TextEditingController> weightControllers;
+  final Map<int, int> updatedWeights = {};
+
+  @override
+  void initState() {
+    super.initState();
+    weightControllers = [];
+    
+    // Tạo controller cho mỗi item dưới 100g
+    for (int i = 0; i < widget.under100gItems.length; i++) {
+      final controller = TextEditingController(
+        text: widget.under100gItems[i].khoiLuong?.toString() ?? ""
+      );
+      weightControllers.add(controller);
+      
+      // Lưu trữ giá trị ban đầu
+      if (widget.under100gItems[i].khoiLuong != null) {
+        updatedWeights[i] = widget.under100gItems[i].khoiLuong!;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Dispose tất cả controllers khi widget bị dispose
+    for (var controller in weightControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 500,
+        constraints: const BoxConstraints(maxHeight: 600),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header với icon
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.scale,
+                    color: Colors.orange,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Thông báo khối lượng",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Bạn có ${widget.under100gItems.length} bưu gửi dưới 100g",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Tiêu đề bảng
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      "Mã bưu gửi",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "KL hiện tại (g)",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "KL mới (g)",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Danh sách bưu gửi
+            Flexible(
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: widget.under100gItems.length,
+                  itemBuilder: (context, index) {
+                    final item = widget.under100gItems[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              item.maBuuGui ?? "",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.red[200]!),
+                              ),
+                              child: Text(
+                                "${item.khoiLuong ?? 0}",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.red[700],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: weightControllers[index],
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (value) {
+                                final newWeight = int.tryParse(value);
+                                if (newWeight != null && newWeight > 0) {
+                                  updatedWeights[index] = newWeight;
+                                } else {
+                                  updatedWeights.remove(index);
+                                }
+                              },
+                              decoration: InputDecoration(
+                                hintText: "Nhập KL",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: widget.onCancel,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      side: BorderSide(color: Colors.grey[400]!),
+                    ),
+                    child: const Text(
+                      "Không thay đổi",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => widget.onConfirm(updatedWeights),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: const Text(
+                      "Xác nhận thay đổi",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
