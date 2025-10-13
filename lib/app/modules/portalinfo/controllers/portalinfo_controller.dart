@@ -95,7 +95,7 @@ class PortalinfoController extends GetxController {
   final isScanSectionVisible = false.obs;
   final Set<String> _scannedBarcodes =
       <String>{}; // Track unique barcodes during scanning session
-  
+
   final scannedBarcodeCount = 0.obs; // Observable count for UI
 
   // Mobile Scanner Controller

@@ -342,10 +342,14 @@ class CreatenewController extends GetxController {
     }
 
     // Kiểm tra bưu gửi có khối lượng dưới 100g
-    final under100gItems = buuGuis.where((bg) => bg.khoiLuong != null && bg.khoiLuong! < 100).toList();
-    
+    final under100gItems = buuGuis
+        .where((bg) => bg.khoiLuong != null && bg.khoiLuong! < 100 && bg.khoiLuong! > 0)
+        .toList();
+
     if (under100gItems.isNotEmpty) {
-      printInfo(info: "Found ${under100gItems.length} items under 100g, showing dialog");
+      printInfo(
+          info:
+              "Found ${under100gItems.length} items under 100g, showing dialog");
       _showWeightModificationDialog(under100gItems, isFirst);
       return; // Dừng việc gửi cho đến khi người dùng xác nhận
     }
@@ -793,6 +797,8 @@ class CreatenewController extends GetxController {
   }
 
   Future<void> getDiNgoaisTempFromFirebase() async {
+
+    
     diNgoaiStates.value = await FirebaseManager().getDiNgoaisTemp();
     stateText.value = "Đã lấy ${diNgoaiStates.length} mã hiệu";
     susggestMHs.clear();
@@ -1027,7 +1033,8 @@ class CreatenewController extends GetxController {
     }
   }
 
-  void _showWeightModificationDialog(List<BuuGuis> under100gItems, bool isFirst) {
+  void _showWeightModificationDialog(
+      List<BuuGuis> under100gItems, bool isFirst) {
     Get.dialog(
       _WeightModificationDialog(
         under100gItems: under100gItems,
@@ -1037,18 +1044,21 @@ class CreatenewController extends GetxController {
             if (updatedItems.containsKey(i)) {
               final newWeight = updatedItems[i];
               if (newWeight != null && newWeight > 0) {
-                printInfo(info: "Updating ${under100gItems[i].maBuuGui} weight from ${under100gItems[i].khoiLuong} to $newWeight");
+                printInfo(
+                    info:
+                        "Updating ${under100gItems[i].maBuuGui} weight from ${under100gItems[i].khoiLuong} to $newWeight");
                 under100gItems[i].khoiLuong = newWeight;
               }
             }
           }
-          
+
           printInfo(info: "User confirmed weight changes, continuing to send");
           Get.back(); // Đóng dialog
           _continueSendToPC(isFirst); // Tiếp tục gửi
         },
         onCancel: () {
-          printInfo(info: "User chose not to change weights, continuing to send");
+          printInfo(
+              info: "User chose not to change weights, continuing to send");
           Get.back(); // Đóng dialog
           _continueSendToPC(isFirst); // Tiếp tục gửi mà không thay đổi
         },
@@ -1085,7 +1095,8 @@ class _WeightModificationDialog extends StatefulWidget {
   });
 
   @override
-  _WeightModificationDialogState createState() => _WeightModificationDialogState();
+  _WeightModificationDialogState createState() =>
+      _WeightModificationDialogState();
 }
 
 class _WeightModificationDialogState extends State<_WeightModificationDialog> {
@@ -1096,14 +1107,13 @@ class _WeightModificationDialogState extends State<_WeightModificationDialog> {
   void initState() {
     super.initState();
     weightControllers = [];
-    
+
     // Tạo controller cho mỗi item dưới 100g
     for (int i = 0; i < widget.under100gItems.length; i++) {
       final controller = TextEditingController(
-        text: widget.under100gItems[i].khoiLuong?.toString() ?? ""
-      );
+          text: widget.under100gItems[i].khoiLuong?.toString() ?? "");
       weightControllers.add(controller);
-      
+
       // Lưu trữ giá trị ban đầu
       if (widget.under100gItems[i].khoiLuong != null) {
         updatedWeights[i] = widget.under100gItems[i].khoiLuong!;
@@ -1172,9 +1182,9 @@ class _WeightModificationDialogState extends State<_WeightModificationDialog> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Tiêu đề bảng
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -1220,9 +1230,9 @@ class _WeightModificationDialogState extends State<_WeightModificationDialog> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Danh sách bưu gửi
             Flexible(
               child: Container(
@@ -1256,7 +1266,8 @@ class _WeightModificationDialogState extends State<_WeightModificationDialog> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 12),
                               decoration: BoxDecoration(
                                 color: Colors.red[50],
                                 borderRadius: BorderRadius.circular(6),
@@ -1293,17 +1304,21 @@ class _WeightModificationDialogState extends State<_WeightModificationDialog> {
                                 hintText: "Nhập KL",
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(6),
-                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                                  borderSide: const BorderSide(
+                                      color: Colors.blue, width: 2),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                                 filled: true,
                                 fillColor: Colors.grey[50],
                               ),
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w500),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -1314,9 +1329,9 @@ class _WeightModificationDialogState extends State<_WeightModificationDialog> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Buttons
             Row(
               children: [

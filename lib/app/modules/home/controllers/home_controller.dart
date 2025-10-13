@@ -337,10 +337,6 @@ class HomeController extends GetxController {
   }
 
   void goToPrintPage() {
-    var detail = Get.find<PrintPageController>();
-
-    detail.khachHang.value = seKhachHangs.value;
-
     Get.toNamed("/print-page");
   }
 
