@@ -11,6 +11,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
+import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/app/modules/createnew/model/contentchangeinfo.dart';
@@ -76,6 +77,10 @@ class CreatenewController extends GetxController {
 
   // Audio Player
   final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // Biến cho quá trình lấy dữ liệu Portal
+  var waitingForPortalData = false.obs;
+  final tempPortals = <Portal>[].obs;
 
   @override
   void onReady() {
@@ -343,7 +348,8 @@ class CreatenewController extends GetxController {
 
     // Kiểm tra bưu gửi có khối lượng dưới 100g
     final under100gItems = buuGuis
-        .where((bg) => bg.khoiLuong != null && bg.khoiLuong! < 100 && bg.khoiLuong! > 0)
+        .where((bg) =>
+            bg.khoiLuong != null && bg.khoiLuong! < 100 && bg.khoiLuong! > 0)
         .toList();
 
     if (under100gItems.isNotEmpty) {
@@ -457,6 +463,17 @@ class CreatenewController extends GetxController {
           stateText.value = "Lỗi nhận HDR";
         }
         update();
+        break;
+      case "getMaHieus":
+        // Xử lý khi nhận được mã hiệu từ Portal
+        if (waitingForPortalData.value) {
+          var codes = (jsonDecode(message.DoiTuong) as List)
+              .map((element) => StateMaHieu.fromJson(element))
+              .toList();
+
+          printInfo(info: "CreateNew nhận được ${codes.length} mã hiệu");
+          processMaHieusFromPortal(codes);
+        }
         break;
       default:
     }
@@ -797,16 +814,213 @@ class CreatenewController extends GetxController {
   }
 
   Future<void> getDiNgoaisTempFromFirebase() async {
+    // Bước 1: Bắt đầu lấy dữ liệu Portal
+    waitingForPortalData.value = true;
+    stateText.value = "Đang lấy dữ liệu Portal...";
 
-    
-    diNgoaiStates.value = await FirebaseManager().getDiNgoaisTemp();
-    stateText.value = "Đã lấy ${diNgoaiStates.length} mã hiệu";
-    susggestMHs.clear();
-    for (var diNgoai in diNgoaiStates) {
-      susggestMHs.add(diNgoai.maHieu!);
+    // Bước 2: Gọi refreshPortal với time = Now
+    await FirebaseManager().refreshPortal(DateTime.now());
+
+    // Chờ một chút để dữ liệu được cập nhật
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Bước 3: Lọc Portal theo maKH
+    final targetMaKHs = ["C002446626", "C015304312"];
+    final filteredPortals = tempPortals.where((portal) {
+      return targetMaKHs.contains(portal.maKH);
+    }).toList();
+
+    if (filteredPortals.isEmpty) {
+      stateText.value = "Không tìm thấy Portal phù hợp";
+      waitingForPortalData.value = false;
+      return;
     }
-    tenKH.value = "Kiểm tra Hàng";
-    update();
+
+    // Bước 4: Lấy danh sách ID
+    final ids = filteredPortals.map((portal) => portal.id).toList();
+
+    printInfo(info: "Đã lọc được ${ids.length} portal: $ids");
+    stateText.value = "Đang lấy mã hiệu từ ${ids.length} portal...";
+
+    // Bước 5: Gọi getMaHieus
+    FirebaseManager()
+        .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(ids)));
+
+    // waitingCodes sẽ được set để xử lý trong onListenNotification
+    // (Sẽ thêm logic xử lý ở phần sau)
+  }
+
+  /// Xử lý dữ liệu Portal khi được cập nhật từ Firebase
+  void onPortalDataUpdated(List<Portal> portals) {
+    if (!waitingForPortalData.value) {
+      return; // Không xử lý nếu không đang chờ
+    }
+
+    tempPortals.value = portals;
+    printInfo(info: "CreateNew nhận được ${portals.length} portal từ Firebase");
+  }
+
+  /// Xử lý mã hiệu sau khi lấy từ Portal
+  void processMaHieusFromPortal(List<StateMaHieu> codes) {
+    printInfo(info: "Nhận được ${codes.length} mã hiệu từ Portal");
+
+    // Load dữ liệu tỉnh thành để phân loại
+    _loadProvinceDataAndClassify(codes);
+  }
+
+  /// Loại bỏ dấu tiếng Việt từ chuỗi
+  String _removeDiacritics(String str) {
+    var withDia = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ';
+    var withoutDia = 'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiioooooooooooooooooouuuuuuuuuuuyyyyyd';
+    
+    var result = str.toLowerCase();
+    for (var i = 0; i < withDia.length; i++) {
+      result = result.replaceAll(withDia[i], withoutDia[i]);
+    }
+    return result;
+  }
+
+  /// Kiểm tra xem địa chỉ có chứa địa danh đặc biệt của Bình Định không
+  bool _isBinhDinhSpecialLocation(String? address) {
+    if (address == null || address.isEmpty) return false;
+    
+    final normalizedAddress = _removeDiacritics(address);
+    final specialLocations = [
+      'hoai nhon',
+      'tam quan',
+      'hoai an',
+      'an lao',
+      'an hao',
+      'an my',
+      'binh duong',
+      'phu my',
+      'phu cat'
+    ];
+    
+    for (final location in specialLocations) {
+      if (normalizedAddress.contains(location)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _loadProvinceDataAndClassify(List<StateMaHieu> codes) async {
+    try {
+      // Load dữ liệu tỉnh thành từ JSON
+      final String jsonString =
+          await rootBundle.loadString('assets/tinhthanh.json');
+      final provinceData = jsonDecode(jsonString);
+
+      // Lấy mã tỉnh cho từng hướng
+      final Set<String> namTrungBoCodes = <String>{};
+      final Set<String> daNangCodes = <String>{};
+
+      // Xử lý Nam Trung Bộ (VÔ)
+      if (provinceData['vo'] != null) {
+        for (final province in provinceData['vo']) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              namTrungBoCodes.add(code.toString());
+            }
+          }
+        }
+      }
+
+      // Xử lý Đà Nẵng (RA)
+      if (provinceData['ra'] != null) {
+        for (final province in provinceData['ra']) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              daNangCodes.add(code.toString());
+            }
+          }
+        }
+      }
+
+      // Phân loại mã hiệu
+      final namTrungBoList = <DiNgoaiStateInfo>[];
+      final daNangList = <DiNgoaiStateInfo>[];
+      final conLaiList = <DiNgoaiStateInfo>[];
+
+      for (final code in codes) {
+        final provinceCode = code.provinceCode?.trim() ?? '';
+        final diNgoaiState = DiNgoaiStateInfo(
+          maHieu: code.code,
+          khoiLuong: code.Weight,
+          maBuuCucNhan: provinceCode,
+          address: code.Address,
+        );
+
+        if (namTrungBoCodes.contains(provinceCode)) {
+          // Kiểm tra trường hợp đặc biệt: Bình Định (mã 55) với địa danh đặc biệt
+          if (provinceCode == '55' && _isBinhDinhSpecialLocation(code.Address)) {
+            // Chuyển sang Còn Lại nếu là địa danh đặc biệt của Bình Định
+            diNgoaiState.keyExactly = "Còn Lại";
+            conLaiList.add(diNgoaiState);
+          } else {
+            // Các trường hợp Nam Trung Bộ bình thường
+            diNgoaiState.keyExactly = "Nam Trung Bộ";
+            namTrungBoList.add(diNgoaiState);
+          }
+        } else if (daNangCodes.contains(provinceCode)) {
+          diNgoaiState.keyExactly = "Đà Nẵng";
+          daNangList.add(diNgoaiState);
+        } else {
+          diNgoaiState.keyExactly = "Còn Lại";
+          conLaiList.add(diNgoaiState);
+        }
+      }
+
+      // Lọc theo lựa chọn của user
+      List<DiNgoaiStateInfo> filteredList = [];
+      String selectedLabel = "";
+
+      switch (selectedState.value) {
+        case "NTB":
+          filteredList = namTrungBoList;
+          selectedLabel = "Nam Trung Bộ";
+          break;
+        case "DN":
+          filteredList = daNangList;
+          selectedLabel = "Đà Nẵng";
+          break;
+        case "CL":
+          filteredList = conLaiList;
+          selectedLabel = "Còn Lại";
+          break;
+        default:
+          // Nếu "CC" (Chưa Chọn) hoặc giá trị khác, hiển thị tất cả
+          filteredList = [...namTrungBoList, ...daNangList, ...conLaiList];
+          selectedLabel = "Tất cả";
+      }
+
+      // Cập nhật dữ liệu với danh sách đã lọc
+      diNgoaiStates.value = filteredList;
+
+      // Cập nhật gợi ý
+      susggestMHs.clear();
+      for (var diNgoai in diNgoaiStates) {
+        susggestMHs.add(diNgoai.maHieu!);
+      }
+
+      tenKH.value = "Lấy hàng Lẻ";
+      waitingForPortalData.value = false;
+
+      stateText.value = "Đã lọc $selectedLabel: ${filteredList.length} mã hiệu "
+          "(Tổng: NTB=${namTrungBoList.length}, DN=${daNangList.length}, CL=${conLaiList.length})";
+
+      update();
+
+      printInfo(
+          info: "Đã lọc $selectedLabel: ${filteredList.length} mã hiệu - "
+              "Phân loại: Nam Trung Bộ=${namTrungBoList.length}, "
+              "Đà Nẵng=${daNangList.length}, Còn lại=${conLaiList.length}");
+    } catch (e) {
+      printInfo(info: "Lỗi khi load dữ liệu tỉnh thành: $e");
+      stateText.value = "Lỗi khi phân loại hướng";
+      waitingForPortalData.value = false;
+    }
   }
 
   void preparePrint() {

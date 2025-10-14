@@ -104,6 +104,16 @@ class FirebaseManager with WidgetsBindingObserver {
       }
       portalInfo!.stateText.value = "Cập nhật dữ liệu thành công";
       portalInfo!.update();
+
+      // Nếu CreateNew đang chờ dữ liệu Portal, cũng cập nhật cho nó
+      try {
+        var createnewController = Get.find<CreatenewController>();
+        if (createnewController.waitingForPortalData.value) {
+          createnewController.onPortalDataUpdated(List<Portal>.from(portalInfo!.portals));
+        }
+      } catch (e) {
+        // CreateNew controller không được khởi tạo, bỏ qua
+      }
     });
     // data.child('PORTAL/MAINPAGE').onChildChanged.listen((event) {
     //   Map<dynamic, dynamic> child =
