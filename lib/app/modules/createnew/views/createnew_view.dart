@@ -267,11 +267,11 @@ class CreatenewView extends GetView<CreatenewController> {
                         const SizedBox(width: 8),
                         DropdownButton<String>(
                           value: controller.selectedState.value,
-                          onChanged: (value) async {
+                          onChanged: (value) {
                             controller.selectedState.value = value!;
-                            if (value != "CC") {
-                              await controller.getDiNgoaisTempFromFirebase();
-                            }
+                            // Chỉ cập nhật lựa chọn hướng, không tự động lấy dữ liệu
+                            // User sẽ bấm nút "Lấy Lan" để tải dữ liệu
+                            controller.update();
                           },
                           items: const [
                             DropdownMenuItem(
@@ -372,6 +372,13 @@ class CreatenewView extends GetView<CreatenewController> {
                       label: 'Send End',
                       color: Colors.indigo,
                       onPressed: () => controller.sendEndAndPrint(),
+                    ),
+                    const SizedBox(width: 10),
+                    _buildActionButton(
+                      icon: Icons.download_rounded,
+                      label: 'Lấy Lan',
+                      color: Colors.teal,
+                      onPressed: () => controller.getDiNgoaisTempFromFirebase(),
                     ),
                   ],
                 ),

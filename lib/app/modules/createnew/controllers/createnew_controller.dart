@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/dingoaicodes_model.dart';
@@ -218,9 +219,8 @@ class CreatenewController extends GetxController {
     }
     if (selectedState.value == "CC") {
       refreshSussgest();
-    } else {
-      getDiNgoaisTempFromFirebase();
     }
+    // Không tự động lấy dữ liệu nữa, user sẽ bấm nút "Lấy Lan"
     update();
   }
 
@@ -538,6 +538,9 @@ class CreatenewController extends GetxController {
 
       List<String> notMHs = [];
 
+      // Bật wakelock để màn hình không tắt khi đang quét
+      WakelockPlus.enable();
+
       // Khởi tạo mobile scanner controller
       mobileScannerController = MobileScannerController(
         detectionSpeed: DetectionSpeed.noDuplicates,
@@ -567,8 +570,10 @@ class CreatenewController extends GetxController {
       _showMobileScannerDialogForCreatenew();
     } on PlatformException {
       Get.snackbar("Thông báo", "Lỗi barcode");
+      WakelockPlus.disable(); // Tắt wakelock nếu có lỗi
     } catch (e) {
       Get.snackbar("Thông báo", "Lỗi khi khởi tạo scanner: ${e.toString()}");
+      WakelockPlus.disable(); // Tắt wakelock nếu có lỗi
     }
   }
 
@@ -604,6 +609,7 @@ class CreatenewController extends GetxController {
                     onPressed: () {
                       onListenBarcode?.cancel();
                       mobileScannerController.dispose();
+                      WakelockPlus.disable(); // Tắt wakelock khi đóng scanner
                       Get.back();
                     },
                     child: const Text('Dừng'),
@@ -627,16 +633,37 @@ class CreatenewController extends GetxController {
   Future<void> _handleValidBarcode(
       String barcodeFilled, List<String> notMHs) async {
     if (!isNotCheckData.value) {
-      if (susggestMHs.contains(barcodeFilled)) {
-        await _processSuggestedBarcode(barcodeFilled, notMHs);
-      } else if (buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
-      } else if (!notMHs.contains(barcodeFilled)) {
-        notMHs.add(barcodeFilled);
-        await _playAudio("assets/kocobg.wav");
+      // Kiểm tra đã quét chưa
+      if (buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
+        // Đã quét rồi - không làm gì
+        return;
+      }
+
+      // Kiểm tra theo chế độ
+      if (selectedState.value == "CC") {
+        // Chế độ CC: Kiểm tra trong susggestMHs
+        if (susggestMHs.contains(barcodeFilled)) {
+          await _processSuggestedBarcode(barcodeFilled, notMHs);
+        } else if (!notMHs.contains(barcodeFilled)) {
+          notMHs.add(barcodeFilled);
+          await _playAudio("assets/kocobg.wav");
+        }
       } else {
-        // await _playAudio("assets/kocobg.wav");
+        // Chế độ NTB/DN/CL: Kiểm tra trong diNgoaiStates
+        final existsInDiNgoai =
+            diNgoaiStates.any((d) => d.maHieu == barcodeFilled);
+
+        if (existsInDiNgoai) {
+          // Có trong diNgoaiStates -> Xử lý (sẽ kiểm tra key trong _processSuggestedBarcode)
+          await _processSuggestedBarcode(barcodeFilled, notMHs);
+        } else if (!notMHs.contains(barcodeFilled)) {
+          // Không có trong diNgoaiStates -> Phát kocobg
+          notMHs.add(barcodeFilled);
+          await _playAudio("assets/kocobg.wav");
+        }
       }
     } else {
+      // Chế độ không kiểm tra dữ liệu
       if (!buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
         await _processSuggestedBarcode(barcodeFilled, notMHs);
       }
@@ -647,84 +674,124 @@ class CreatenewController extends GetxController {
       String barcodeFilled, List<String> notMHs) async {
     var existingDiNgoais =
         diNgoaiStates.firstWhereOrNull((m) => m.maHieu == barcodeFilled);
-    if (selectedState.value == "CC" || existingDiNgoais != null) {
-      printInfo(info: "Code is $barcodeFilled");
 
-      var bgTemp = BuuGuis(
-        index: buuGuis.length + 1,
-        maBuuGui: barcodeFilled,
-      );
-
-// Xử lý khối lượng
-      // Sửa lại đoạn code gây lỗi:
-      if (existingDiNgoais == null) {
-        // Tìm bưu gửi trong danh sách khách hàng một cách an toàn
-        final buuGuiFromKhachHang = khachHang.value.buuGuis
-            ?.firstWhereOrNull((element) => barcodeFilled == element.maBuuGui);
-
-        if (buuGuiFromKhachHang != null) {
-          //nếu khối lượng là 10 thì thay đổi thành 3000
-          if (buuGuiFromKhachHang.khoiLuong == 10) {
-            buuGuiFromKhachHang.khoiLuong = 3000;
-          } else {
-            // Nếu tìm thấy, gán khối lượng
-            bgTemp.khoiLuong = buuGuiFromKhachHang.khoiLuong;
-          }
-        } else {
-          // Nếu KHÔNG tìm thấy, bạn phải quyết định làm gì
-          // Ví dụ: Gán một giá trị mặc định hoặc báo lỗi
-          bgTemp.khoiLuong = 0; // Gán mặc định là 0
-          // Hoặc có thể bạn muốn dừng xử lý ở đây
-          // await _playAudio("assets/error.wav");
-          // return;
-        }
-      } else {
-        bgTemp.khoiLuong = int.tryParse(existingDiNgoais.khoiLuong!) ?? 0;
+    // Trường hợp 1: Chế độ CC (Chưa Chọn) - logic cũ
+    if (selectedState.value == "CC") {
+      if (existingDiNgoais != null || susggestMHs.contains(barcodeFilled)) {
+        await _addBuuGuiAndPlaySound(barcodeFilled, existingDiNgoais);
       }
-      var existingBG =
-          buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
+      return;
+    }
 
-      final shouldAdd = existingDiNgoais == null ||
-          existingDiNgoais.keyExactly == selectedState.value;
+    // Trường hợp 2: Đã chọn hướng cụ thể (NTB, DN, CL)
+    // Kiểm tra mã hiệu có tồn tại trong diNgoaiStates không
+    if (existingDiNgoais == null) {
+      // Không có trong toàn bộ danh sách -> phát kocobg.wav
+      if (!notMHs.contains(barcodeFilled)) {
+        notMHs.add(barcodeFilled);
+        await _playAudio("assets/kocobg.wav");
+      }
+      return;
+    }
 
-      if (shouldAdd && existingBG == null) {
-        if (is1KG.value) {
-          if (bgTemp.khoiLuong! < 2000) {
-            await _playAudio("assets/hang_duoi_2kg.wav");
-            return;
-          }
-        }
-        susggestMHs.remove(barcodeFilled);
-        HapticFeedback.lightImpact(); // Rung nhẹ để báo hiệu quét thành công
-        buuGuis
-          ..add(bgTemp)
-          ..sort((a, b) => a.index!.compareTo(b.index!));
-        if (isAutoWork.value) {
-          FirebaseManager().sendListScannedToPortal(buuGuis);
-        }
+    // Kiểm tra key có khớp với selectedState không
+    String selectedKey = _getKeyFromState(selectedState.value);
 
-        // Lưu danh sách bưu gửi sau khi thêm mới
-        saveBuuGuisForCurrentCustomer();
+    if (existingDiNgoais.keyExactly == selectedKey) {
+      // Key khớp -> thêm bình thường
+      await _addBuuGuiAndPlaySound(barcodeFilled, existingDiNgoais);
 
-        update();
-
-        final length = buuGuis.length;
-        final audioPath =
-            length < 100 ? "assets/$length.wav" : "assets/beep.mp3";
-        await _playAudio(audioPath);
-      } else {
-        if (existingBG == null) {
-          await _playAudio("assets/lachuong.mp3");
-        } else {
-          //nếu vị trí tồn tại bg nhỏ hơn vị trí cuối cùng trừ 5 thì phát âm thanh trùng đơn
-          if (existingBG.index! < buuGuis.length - 5) {
-            await _playAudio("assets/trungdon.wav");
-          }
-        }
+      // Kiểm tra xem còn bưu gửi nào có cùng key không
+      if (susggestMHs.isEmpty ||
+          !diNgoaiStates.any((d) =>
+              d.keyExactly == selectedKey && susggestMHs.contains(d.maHieu))) {
+        // Hết bưu gửi cùng key -> phát dusoluong.wav
+        await _playAudio("assets/dusoluong.wav");
       }
     } else {
-      if (existingDiNgoais == null) {
-        await _playAudio("assets/kocobg.mp3");
+      // Key không khớp (quét nhầm hướng khác) -> phát lachuong.mp3
+      await _playAudio("assets/lachuong.mp3");
+    }
+  }
+
+  /// Chuyển đổi selectedState sang tên key tương ứng
+  String _getKeyFromState(String state) {
+    switch (state) {
+      case "NTB":
+        return "Nam Trung Bộ";
+      case "DN":
+        return "Đà Nẵng";
+      case "CL":
+        return "Còn Lại";
+      default:
+        return "";
+    }
+  }
+
+  /// Thêm bưu gửi và phát âm thanh
+  Future<void> _addBuuGuiAndPlaySound(
+      String barcodeFilled, DiNgoaiStateInfo? existingDiNgoais) async {
+    printInfo(info: "Code is $barcodeFilled");
+
+    var bgTemp = BuuGuis(
+      index: buuGuis.length + 1,
+      maBuuGui: barcodeFilled,
+    );
+
+    // Xử lý khối lượng
+    if (existingDiNgoais == null) {
+      // Tìm bưu gửi trong danh sách khách hàng một cách an toàn
+      final buuGuiFromKhachHang = khachHang.value.buuGuis
+          ?.firstWhereOrNull((element) => barcodeFilled == element.maBuuGui);
+
+      if (buuGuiFromKhachHang != null) {
+        //nếu khối lượng là 10 thì thay đổi thành 3000
+        if (buuGuiFromKhachHang.khoiLuong == 10) {
+          buuGuiFromKhachHang.khoiLuong = 3000;
+        } else {
+          // Nếu tìm thấy, gán khối lượng
+          bgTemp.khoiLuong = buuGuiFromKhachHang.khoiLuong;
+        }
+      } else {
+        bgTemp.khoiLuong = 0; // Gán mặc định là 0
+      }
+    } else {
+      bgTemp.khoiLuong = int.tryParse(existingDiNgoais.khoiLuong!) ?? 0;
+    }
+
+    var existingBG =
+        buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
+
+    if (existingBG == null) {
+      if (is1KG.value) {
+        if (bgTemp.khoiLuong! < 2000) {
+          await _playAudio("assets/hang_duoi_2kg.wav");
+          return;
+        }
+      }
+
+      susggestMHs.remove(barcodeFilled);
+      HapticFeedback.lightImpact(); // Rung nhẹ để báo hiệu quét thành công
+      buuGuis
+        ..add(bgTemp)
+        ..sort((a, b) => a.index!.compareTo(b.index!));
+
+      if (isAutoWork.value) {
+        FirebaseManager().sendListScannedToPortal(buuGuis);
+      }
+
+      // Lưu danh sách bưu gửi sau khi thêm mới
+      saveBuuGuisForCurrentCustomer();
+
+      update();
+
+      final length = buuGuis.length;
+      final audioPath = length < 100 ? "assets/$length.wav" : "assets/beep.mp3";
+      await _playAudio(audioPath);
+    } else {
+      //nếu vị trí tồn tại bg nhỏ hơn vị trí cuối cùng trừ 5 thì phát âm thanh trùng đơn
+      if (existingBG.index! < buuGuis.length - 5) {
+        await _playAudio("assets/trungdon.wav");
       }
     }
   }
@@ -818,8 +885,11 @@ class CreatenewController extends GetxController {
     waitingForPortalData.value = true;
     stateText.value = "Đang lấy dữ liệu Portal...";
 
-    // Bước 2: Gọi refreshPortal với time = Now
-    await FirebaseManager().refreshPortal(DateTime.now());
+    //  Bước 2: Gọi refreshPortal với time = Now - 1 day
+    await FirebaseManager()
+        .refreshPortal(DateTime.now().subtract(const Duration(days: 1)));
+
+    // await FirebaseManager().refreshPortal(DateTime.now());
 
     // Chờ một chút để dữ liệu được cập nhật
     await Future.delayed(const Duration(seconds: 2));
@@ -1296,6 +1366,10 @@ class CreatenewController extends GetxController {
       // Controller might not be initialized
     }
     _audioPlayer.dispose();
+
+    // Tắt wakelock khi đóng controller
+    WakelockPlus.disable();
+
     super.onClose();
   }
 }
