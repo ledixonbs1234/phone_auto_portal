@@ -870,9 +870,11 @@ class CreatenewController extends GetxController {
 
   /// Loại bỏ dấu tiếng Việt từ chuỗi
   String _removeDiacritics(String str) {
-    var withDia = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ';
-    var withoutDia = 'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiioooooooooooooooooouuuuuuuuuuuyyyyyd';
-    
+    var withDia =
+        'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ';
+    var withoutDia =
+        'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiioooooooooooooooooouuuuuuuuuuuyyyyyd';
+
     var result = str.toLowerCase();
     for (var i = 0; i < withDia.length; i++) {
       result = result.replaceAll(withDia[i], withoutDia[i]);
@@ -883,7 +885,7 @@ class CreatenewController extends GetxController {
   /// Kiểm tra xem địa chỉ có chứa địa danh đặc biệt của Bình Định không
   bool _isBinhDinhSpecialLocation(String? address) {
     if (address == null || address.isEmpty) return false;
-    
+
     final normalizedAddress = _removeDiacritics(address);
     final specialLocations = [
       'hoai nhon',
@@ -896,7 +898,7 @@ class CreatenewController extends GetxController {
       'phu my',
       'phu cat'
     ];
-    
+
     for (final location in specialLocations) {
       if (normalizedAddress.contains(location)) {
         return true;
@@ -954,7 +956,8 @@ class CreatenewController extends GetxController {
 
         if (namTrungBoCodes.contains(provinceCode)) {
           // Kiểm tra trường hợp đặc biệt: Bình Định (mã 55) với địa danh đặc biệt
-          if (provinceCode == '55' && _isBinhDinhSpecialLocation(code.Address)) {
+          if (provinceCode == '55' &&
+              _isBinhDinhSpecialLocation(code.Address)) {
             // Chuyển sang Còn Lại nếu là địa danh đặc biệt của Bình Định
             diNgoaiState.keyExactly = "Còn Lại";
             conLaiList.add(diNgoaiState);

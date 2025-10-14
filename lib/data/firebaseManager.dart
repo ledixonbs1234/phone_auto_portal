@@ -109,7 +109,8 @@ class FirebaseManager with WidgetsBindingObserver {
       try {
         var createnewController = Get.find<CreatenewController>();
         if (createnewController.waitingForPortalData.value) {
-          createnewController.onPortalDataUpdated(List<Portal>.from(portalInfo!.portals));
+          createnewController
+              .onPortalDataUpdated(List<Portal>.from(portalInfo!.portals));
         }
       } catch (e) {
         // CreateNew controller không được khởi tạo, bỏ qua
