@@ -131,13 +131,17 @@ class CreatenewView extends GetView<CreatenewController> {
                       Checkbox(
                           value: controller.isChangeKL.value,
                           onChanged: (e) {
-                            controller.isChangeKL.value = e!;
+                            controller.isChangeKL.value = e ?? false;
+                            controller.update(); // Force update
                           }),
                       const Text('KL'),
                       Checkbox(
                           value: controller.isNotCheckData.value,
                           onChanged: (e) {
-                            controller.isNotCheckData.value = e!;
+                            controller.isNotCheckData.value = e ?? false;
+                            controller.update(); // Force update
+                            print(
+                                'NOT checkbox changed to: ${controller.isNotCheckData.value}'); // Debug
                           }),
                       const Text('NOT'),
                     ],
@@ -258,35 +262,36 @@ class CreatenewView extends GetView<CreatenewController> {
                     padding: const EdgeInsets.symmetric(horizontal: 3.0),
                     child: Row(
                       children: [
-                        Checkbox(
-                            value: controller.is1KG.value,
-                            onChanged: (e) {
-                              controller.is1KG.value = e!;
-                            }),
-                        const Text("1KG"),
-                        const SizedBox(width: 8),
                         DropdownButton<String>(
                           value: controller.selectedState.value,
                           onChanged: (value) {
                             controller.selectedState.value = value!;
-                            // Chỉ cập nhật lựa chọn hướng, không tự động lấy dữ liệu
-                            // User sẽ bấm nút "Lấy Lan" để tải dữ liệu
+                            
+                            // ✅ Cập nhật susggestMHs khi đổi hướng
+                            controller.updateSuggestMHsForSelectedState();
+                            
                             controller.update();
                           },
-                          items: const [
+                          items: [
                             DropdownMenuItem(
                               value: "NTB",
-                              child: Text('Nam Trung Bộ'),
+                              child: Obx(() => Text(
+                                    'Nam Trung Bộ (${controller.namTrungBoCount.value})',
+                                  )),
                             ),
                             DropdownMenuItem(
                               value: "DN",
-                              child: Text('Đà Nẵng'),
+                              child: Obx(() => Text(
+                                    'Đà Nẵng (${controller.daNangCount.value})',
+                                  )),
                             ),
                             DropdownMenuItem(
                               value: "CL",
-                              child: Text('Còn Lại'),
+                              child: Obx(() => Text(
+                                    'Còn Lại (${controller.conLaiCount.value})',
+                                  )),
                             ),
-                            DropdownMenuItem(
+                            const DropdownMenuItem(
                               value: "CC",
                               child: Text('Chưa Chọn'),
                             ),
@@ -457,34 +462,7 @@ class CreatenewView extends GetView<CreatenewController> {
                           color: Colors.orange,
                           onPressed: () {
                             if (controller.selectedState.value != "CC") {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Xác nhận In'),
-                                  content: const Text(
-                                      'In BD1 và tùy chọn xóa thông tin đã In?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        controller.printAll();
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text('Chỉ In'),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.orange[700]),
-                                      onPressed: () async {
-                                        await controller.printAllAndDelete();
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text('In và Xoá',
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                    ),
-                                  ],
-                                ),
-                              );
+                                controller.printAllAndDelete();
                             } else {
                               controller.printAll();
                             }

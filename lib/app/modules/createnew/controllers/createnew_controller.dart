@@ -32,6 +32,11 @@ class CreatenewController extends GetxController {
   final isDo = false.obs;
   final is1KG = false.obs;
   final isDeletePhone = true.obs;
+
+  // Số lượng cho từng hướng
+  final namTrungBoCount = 0.obs;
+  final daNangCount = 0.obs;
+  final conLaiCount = 0.obs;
   late FocusNode focusKL = FocusNode();
   late FocusNode focusK1 = FocusNode();
   late FocusNode focusK2 = FocusNode();
@@ -675,7 +680,15 @@ class CreatenewController extends GetxController {
     var existingDiNgoais =
         diNgoaiStates.firstWhereOrNull((m) => m.maHieu == barcodeFilled);
 
-    // Trường hợp 1: Chế độ CC (Chưa Chọn) - logic cũ
+    // QUAN TRỌNG: Kiểm tra chế độ NOT (không kiểm tra dữ liệu)
+    // Khi isNotCheckData = true, cho phép thêm MỌI mã hiệu (kể cả không có trong danh sách)
+    if (isNotCheckData.value) {
+      // Chế độ NOT: Thêm mã hiệu bất kể có trong danh sách hay không
+      await _addBuuGuiAndPlaySound(barcodeFilled, existingDiNgoais);
+      return;
+    }
+
+    // Trường hợp 1: Chế độ CC (Chưa Chọn) - logic bình thường
     if (selectedState.value == "CC") {
       if (existingDiNgoais != null || susggestMHs.contains(barcodeFilled)) {
         await _addBuuGuiAndPlaySound(barcodeFilled, existingDiNgoais);
@@ -763,13 +776,6 @@ class CreatenewController extends GetxController {
         buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
 
     if (existingBG == null) {
-      if (is1KG.value) {
-        if (bgTemp.khoiLuong! < 2000) {
-          await _playAudio("assets/hang_duoi_2kg.wav");
-          return;
-        }
-      }
-
       susggestMHs.remove(barcodeFilled);
       HapticFeedback.lightImpact(); // Rung nhẹ để báo hiệu quét thành công
       buuGuis
@@ -885,11 +891,9 @@ class CreatenewController extends GetxController {
     waitingForPortalData.value = true;
     stateText.value = "Đang lấy dữ liệu Portal...";
 
-    //  Bước 2: Gọi refreshPortal với time = Now - 1 day
-    await FirebaseManager()
-        .refreshPortal(DateTime.now().subtract(const Duration(days: 1)));
-
-    // await FirebaseManager().refreshPortal(DateTime.now());
+    //  Bước 2: Gọi refreshPortal với time = Now
+    //-1 day
+    await FirebaseManager().refreshPortal(DateTime.now());
 
     // Chờ một chút để dữ liệu được cập nhật
     await Future.delayed(const Duration(seconds: 2));
@@ -938,25 +942,11 @@ class CreatenewController extends GetxController {
     _loadProvinceDataAndClassify(codes);
   }
 
-  /// Loại bỏ dấu tiếng Việt từ chuỗi
-  String _removeDiacritics(String str) {
-    var withDia =
-        'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ';
-    var withoutDia =
-        'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiioooooooooooooooooouuuuuuuuuuuyyyyyd';
-
-    var result = str.toLowerCase();
-    for (var i = 0; i < withDia.length; i++) {
-      result = result.replaceAll(withDia[i], withoutDia[i]);
-    }
-    return result;
-  }
-
   /// Kiểm tra xem địa chỉ có chứa địa danh đặc biệt của Bình Định không
   bool _isBinhDinhSpecialLocation(String? address) {
     if (address == null || address.isEmpty) return false;
 
-    final normalizedAddress = _removeDiacritics(address);
+    final normalizedAddress = removeDiacritics(address.toLowerCase());
     final specialLocations = [
       'hoai nhon',
       'tam quan',
@@ -1068,13 +1058,25 @@ class CreatenewController extends GetxController {
           selectedLabel = "Tất cả";
       }
 
-      // Cập nhật dữ liệu với danh sách đã lọc
-      diNgoaiStates.value = filteredList;
+      // Cập nhật số lượng từng hướng
+      namTrungBoCount.value = namTrungBoList.length;
+      daNangCount.value = daNangList.length;
+      conLaiCount.value = conLaiList.length;
 
-      // Cập nhật gợi ý
+      // ✅ LƯU TẤT CẢ dữ liệu vào diNgoaiStates (không phân biệt hướng)
+      diNgoaiStates.value = [...namTrungBoList, ...daNangList, ...conLaiList];
+
+      // ✅ Cập nhật gợi ý dựa trên filteredList (chỉ hiển thị hướng đã chọn)
       susggestMHs.clear();
-      for (var diNgoai in diNgoaiStates) {
+      for (var diNgoai in filteredList) {
         susggestMHs.add(diNgoai.maHieu!);
+      }
+
+      // Xóa các mã đã có trong buuGuis
+      if (buuGuis.isNotEmpty) {
+        susggestMHs.removeWhere((element1) => buuGuis
+            .where((element) => element.maBuuGui == element1)
+            .isNotEmpty);
       }
 
       tenKH.value = "Lấy hàng Lẻ";
@@ -1086,9 +1088,10 @@ class CreatenewController extends GetxController {
       update();
 
       printInfo(
-          info: "Đã lọc $selectedLabel: ${filteredList.length} mã hiệu - "
+          info: "✅ Đã lọc $selectedLabel: ${filteredList.length} mã hiệu - "
               "Phân loại: Nam Trung Bộ=${namTrungBoList.length}, "
-              "Đà Nẵng=${daNangList.length}, Còn lại=${conLaiList.length}");
+              "Đà Nẵng=${daNangList.length}, Còn lại=${conLaiList.length} - "
+              "susggestMHs: ${susggestMHs.length} items");
     } catch (e) {
       printInfo(info: "Lỗi khi load dữ liệu tỉnh thành: $e");
       stateText.value = "Lỗi khi phân loại hướng";
@@ -1114,8 +1117,43 @@ class CreatenewController extends GetxController {
   }
 
   Future<void> printAllAndDelete() async {
+    // Bước 1: In tất cả bưu gửi
     printAll();
-    await deleteBuuGuisOnFirebase();
+
+    // Bước 2: Lấy danh sách mã hiệu cần xóa từ buuGuis
+    final maHieusToDelete = buuGuis.map((bg) => bg.maBuuGui).toSet();
+
+    // Bước 3: Xóa các mã hiệu đã in khỏi diNgoaiStates
+    diNgoaiStates
+        .removeWhere((diNgoai) => maHieusToDelete.contains(diNgoai.maHieu));
+
+    // Bước 4: Xóa các mã hiệu đã in khỏi susggestMHs
+    susggestMHs.removeWhere((mh) => maHieusToDelete.contains(mh));
+
+    // Bước 5: Cập nhật số lượng theo hướng (dựa trên diNgoaiStates mới)
+    namTrungBoCount.value =
+        diNgoaiStates.where((d) => d.keyExactly == "Nam Trung Bộ").length;
+    daNangCount.value =
+        diNgoaiStates.where((d) => d.keyExactly == "Đà Nẵng").length;
+    conLaiCount.value =
+        diNgoaiStates.where((d) => d.keyExactly == "Còn Lại").length;
+
+    // Bước 7: Lưu trạng thái
+    saveBuuGuisForCurrentCustomer();
+
+    // Bước 8: Cập nhật UI
+    update();
+
+    stateText.value = "Đã in và xóa ${maHieusToDelete.length} bưu gửi. "
+        "Còn lại: NTB=${namTrungBoCount.value}, DN=${daNangCount.value}, CL=${conLaiCount.value}";
+
+    printInfo(
+        info: "✅ Đã xóa ${maHieusToDelete.length} bưu gửi khỏi diNgoaiStates");
+
+    // Phát âm thanh nếu hết hàng
+    // if (susggestMHs.isEmpty) {
+    //   await _playAudio("assets/dusoluong.wav");
+    // }
   }
 
   Future<void> deleteBuuGuisOnFirebase() async {
@@ -1126,7 +1164,26 @@ class CreatenewController extends GetxController {
   }
 
   void showAll() {
-    for (var diNgoaiS in diNgoaiStates) {
+    // Lọc danh sách dựa trên selectedState
+    List<DiNgoaiStateInfo> itemsToShow;
+
+    if (selectedState.value == "CC") {
+      // Chế độ CC: Hiện tất cả
+      itemsToShow = diNgoaiStates.toList();
+    } else {
+      // Đã chọn key cụ thể: Chỉ hiện những mã hiệu có key khớp
+      String selectedKey = _getKeyFromState(selectedState.value);
+      itemsToShow = diNgoaiStates
+          .where((diNgoai) => diNgoai.keyExactly == selectedKey)
+          .toList();
+
+      printInfo(
+          info:
+              "Filtered ${itemsToShow.length}/${diNgoaiStates.length} items for key: $selectedKey");
+    }
+
+    // Thêm các mã hiệu đã lọc vào buuGuis
+    for (var diNgoaiS in itemsToShow) {
       var bgTemp = BuuGuis(
         index: buuGuis.length + 1,
         maBuuGui: diNgoaiS.maHieu,
@@ -1136,6 +1193,64 @@ class CreatenewController extends GetxController {
         ..add(bgTemp)
         ..sort((a, b) => b.index!.compareTo(a.index!));
     }
+
+    // Hiển thị thông báo
+    if (itemsToShow.isEmpty) {
+      stateText.value =
+          "Không có mã hiệu nào cho ${selectedState.value == 'CC' ? 'tất cả' : selectedState.value}";
+    } else {
+      stateText.value =
+          "Đã hiển thị ${itemsToShow.length} mã hiệu ${selectedState.value == 'CC' ? '' : 'cho ${selectedState.value}'}";
+    }
+
+    update();
+  }
+
+  /// Cập nhật susggestMHs dựa trên selectedState
+  void updateSuggestMHsForSelectedState() {
+    susggestMHs.clear();
+
+    if (selectedState.value == "CC") {
+      // Chế độ CC: Lấy từ danh sách khách hàng hiện tại
+      for (var buugui in khachHang.value.buuGuis!) {
+        if (buugui.trangThai == "Đang đi thu gom" ||
+            buugui.trangThai == "Nhận hàng thành công" ||
+            buugui.trangThai == "Đã phân hướng" ||
+            buugui.trangThai == "Tạo đơn" ||
+            buugui.trangThai == "Bưu tá nhận yêu cầu thu gom" ||
+            buugui.trangThai == "Đã lấy hàng") {
+          susggestMHs.add(buugui.maBuuGui!);
+        }
+      }
+
+      // Xóa các mã đã có trong buuGuis
+      if (buuGuis.isNotEmpty) {
+        susggestMHs.removeWhere((element1) => buuGuis
+            .where((element) => element.maBuuGui == element1)
+            .isNotEmpty);
+      }
+    } else {
+      // Chế độ đã chọn hướng: Chỉ lấy mã hiệu cùng key từ diNgoaiStates
+      String selectedKey = _getKeyFromState(selectedState.value);
+
+      final filteredMaHieus = diNgoaiStates
+          .where((d) => d.keyExactly == selectedKey)
+          .map((d) => d.maHieu!)
+          .toList();
+
+      susggestMHs.addAll(filteredMaHieus);
+
+      // Xóa các mã đã có trong buuGuis
+      if (buuGuis.isNotEmpty) {
+        susggestMHs.removeWhere((element1) => buuGuis
+            .where((element) => element.maBuuGui == element1)
+            .isNotEmpty);
+      }
+    }
+
+    printInfo(
+        info:
+            "✅ Updated susggestMHs for ${selectedState.value}: ${susggestMHs.length} items");
     update();
   }
 

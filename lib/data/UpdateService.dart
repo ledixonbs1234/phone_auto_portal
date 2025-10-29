@@ -120,34 +120,44 @@ class UpdateService {
 
   void _showUpdateDialog(String versionName, String notes, String url) {
     Get.dialog(
-      AlertDialog(
-        title: Text("Cập nhật mới: $versionName"),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              Text("Đã có phiên bản mới ($versionName)!\nNội dung cập nhật:"),
-              SizedBox(height: 8),
-              Text(notes, style: TextStyle(fontSize: 14)),
-            ],
+      WillPopScope(
+        onWillPop: () async => true, // Cho phép đóng bằng nút back
+        child: AlertDialog(
+          title: Text("Cập nhật mới: $versionName"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text("Đã có phiên bản mới ($versionName)!\nNội dung cập nhật:"),
+                SizedBox(height: 8),
+                Text(notes, style: TextStyle(fontSize: 14)),
+              ],
+            ),
           ),
+          actions: <Widget>[
+            TextButton(
+              child: Text("Để sau"),
+              onPressed: () {
+                Get.back(); // Đơn giản chỉ cần đóng dialog
+              },
+            ),
+            TextButton(
+              child: Text("Cập nhật ngay"),
+              onPressed: () {
+                // Đóng dialog ngay lập tức
+                Navigator.of(Get.overlayContext!).pop();
+
+                // Bắt đầu quá trình cập nhật sau khi dialog đã đóng
+                Future.microtask(() {
+                  if (Platform.isAndroid) {
+                    _downloadAndInstallUpdate(url);
+                  }
+                });
+              },
+            ),
+          ],
         ),
-        actions: <Widget>[
-          TextButton(
-            child: Text("Để sau"),
-            onPressed: () => Get.back(),
-          ),
-          TextButton(
-            child: Text("Cập nhật ngay"),
-            onPressed: () async {
-              Get.back();
-              if (Platform.isAndroid) {
-                await _downloadAndInstallUpdate(url); // Gọi hàm mới
-              }
-            },
-          ),
-        ],
       ),
-      barrierDismissible: false,
+      barrierDismissible: true, // Cho phép đóng bằng cách tap ra ngoài
     );
   }
 

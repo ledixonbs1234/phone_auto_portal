@@ -31,7 +31,7 @@ class PortalinfoController extends GetxController {
 
   final maychus = <String>["maychu", "mayphu", "mayphusan", "maytest"].obs;
 
-  final selectedMayChu = "maychu".obs;
+  final selectedMayChu = "mayphu".obs;
 
   bool isAutoRunBD = false;
   final isShowEdit = false.obs;
@@ -83,7 +83,7 @@ class PortalinfoController extends GetxController {
     update(); // Trigger UI update
   }
 
-  final isPrinted = true.obs;
+  final isPrinted = false.obs;
 
   var waitingCodes = "";
 
