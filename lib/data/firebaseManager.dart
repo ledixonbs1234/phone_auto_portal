@@ -242,6 +242,17 @@ class FirebaseManager with WidgetsBindingObserver {
   }
 
   void addMessage(MessageReceiveModel message) async {
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        var homeController = Get.find<HomeController>();
+        if (homeController.selectedUser.value != null) {
+          message.username = homeController.selectedUser.value!.username;
+          message.password = homeController.selectedUser.value!.password;
+        }
+      }
+    } catch (e) {
+      print("Error adding user info to message: $e");
+    }
     rootPath
         .child('message/topc')
         .set(message.toJson())

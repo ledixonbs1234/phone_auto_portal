@@ -760,7 +760,11 @@ class CreatenewController extends GetxController {
       if (buuGuiFromKhachHang != null) {
         //nếu khối lượng là 10 thì thay đổi thành 3000
         if (buuGuiFromKhachHang.khoiLuong == 10) {
-          buuGuiFromKhachHang.khoiLuong = 3000;
+          if (khachHang.value.maKH == "C005167254") {
+            bgTemp.khoiLuong = 1000;
+          } else {
+            bgTemp.khoiLuong = 3000;
+          }
         } else {
           // Nếu tìm thấy, gán khối lượng
           bgTemp.khoiLuong = buuGuiFromKhachHang.khoiLuong;
