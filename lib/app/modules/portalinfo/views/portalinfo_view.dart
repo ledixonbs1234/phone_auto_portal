@@ -584,6 +584,85 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       ],
                     ),
                     const SizedBox(height: 8.0),
+                    // Sorting buttons
+                    Row(
+                      children: [
+                        const Text(
+                          'Sort: ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Obx(() => ElevatedButton.icon(
+                              onPressed: () {
+                                controller.sortDialogList('Trọng lượng');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    controller.dialogSortOption.value ==
+                                            'Trọng lượng'
+                                        ? Colors.deepPurple
+                                        : Colors.grey.shade300,
+                                foregroundColor:
+                                    controller.dialogSortOption.value ==
+                                            'Trọng lượng'
+                                        ? Colors.white
+                                        : Colors.black87,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                minimumSize: const Size(0, 32),
+                              ),
+                              icon: controller.dialogSortOption.value ==
+                                      'Trọng lượng'
+                                  ? Icon(
+                                      controller.dialogSortAscending.value
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
+                                      size: 14,
+                                    )
+                                  : const SizedBox.shrink(),
+                              label: const Text(
+                                'Trọng Lượng',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            )),
+                        const SizedBox(width: 8),
+                        Obx(() => ElevatedButton.icon(
+                              onPressed: () {
+                                controller.sortDialogList('COD');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    controller.dialogSortOption.value == 'COD'
+                                        ? Colors.green
+                                        : Colors.grey.shade300,
+                                foregroundColor:
+                                    controller.dialogSortOption.value == 'COD'
+                                        ? Colors.white
+                                        : Colors.black87,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                minimumSize: const Size(0, 32),
+                              ),
+                              icon: controller.dialogSortOption.value == 'COD'
+                                  ? Icon(
+                                      controller.dialogSortAscending.value
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
+                                      size: 14,
+                                    )
+                                  : const SizedBox.shrink(),
+                              label: const Text(
+                                'COD',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
                     const Divider(thickness: 1.0),
                     const SizedBox(height: 12.0),
                     // Thông tin Người Nhập
@@ -659,6 +738,55 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           final totalPackages =
                               dx.currentMaHieusInPortal.length;
 
+                          // Định nghĩa thứ tự ưu tiên và màu sắc cho các danh mục
+                          final categoryOrder = [
+                            'RA',
+                            'VÔ',
+                            'Quảng Nam',
+                            'Quảng Ngãi'
+                          ];
+                          final categoryColors = {
+                            'RA': Colors.red,
+                            'VÔ': Colors.green,
+                            'Quảng Nam': Colors.orange,
+                            'Quảng Ngãi': Colors.purple,
+                          };
+
+                          // Màu sắc cho các địa danh đặc biệt của Bình Định
+                          final binhDinhColors = [
+                            Colors.blue,
+                            Colors.teal,
+                            Colors.indigo,
+                            Colors.cyan,
+                            Colors.deepPurple,
+                            Colors.pink,
+                            Colors.amber,
+                            Colors.deepOrange,
+                            Colors.lime,
+                          ];
+
+                          // Tạo danh sách các mục để hiển thị
+                          final displayItems = <MapEntry<String, int>>[];
+
+                          // Thêm các danh mục chính theo thứ tự
+                          for (final category in categoryOrder) {
+                            if (counts.containsKey(category) &&
+                                counts[category]! > 0) {
+                              displayItems
+                                  .add(MapEntry(category, counts[category]!));
+                            }
+                          }
+
+                          // Thêm các địa danh đặc biệt của Bình Định (sắp xếp theo tên)
+                          final binhDinhLocations = counts.entries
+                              .where((entry) =>
+                                  !categoryOrder.contains(entry.key) &&
+                                  entry.value > 0)
+                              .toList()
+                            ..sort((a, b) => a.key.compareTo(b.key));
+
+                          displayItems.addAll(binhDinhLocations);
+
                           return Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -695,24 +823,32 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 4,
-                                  children: [
-                                    // Only show RA badge if count > 0
-                                    if (counts['RA']! > 0)
-                                      _buildCategoryCount(
-                                          'RA', counts['RA']!, Colors.red),
-                                    // Only show VÔ badge if count > 0
-                                    if (counts['VÔ']! > 0)
-                                      _buildCategoryCount(
-                                          'VÔ', counts['VÔ']!, Colors.green),
-                                    // Only show Quảng Nam badge if count > 0
-                                    if (counts['Quảng Nam']! > 0)
-                                      _buildCategoryCount('Quảng Nam',
-                                          counts['Quảng Nam']!, Colors.orange),
-                                    // Only show Quảng Ngãi badge if count > 0
-                                    if (counts['Quảng Ngãi']! > 0)
-                                      _buildCategoryCount('Quảng Ngãi',
-                                          counts['Quảng Ngãi']!, Colors.purple),
-                                  ],
+                                  children:
+                                      displayItems.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final item = entry.value;
+                                    final category = item.key;
+                                    final count = item.value;
+
+                                    // Chọn màu
+                                    Color color;
+                                    if (categoryColors.containsKey(category)) {
+                                      color = categoryColors[category]!;
+                                    } else {
+                                      // Địa danh Bình Định - sử dụng màu từ danh sách
+                                      final binhDinhIndex = index -
+                                          categoryOrder
+                                              .where((cat) =>
+                                                  counts.containsKey(cat) &&
+                                                  counts[cat]! > 0)
+                                              .length;
+                                      color = binhDinhColors[binhDinhIndex %
+                                          binhDinhColors.length];
+                                    }
+
+                                    return _buildCategoryCount(
+                                        category, count, color);
+                                  }).toList(),
                                 ),
                               ],
                             ),
@@ -753,7 +889,28 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Text(item.Weight ?? 'N/A'),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                item.Weight ?? 'N/A',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              Text(
+                                                item.Money ?? '0',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.green.shade700,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                           if (showDeleteButton) ...[
                                             const SizedBox(width: 4),
                                             _buildIconDialogButton(

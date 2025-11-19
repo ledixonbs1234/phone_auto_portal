@@ -296,15 +296,34 @@ class FirebaseManager with WidgetsBindingObserver {
 //   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      print('Could not launch $phoneNumber');
+    try {
+      final Uri launchUri = Uri(
+        scheme: 'tel',
+        path: phoneNumber,
+      );
+
+      // Kiểm tra xem có thể gọi được không
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+        print('Successfully launched phone call to: $phoneNumber');
+      } else {
+        print(
+            'Cannot launch phone call - canLaunchUrl returned false for: $phoneNumber');
+        // Thử sử dụng DIAL thay vì CALL (không cần permission)
+        final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber);
+        await launchUrl(dialUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      print('Error making phone call to $phoneNumber: $e');
       // Hiển thị thông báo lỗi cho người dùng
+      Get.snackbar(
+        'Lỗi gọi điện',
+        'Không thể thực hiện cuộc gọi đến $phoneNumber',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 

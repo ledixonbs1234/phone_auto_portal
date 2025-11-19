@@ -104,6 +104,8 @@ class PortalinfoController extends GetxController {
 
   // --- START: LOGIC MỚI CHO DIALOG ---
   final selectedDialogItemCount = 0.obs;
+  final dialogSortOption = "Chưa chọn".obs; // Sorting option for dialog list
+  final dialogSortAscending = false.obs; // Track sort direction
 
   bool get isAnyItemSelectedInDialog =>
       currentMaHieusInPortal.any((item) => item.selected);
@@ -117,6 +119,43 @@ class PortalinfoController extends GetxController {
   void _updateSelectedDialogItemCount() {
     selectedDialogItemCount.value =
         currentMaHieusInPortal.where((item) => item.selected).length;
+  }
+
+  // Sort dialog list based on selected option
+  void sortDialogList(String sortOption) {
+    // If clicking the same option, toggle sort direction
+    if (dialogSortOption.value == sortOption) {
+      dialogSortAscending.value = !dialogSortAscending.value;
+    } else {
+      dialogSortOption.value = sortOption;
+      dialogSortAscending.value = true; // Default to ascending for new option
+    }
+
+    switch (sortOption) {
+      case "Trọng lượng":
+        currentMaHieusInPortal.sort((a, b) {
+          final aWeight = double.tryParse(a.Weight ?? '0') ?? 0;
+          final bWeight = double.tryParse(b.Weight ?? '0') ?? 0;
+          return dialogSortAscending.value
+              ? aWeight.compareTo(bWeight) // Ascending
+              : bWeight.compareTo(aWeight); // Descending
+        });
+        break;
+      case "COD":
+        currentMaHieusInPortal.sort((a, b) {
+          final aMoney = double.tryParse(a.Money ?? '0') ?? 0;
+          final bMoney = double.tryParse(b.Money ?? '0') ?? 0;
+          return dialogSortAscending.value
+              ? aMoney.compareTo(bMoney) // Ascending
+              : bMoney.compareTo(aMoney); // Descending
+        });
+        break;
+      case "Chưa chọn":
+      default:
+        // Do nothing - keep original order
+        break;
+    }
+    update();
   }
 
   void startBulkQRScanInDialog() {
@@ -262,6 +301,59 @@ class PortalinfoController extends GetxController {
     }
   }
 
+  /// Kiểm tra xem địa chỉ có chứa địa danh đặc biệt của Bình Định không
+  bool _isBinhDinhSpecialLocation(String? address) {
+    if (address == null || address.isEmpty) return false;
+
+    final normalizedAddress = removeDiacritics(address.toLowerCase());
+    final specialLocations = [
+      'hoai nhon',
+      'tam quan',
+      'hoai an',
+      'an lao',
+      'an hao',
+      'an my',
+      'binh duong',
+      'phu my',
+      'phu cat'
+    ];
+
+    for (final location in specialLocations) {
+      if (normalizedAddress.contains(location)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Trích xuất tên địa danh đặc biệt từ địa chỉ (có dấu)
+  String _extractBinhDinhLocation(String? address) {
+    if (address == null || address.isEmpty) return 'Bình Định khác';
+
+    final normalizedAddress = removeDiacritics(address.toLowerCase());
+
+    // Map từ tên không dấu sang tên có dấu
+    final locationMap = {
+      'hoai nhon': 'Hoài Nhơn',
+      'tam quan': 'Tam Quan',
+      'hoai an': 'Hoài Ân',
+      'an lao': 'An Lão',
+      'an hao': 'Ân Hảo',
+      'an my': 'Ân Mỹ',
+      'binh duong': 'Bình Dương',
+      'phu my': 'Phù Mỹ',
+      'phu cat': 'Phù Cát'
+    };
+
+    for (final entry in locationMap.entries) {
+      if (normalizedAddress.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+
+    return 'Bình Định khác';
+  }
+
   // Count packages by categories using province codes
   Future<Map<String, int>> countPackagesByCategories() async {
     await _loadProvinceData();
@@ -330,6 +422,20 @@ class PortalinfoController extends GetxController {
       if (item.provinceCode == null || item.provinceCode!.isEmpty) continue;
 
       final provinceCode = item.provinceCode!.trim();
+
+      // Kiểm tra trường hợp đặc biệt: Bình Định (mã 55)
+      if (provinceCode == '55') {
+        if (_isBinhDinhSpecialLocation(item.Address)) {
+          // Có địa danh đặc biệt → phân loại theo tên địa danh
+          final locationName = _extractBinhDinhLocation(item.Address);
+          counts[locationName] = (counts[locationName] ?? 0) + 1;
+          continue; // Bỏ qua các kiểm tra khác
+        } else {
+          // Không có địa danh đặc biệt → tính vào VÔ
+          counts['VÔ'] = counts['VÔ']! + 1;
+          continue; // Bỏ qua các kiểm tra khác
+        }
+      }
 
       // Count RA (outbound) packages
       if (raCodes.contains(provinceCode)) {
@@ -783,6 +889,9 @@ class PortalinfoController extends GetxController {
         case "TOSHOW":
           waitingCodes = "";
           currentMaHieusInPortal.value = codes;
+          // Reset sort state when loading new portal data
+          dialogSortOption.value = "Chưa chọn";
+          dialogSortAscending.value = true;
           isShowEdit.value = true;
           update();
           break;
@@ -948,6 +1057,21 @@ class PortalinfoController extends GetxController {
 
       final provinceCode = item.provinceCode!.trim();
 
+      // Kiểm tra trường hợp đặc biệt: Bình Định (mã 55)
+      if (provinceCode == '55') {
+        if (_isBinhDinhSpecialLocation(item.Address)) {
+          // Có địa danh đặc biệt → phân loại theo tên địa danh
+          final locationName = _extractBinhDinhLocation(item.Address);
+          aggregatedCounts[locationName] =
+              (aggregatedCounts[locationName] ?? 0) + 1;
+          continue; // Bỏ qua các kiểm tra khác
+        } else {
+          // Không có địa danh đặc biệt → tính vào VÔ
+          aggregatedCounts['VÔ'] = aggregatedCounts['VÔ']! + 1;
+          continue; // Bỏ qua các kiểm tra khác
+        }
+      }
+
       if (raCodes.contains(provinceCode)) {
         aggregatedCounts['RA'] = aggregatedCounts['RA']! + 1;
       }
@@ -967,6 +1091,46 @@ class PortalinfoController extends GetxController {
   }
 
   void _showProvinceStatisticsDialog(int portalCount, Map<String, int> counts) {
+    // Định nghĩa thứ tự ưu tiên và màu sắc cho các danh mục
+    final categoryOrder = ['RA', 'VÔ', 'Quảng Nam', 'Quảng Ngãi'];
+    final categoryColors = {
+      'RA': Colors.red,
+      'VÔ': Colors.green,
+      'Quảng Nam': Colors.orange,
+      'Quảng Ngãi': Colors.purple,
+    };
+
+    // Màu sắc cho các địa danh đặc biệt của Bình Định
+    final binhDinhColors = [
+      Colors.blue,
+      Colors.teal,
+      Colors.indigo,
+      Colors.cyan,
+      Colors.deepPurple,
+      Colors.pink,
+      Colors.amber,
+      Colors.deepOrange,
+      Colors.lime,
+    ];
+
+    // Tạo danh sách các mục để hiển thị
+    final displayItems = <MapEntry<String, int>>[];
+
+    // Thêm các danh mục chính theo thứ tự
+    for (final category in categoryOrder) {
+      if (counts.containsKey(category) && counts[category]! > 0) {
+        displayItems.add(MapEntry(category, counts[category]!));
+      }
+    }
+
+    // Thêm các địa danh đặc biệt của Bình Định (sắp xếp theo tên)
+    final binhDinhLocations = counts.entries
+        .where((entry) => !categoryOrder.contains(entry.key) && entry.value > 0)
+        .toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    displayItems.addAll(binhDinhLocations);
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -980,67 +1144,76 @@ class PortalinfoController extends GetxController {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tổng hợp từ $portalCount portal đã chọn',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tổng hợp từ $portalCount portal đã chọn',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            // Only show RA row if count > 0
-            if (counts['RA']! > 0) ...[
-              _buildStatisticRow('RA (Đi ra)', counts['RA']!, Colors.red),
+              const SizedBox(height: 16),
+              // Hiển thị các mục động
+              ...displayItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final category = item.key;
+                final count = item.value;
+
+                // Chọn màu
+                Color color;
+                if (categoryColors.containsKey(category)) {
+                  color = categoryColors[category]!;
+                } else {
+                  // Địa danh Bình Định - sử dụng màu từ danh sách
+                  final binhDinhIndex = index -
+                      categoryOrder
+                          .where((cat) =>
+                              counts.containsKey(cat) && counts[cat]! > 0)
+                          .length;
+                  color = binhDinhColors[binhDinhIndex % binhDinhColors.length];
+                }
+
+                return Column(
+                  children: [
+                    _buildStatisticRow(category, count, color),
+                    if (index < displayItems.length - 1)
+                      const SizedBox(height: 8),
+                  ],
+                );
+              }).toList(),
               const SizedBox(height: 8),
-            ],
-            // Only show VÔ row if count > 0
-            if (counts['VÔ']! > 0) ...[
-              _buildStatisticRow('VÔ (Đi vào)', counts['VÔ']!, Colors.green),
-              const SizedBox(height: 8),
-            ],
-            // Only show Quảng Nam row if count > 0
-            if (counts['Quảng Nam']! > 0) ...[
-              _buildStatisticRow(
-                  'Quảng Nam', counts['Quảng Nam']!, Colors.orange),
-              const SizedBox(height: 8),
-            ],
-            // Only show Quảng Ngãi row if count > 0
-            if (counts['Quảng Ngãi']! > 0) ...[
-              _buildStatisticRow(
-                  'Quảng Ngãi', counts['Quảng Ngãi']!, Colors.purple),
-              const SizedBox(height: 8),
-            ],
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Tổng cộng:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '${counts.values.reduce((a, b) => a + b)} bưu gửi',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade700,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Tổng cộng:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
+                    Text(
+                      '${counts.values.reduce((a, b) => a + b)} bưu gửi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(

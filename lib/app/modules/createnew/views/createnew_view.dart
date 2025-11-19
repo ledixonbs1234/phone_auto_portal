@@ -266,10 +266,10 @@ class CreatenewView extends GetView<CreatenewController> {
                           value: controller.selectedState.value,
                           onChanged: (value) {
                             controller.selectedState.value = value!;
-                            
+
                             // ✅ Cập nhật susggestMHs khi đổi hướng
                             controller.updateSuggestMHsForSelectedState();
-                            
+
                             controller.update();
                           },
                           items: [
@@ -462,9 +462,22 @@ class CreatenewView extends GetView<CreatenewController> {
                           color: Colors.orange,
                           onPressed: () {
                             if (controller.selectedState.value != "CC") {
-                                controller.printAllAndDelete();
+                              controller.printAllAndDelete();
                             } else {
                               controller.printAll();
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        _buildActionButton(
+                          icon: Icons.print_outlined,
+                          label: 'In AR',
+                          color: Colors.blueGrey,
+                          onPressed: () {
+                            if (controller.selectedState.value != "CC") {
+                              controller.printAllAndDelete();
+                            } else {
+                              controller.printARs();
                             }
                           },
                         ),

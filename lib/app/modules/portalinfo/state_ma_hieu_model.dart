@@ -8,6 +8,7 @@ class StateMaHieu {
   String? Name;
   String? Address;
   String? Date;
+  String? Money;
   bool selected = false;
   StateMaHieu(
       {this.iD,
@@ -18,7 +19,8 @@ class StateMaHieu {
       this.Weight,
       this.Name,
       this.Date,
-      this.Address});
+      this.Address,
+      this.Money});
 
   StateMaHieu.fromJson(Map<dynamic, dynamic> json) {
     iD = json['ID'];
@@ -35,6 +37,7 @@ class StateMaHieu {
       Date =
           "${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}:${parsedDate.second.toString().padLeft(2, '0')}";
     }
+    Money = json['Money'];
   }
 
   Map<dynamic, dynamic> toJson() {
@@ -44,6 +47,7 @@ class StateMaHieu {
     data['State'] = state;
     data['Weight'] = Weight;
     data['IDCODE'] = IDCODE;
+    data['Money'] = Money;
     return data;
   }
 }

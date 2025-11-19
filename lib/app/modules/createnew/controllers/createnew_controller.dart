@@ -1487,6 +1487,17 @@ class CreatenewController extends GetxController {
 
     super.onClose();
   }
+
+  void printARs() {
+    if (buuGuis.isEmpty) return;
+
+    // Collecting maHieu values from buuGuis
+    List<String?> maHieus = buuGuis.map((buuGui) => buuGui.maBuuGui).toList();
+
+    // Sending the list of maHieus as a message
+    FirebaseManager()
+        .addMessage(MessageReceiveModel("printARPages", jsonEncode(maHieus)));
+  }
 }
 
 class _WeightModificationDialog extends StatefulWidget {
