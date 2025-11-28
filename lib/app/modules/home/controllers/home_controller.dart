@@ -672,4 +672,8 @@ class HomeController extends GetxController {
     //   }
     // }
   }
+
+  void goToQuetMH() {
+    Get.toNamed("/quetmh");
+  }
 }

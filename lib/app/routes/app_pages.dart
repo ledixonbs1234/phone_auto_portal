@@ -18,6 +18,8 @@ import '../modules/printPage/bindings/print_page_binding.dart';
 import '../modules/printPage/views/print_page_view.dart';
 import '../modules/quetthu/bindings/quetthu_binding.dart';
 import '../modules/quetthu/views/quetthu_view.dart';
+import '../modules/quetmh/bindings/quetmh_binding.dart';
+import '../modules/quetmh/views/quetmh_view.dart';
 
 part 'app_routes.dart';
 
@@ -66,6 +68,11 @@ class AppPages {
       name: _Paths.QUETTHU,
       page: () => const QuetThuView(),
       binding: QuetThuBinding(),
+    ),
+    GetPage(
+      name: _Paths.QUETMH,
+      page: () => const QuetmhView(),
+      binding: QuetmhBinding(),
     ),
     GetPage(
       name: _Paths.DIRECTION_SCANNING,

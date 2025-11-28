@@ -488,6 +488,18 @@ class HomeView extends GetView<HomeController> {
                                 },
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 130,
+                              child: _buildActionButton(
+                                icon: Icons.qr_code_scanner,
+                                label: 'Quét MH',
+                                color: Colors.teal,
+                                onPressed: () {
+                                  controller.goToQuetMH();
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),

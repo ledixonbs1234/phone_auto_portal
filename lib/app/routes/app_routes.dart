@@ -12,6 +12,7 @@ abstract class Routes {
   static const EDIT_PAGE = _Paths.EDIT_PAGE;
   static const MYVIEW = _Paths.MYVIEW;
   static const QUETTHU = _Paths.QUETTHU;
+  static const QUETMH = _Paths.QUETMH;
   static const DIRECTION_SCANNING = _Paths.DIRECTION_SCANNING;
 }
 
@@ -26,5 +27,6 @@ abstract class _Paths {
   static const EDIT_PAGE = '/edit-page';
   static const MYVIEW = '/myview';
   static const QUETTHU = '/quetthu';
+  static const QUETMH = '/quetmh';
   static const DIRECTION_SCANNING = '/direction-scanning';
 }
