@@ -13,6 +13,7 @@ abstract class Routes {
   static const MYVIEW = _Paths.MYVIEW;
   static const QUETTHU = _Paths.QUETTHU;
   static const QUETMH = _Paths.QUETMH;
+  static const IMPORT_IMAGES = _Paths.IMPORT_IMAGES;
   static const DIRECTION_SCANNING = _Paths.DIRECTION_SCANNING;
 }
 
@@ -29,4 +30,5 @@ abstract class _Paths {
   static const QUETTHU = '/quetthu';
   static const QUETMH = '/quetmh';
   static const DIRECTION_SCANNING = '/direction-scanning';
+  static const IMPORT_IMAGES = '/import-images';
 }

@@ -500,6 +500,18 @@ class HomeView extends GetView<HomeController> {
                                 },
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 130,
+                              child: _buildActionButton(
+                                icon: Icons.photo_library,
+                                label: 'Import Img',
+                                color: Colors.deepPurple,
+                                onPressed: () {
+                                  controller.goToImportImages();
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),

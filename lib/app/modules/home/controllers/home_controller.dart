@@ -20,12 +20,12 @@ import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
 
-import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
 import 'package:phone_auto_portal/data/UpdateService.dart';
 
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 
 import '../../portalinfo/controllers/portalinfo_controller.dart';
+import 'package:phone_auto_portal/app/routes/app_pages.dart';
 
 import '../khach_hangs_model.dart';
 import '../user_info.dart';
@@ -675,5 +675,10 @@ class HomeController extends GetxController {
 
   void goToQuetMH() {
     Get.toNamed("/quetmh");
+  }
+
+  void goToImportImages() {
+    // Navigate to the import images view
+    Get.toNamed(Routes.IMPORT_IMAGES);
   }
 }

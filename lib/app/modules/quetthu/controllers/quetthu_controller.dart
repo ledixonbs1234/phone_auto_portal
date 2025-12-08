@@ -20,7 +20,7 @@ class QuetThuController extends GetxController {
   late GeminiChatService geminiSevice;
 
   // --- THAY THẾ BẰNG KHÓA API CỦA BẠN ---
-  final String _geminiApiKey = 'AIzaSyA4nh1XgptxJGC6RRTXJ0cht9iRJEQqG30';
+  final String _geminiApiKey = 'AIzaSyC7a4dX-wRZIB9HJppHSYkiZ1uO10ZO7Zs';
   // ------------------------------------
 
   final String _modelId = 'gemini-2.0-flash'; // Hoặc 'gemini-1.5-flash'

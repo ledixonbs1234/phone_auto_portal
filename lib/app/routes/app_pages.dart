@@ -20,6 +20,8 @@ import '../modules/quetthu/bindings/quetthu_binding.dart';
 import '../modules/quetthu/views/quetthu_view.dart';
 import '../modules/quetmh/bindings/quetmh_binding.dart';
 import '../modules/quetmh/views/quetmh_view.dart';
+import '../modules/import_images/views/import_images_view.dart';
+import '../modules/import_images/controllers/image_import_controller.dart';
 
 part 'app_routes.dart';
 
@@ -73,6 +75,13 @@ class AppPages {
       name: _Paths.QUETMH,
       page: () => const QuetmhView(),
       binding: QuetmhBinding(),
+    ),
+    GetPage(
+      name: _Paths.IMPORT_IMAGES,
+      page: () => ImportImagesView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ImageImportController>(() => ImageImportController());
+      }),
     ),
     GetPage(
       name: _Paths.DIRECTION_SCANNING,
