@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
@@ -15,7 +16,9 @@ void _debugLog(String message) {
 
 /// Service upload ảnh lên Firebase Storage và sync metadata với Realtime Database
 class ImageUploadService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  // Use secondary Firebase app for Storage (quanlybd-2eb5e.appspot.com)
+  final FirebaseStorage _storage =
+      FirebaseStorage.instanceFor(app: Firebase.app('storage'));
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   /// Lấy rootPath giống firebaseManager

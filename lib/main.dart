@@ -70,6 +70,12 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize secondary Firebase app for Storage (quanlybd-2eb5e)
+  await Firebase.initializeApp(
+    name: 'storage',
+    options: DefaultFirebaseOptions.storageProject,
+  );
+
   FirebaseManager().setUp();
   // FirebaseDatabase.instance.setLoggingEnabled(true);
 

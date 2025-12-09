@@ -68,9 +68,7 @@ class HomeController extends GetxController {
 
   // --- Trạng thái Chọn Người dùng ---
   final GetStorage _storage = GetStorage();
-  final userList = <UserInfo>[].obs;
   final selectedUser = Rx<UserInfo?>(null);
-  final isLoadingUsers = false.obs; // Cờ báo đang tải user từ RTDB
   final _selectedUserStorageKey =
       'selectedPortalUsername'; // Lưu username đã chọn vào GetStorage
   // --- Kết thúc Trạng thái Chọn Người dùng ---
@@ -126,67 +124,42 @@ class HomeController extends GetxController {
 
   // Hàm khởi tạo gộp
   Future<void> initializeData() async {
-    await loadPortalUsersFromRTDB(); // Tải user từ RTDB trước
-    loadSelectedUserFromStorage(); // Sau đó tải lựa chọn từ bộ nhớ cục bộ
+    loadSelectedUserFromStorage(); // Tải lựa chọn từ bộ nhớ cục bộ
   }
 
-  Future<void> loadPortalUsersFromRTDB() async {
-    isLoadingUsers.value = true;
-    userList.clear(); // Xóa list cũ trước khi tải
-    // Luôn thêm lựa chọn "Không chọn" vào đầu danh sách
-    final noSelectionUser =
-        UserInfo(name: 'Không chọn', username: '', password: '');
-    userList.add(noSelectionUser);
-
-    try {
-      final List<UserInfo> fetchedUsers =
-          await FirebaseManager().getPortalUsers();
-      userList.addAll(fetchedUsers); // Thêm user lấy từ RTDB
-    } catch (e) {
-      print("Lỗi trong HomeController khi tải portal users: $e");
-      Get.snackbar('Lỗi', 'Không thể tải danh sách tài khoản portal.');
-      // userList sẽ chỉ chứa 'Không chọn' nếu có lỗi
-    } finally {
-      isLoadingUsers.value = false;
-      // Đảm bảo lựa chọn hiện tại hợp lệ sau khi tải xong
-    }
-  }
-
-  // Tải username đã chọn từ GetStorage và tìm UserInfo tương ứng trong list đã tải từ RTDB
+  // Tải thông tin user đã lưu từ GetStorage
   void loadSelectedUserFromStorage() {
-    final String? selectedUsername =
+    final String? savedUsername =
         GetStorage().read<String>(_selectedUserStorageKey);
-    if (selectedUsername != null) {
-      // Tìm user trong list (đã bao gồm 'Không chọn')
-      final user = userList.firstWhere((u) => u.username == selectedUsername,
-          orElse: () {
-        print(
-            "Username '$selectedUsername' đã lưu không tồn tại trong danh sách mới tải.");
-        return userList.firstWhere((u) =>
-            u.username.isEmpty); // Trả về 'Không chọn' nếu không tìm thấy
-      });
-      selectedUser.value = user;
+    final String? savedPassword =
+        GetStorage().read<String>('selectedPortalPassword');
+    
+    if (savedUsername != null && savedUsername.isNotEmpty) {
+      selectedUser.value = UserInfo(
+        name: savedUsername,
+        username: savedUsername,
+        password: savedPassword ?? '',
+      );
     } else {
       // Nếu chưa có gì được lưu, mặc định là "Không chọn"
-      selectedUser.value = userList.firstWhere((u) => u.username.isEmpty,
-          orElse: () =>
-              UserInfo(name: 'Không chọn', username: '', password: ''));
+      selectedUser.value = UserInfo(name: 'Không chọn', username: '', password: '');
     }
   }
 
   void saveSelectedUserToStorage() {
     final usernameToSave = selectedUser.value?.username;
-    if (usernameToSave != null) {
-      // Lưu cả username rỗng của 'Không chọn'
+    final passwordToSave = selectedUser.value?.password;
+    
+    if (usernameToSave != null && usernameToSave.isNotEmpty) {
       GetStorage().write(_selectedUserStorageKey, usernameToSave);
+      GetStorage().write('selectedPortalPassword', passwordToSave ?? '');
       print("Đã lưu lựa chọn username: '$usernameToSave'");
     } else {
-      _storage.remove(
-          _selectedUserStorageKey); // Xóa nếu selectedUser là null (hiếm khi)
+      // Xóa nếu username rỗng (đăng xuất)
+      _storage.remove(_selectedUserStorageKey);
+      _storage.remove('selectedPortalPassword');
     }
   }
-
-  // Kiểm tra xem user đang chọn có còn trong danh sách không (sau khi tải lại từ RTDB)
 
   void listenForSelectedUserChanges() {
     // Tự động lưu vào GetStorage khi lựa chọn thay đổi

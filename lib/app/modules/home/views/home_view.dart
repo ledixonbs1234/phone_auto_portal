@@ -35,6 +35,58 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
+  void _showLoginDialog(BuildContext context) {
+    final usernameController = TextEditingController(
+        text: controller.selectedUser.value?.username ?? '');
+    final passwordController = TextEditingController(
+        text: controller.selectedUser.value?.password ?? '');
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text("Cài đặt tài khoản Portal"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: usernameController,
+              decoration: const InputDecoration(labelText: "Tài khoản"),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: "Mật khẩu"),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Logout
+              controller.selectedUser.value =
+                  UserInfo(name: 'Không chọn', username: '', password: '');
+              Get.back();
+            },
+            child: const Text("Thoát", style: TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Save
+              if (usernameController.text.isNotEmpty) {
+                controller.selectedUser.value = UserInfo(
+                  name: usernameController.text,
+                  username: usernameController.text,
+                  password: passwordController.text,
+                );
+              }
+              Get.back();
+            },
+            child: const Text("Lưu"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,71 +109,52 @@ class HomeView extends GetView<HomeController> {
                   // Host Selection Widget at the top
                   Padding(
                     padding: const EdgeInsets.all(12.0),
-                    child: Obx(() {
-                      // Có thể hiển thị dropdown mờ đi khi đang tải user
-                      return IgnorePointer(
-                        // Ngăn tương tác khi đang tải
-                        ignoring: controller.isLoadingUsers.value,
-                        child: DropdownButtonFormField<UserInfo>(
-                          value: controller.selectedUser.value,
-                          hint: Text(controller.isLoadingUsers.value
-                              ? 'Đang tải...'
-                              : 'Chọn tài khoản portal'),
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0)),
-                            enabledBorder: OutlineInputBorder(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Obx(() {
+                            final user = controller.selectedUser.value;
+                            final hasUser =
+                                user != null && user.username.isNotEmpty;
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                border: Border.all(color: Colors.grey.shade400),
                                 borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide(
-                                    color: controller.isLoadingUsers.value
-                                        ? Colors.grey.shade300
-                                        : Colors.grey
-                                            .shade400) // Màu border khi đang tải
-                                ),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide(
-                                    color: Theme.of(context).primaryColor,
-                                    width: 1.5)),
-                            labelText: "Tài khoản Portal",
-                            prefixIcon: controller.isLoadingUsers.value
-                                ? const Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: SizedBox(
-                                        width: 15,
-                                        height: 15,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 1.5)))
-                                : const Icon(Icons.person_outline,
-                                    size: 20), // Icon hoặc loading
-                            filled: controller.isLoadingUsers
-                                .value, // Tô màu nền khi đang tải
-                            fillColor: Colors.grey.shade100,
-                          ),
-                          // Chỉ hiển thị item nếu list không rỗng
-                          items: controller.userList.isNotEmpty
-                              ? controller.userList
-                                  .map<DropdownMenuItem<UserInfo>>(
-                                      (UserInfo user) {
-                                  return DropdownMenuItem<UserInfo>(
-                                    value: user,
-                                    child: Text(user.toString(),
-                                        overflow: TextOverflow.ellipsis),
-                                  );
-                                }).toList()
-                              : [], // Trả về list rỗng nếu userList chưa có gì (ngoài 'Không chọn' lúc đầu)
-                          onChanged: controller.isLoadingUsers.value
-                              ? null
-                              : (UserInfo? newValue) {
-                                  // Vô hiệu hóa onChanged khi đang tải
-                                  controller.selectedUser.value = newValue;
-                                },
+                              ),
+                              child: Text(
+                                hasUser
+                                    ? "TK: ${user.username}"
+                                    : "Chưa đăng nhập",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: hasUser
+                                        ? Colors.black
+                                        : Colors.grey.shade600),
+                              ),
+                            );
+                          }),
                         ),
-                      );
-                    }),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () => _showLoginDialog(context),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              border: Border.all(color: Colors.blue.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child:
+                                const Icon(Icons.settings, color: Colors.blue),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,

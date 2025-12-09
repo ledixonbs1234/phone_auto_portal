@@ -55,7 +55,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '892472148061',
     projectId: 'xonapp',
     authDomain: 'xonapp.firebaseapp.com',
-    databaseURL: 'https://xonapp-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://xonapp-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'xonapp.appspot.com',
   );
 
@@ -64,8 +65,43 @@ class DefaultFirebaseOptions {
     appId: '1:892472148061:android:d9c3f2b749219e9e26cdb4',
     messagingSenderId: '892472148061',
     projectId: 'xonapp',
-    databaseURL: 'https://xonapp-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://xonapp-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'xonapp.appspot.com',
   );
 
+  // Secondary Firebase project for Storage only
+  static const FirebaseOptions storageProjectWeb = FirebaseOptions(
+    apiKey: 'AIzaSyCvhWDQOm7zeMc_JRFObRaNtwCzpGTn1s8',
+    appId: '1:948742284303:web:8c2c69f5c676a9fa5daf7a',
+    messagingSenderId: '948742284303',
+    projectId: 'quanlybd-2eb5e',
+    authDomain: 'quanlybd-2eb5e.firebaseapp.com',
+    databaseURL:
+        'https://quanlybd-2eb5e-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'quanlybd-2eb5e.appspot.com',
+    measurementId: 'G-EYSDGDFS60',
+  );
+
+  static const FirebaseOptions storageProjectAndroid = FirebaseOptions(
+    apiKey: 'AIzaSyCvhWDQOm7zeMc_JRFObRaNtwCzpGTn1s8',
+    appId: '1:948742284303:android:PLACEHOLDER',
+    messagingSenderId: '948742284303',
+    projectId: 'quanlybd-2eb5e',
+    databaseURL:
+        'https://quanlybd-2eb5e-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'quanlybd-2eb5e.appspot.com',
+  );
+
+  static FirebaseOptions get storageProject {
+    if (kIsWeb) {
+      return storageProjectWeb;
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return storageProjectAndroid;
+      default:
+        return storageProjectWeb;
+    }
+  }
 }
