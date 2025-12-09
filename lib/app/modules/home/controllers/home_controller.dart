@@ -133,7 +133,7 @@ class HomeController extends GetxController {
         GetStorage().read<String>(_selectedUserStorageKey);
     final String? savedPassword =
         GetStorage().read<String>('selectedPortalPassword');
-    
+
     if (savedUsername != null && savedUsername.isNotEmpty) {
       selectedUser.value = UserInfo(
         name: savedUsername,
@@ -142,14 +142,15 @@ class HomeController extends GetxController {
       );
     } else {
       // Nếu chưa có gì được lưu, mặc định là "Không chọn"
-      selectedUser.value = UserInfo(name: 'Không chọn', username: '', password: '');
+      selectedUser.value =
+          UserInfo(name: 'Không chọn', username: '', password: '');
     }
   }
 
   void saveSelectedUserToStorage() {
     final usernameToSave = selectedUser.value?.username;
     final passwordToSave = selectedUser.value?.password;
-    
+
     if (usernameToSave != null && usernameToSave.isNotEmpty) {
       GetStorage().write(_selectedUserStorageKey, usernameToSave);
       GetStorage().write('selectedPortalPassword', passwordToSave ?? '');
