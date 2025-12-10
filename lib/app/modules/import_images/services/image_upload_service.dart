@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
+import 'package:phone_auto_portal/data/telegram_service.dart';
+import 'package:phone_auto_portal/data/exceptions/telegram_exceptions.dart';
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
@@ -14,11 +14,8 @@ void _debugLog(String message) {
   }
 }
 
-/// Service upload ảnh lên Firebase Storage và sync metadata với Realtime Database
+/// Service upload ảnh lên Telegram Bot API và sync metadata với Realtime Database
 class ImageUploadService {
-  // Use secondary Firebase app for Storage (quanlybd-2eb5e.appspot.com)
-  final FirebaseStorage _storage =
-      FirebaseStorage.instanceFor(app: Firebase.app('storage'));
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   /// Lấy rootPath giống firebaseManager
@@ -27,50 +24,139 @@ class ImageUploadService {
     return _database.child("PORTAL/CHILD/$keyData");
   }
 
-  /// Upload ảnh lên Firebase Storage
-  Future<String> uploadImageToStorage(
-    File imageFile,
-    String batchId,
-    String imageId,
-    Function(double)? onProgress,
-  ) async {
+  /// Upload nhiều ảnh dùng Media Group (tối đa 10 ảnh/lần) với retry mechanism
+  Future<BatchUploadResult> uploadImagesInBatches({
+    required List<ImageItem> images,
+    required String batchId,
+    Function(int current, int total, String status)? onProgress,
+  }) async {
+    // Track successfully uploaded image IDs for rollback
+    final List<String> successfulImageIds = [];
+    int successCount = 0;
+    int failCount = 0;
+    const maxRetries = 3;
+    const maxImagesPerGroup = 10; // Telegram limit
+
     try {
-      // Tạo đường dẫn: images/{date}/{batch_id}/{image_id}.jpg
-      final now = DateTime.now();
-      final dateStr = DateFormat('yyyy-MM-dd').format(now);
-      final fileName = '$imageId.jpg';
-      final storagePath = 'images/$dateStr/$batchId/$fileName';
+      // Split images into groups of 10 (Telegram Media Group limit)
+      for (int groupStart = 0;
+          groupStart < images.length;
+          groupStart += maxImagesPerGroup) {
+        final groupEnd =
+            (groupStart + maxImagesPerGroup).clamp(0, images.length);
+        final imageGroup = images.sublist(groupStart, groupEnd);
+        final groupNumber = (groupStart ~/ maxImagesPerGroup) + 1;
+        final totalGroups = (images.length / maxImagesPerGroup).ceil();
 
-      // Reference đến file trong Storage
-      final storageRef = _storage.ref().child(storagePath);
+        _debugLog(
+            '📤 Uploading media group $groupNumber/$totalGroups: ${imageGroup.length} images (${groupStart + 1}-$groupEnd of ${images.length})');
 
-      // Upload file với metadata
-      final uploadTask = storageRef.putFile(
-        imageFile,
-        SettableMetadata(
-          contentType: 'image/jpeg',
-          customMetadata: {
-            'batchId': batchId,
-            'uploadTime': now.toIso8601String(),
-          },
-        ),
+        onProgress?.call(groupStart, images.length,
+            'Đang upload nhóm $groupNumber/$totalGroups');
+
+        bool uploadSuccess = false;
+        int retryCount = 0;
+        List<Map<String, String>>? downloadUrls;
+        Exception? lastException;
+
+        // Retry up to 3 times for each media group
+        while (retryCount < maxRetries && !uploadSuccess) {
+          try {
+            if (retryCount > 0) {
+              _debugLog(
+                  '🔄 Retry ${retryCount}/$maxRetries for media group $groupNumber');
+              onProgress?.call(groupStart, images.length,
+                  'Thử lại lần $retryCount nhóm $groupNumber/$totalGroups');
+              // Wait before retry with exponential backoff
+              await Future.delayed(Duration(seconds: retryCount));
+            }
+
+            // Upload entire group as media group to Telegram
+            // Truyền ImageItem để TelegramService dùng originalFile làm cache key
+            onProgress?.call(groupStart, images.length,
+                'Upload nhóm $groupNumber/$totalGroups (${imageGroup.length} ảnh)');
+
+            downloadUrls =
+                await TelegramService.instance.uploadMediaGroup(imageGroup);
+
+            // Save metadata for all images in the group
+            onProgress?.call(groupStart, images.length,
+                'Lưu metadata nhóm $groupNumber/$totalGroups');
+
+            for (int i = 0; i < imageGroup.length; i++) {
+              final imageItem = imageGroup[i];
+              final urlMap = downloadUrls[i];
+
+              await saveImageMetadata(
+                batchId: batchId,
+                imageId: imageItem.id,
+                downloadUrl: urlMap['downloadUrl']!,
+                thumbnailUrl: urlMap['thumbnailUrl']!,
+                maHieu: imageItem.maHieu,
+                timestamp: imageItem.timestamp,
+              );
+
+              successfulImageIds.add(imageItem.id);
+              successCount++;
+              _debugLog('✅ Uploaded image: ${imageItem.id}');
+            }
+
+            uploadSuccess = true;
+            _debugLog(
+                '✅ Media group $groupNumber/$totalGroups uploaded successfully');
+
+            onProgress?.call(groupEnd, images.length,
+                'Hoàn thành nhóm $groupNumber/$totalGroups');
+          } catch (e) {
+            retryCount++;
+            lastException = e is Exception ? e : Exception(e.toString());
+            _debugLog(
+                '❌ Media group upload failed (attempt $retryCount/$maxRetries): $e');
+
+            if (retryCount >= maxRetries) {
+              // Max retries reached, fail the entire batch
+              failCount += imageGroup.length;
+              _debugLog('❌ Max retries reached for media group');
+              throw lastException;
+            }
+          }
+        }
+      }
+
+      // All uploads successful
+      return BatchUploadResult(
+        isSuccess: true,
+        successCount: successCount,
+        failCount: 0,
+        totalCount: images.length,
       );
-
-      // Listen upload progress
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-        onProgress?.call(progress);
-      });
-
-      // Đợi upload hoàn thành
-      final snapshot = await uploadTask;
-
-      // Lấy download URL
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-
-      return downloadUrl;
     } catch (e) {
-      throw Exception('Lỗi khi upload ảnh: $e');
+      _debugLog(
+          '❌ Batch upload failed. Rolling back ${successfulImageIds.length} uploaded images...');
+
+      // Rollback: Delete all successfully uploaded image metadata
+      await _rollbackUploadedImages(successfulImageIds);
+
+      // Throw batch upload failed exception
+      throw TelegramBatchUploadFailedException(
+        message:
+            'Upload thất bại sau $maxRetries lần thử. Đã dừng xử lý và xóa ${successfulImageIds.length} ảnh đã upload.',
+        successfulImageIds: successfulImageIds,
+        originalException: e is Exception ? e : Exception(e.toString()),
+      );
+    }
+  }
+
+  /// Rollback uploaded images by deleting their metadata from database
+  Future<void> _rollbackUploadedImages(List<String> imageIds) async {
+    for (final imageId in imageIds) {
+      try {
+        await rootPath.child('imported_images').child(imageId).remove();
+        _debugLog('🗑️ Rolled back image: $imageId');
+      } catch (e) {
+        // Silently ignore rollback errors
+        _debugLog('⚠️ Failed to rollback image $imageId: $e');
+      }
     }
   }
 
@@ -90,6 +176,7 @@ class ImageUploadService {
     required String batchId,
     required String imageId,
     required String downloadUrl,
+    required String thumbnailUrl,
     required String? maHieu,
     required DateTime timestamp,
   }) async {
@@ -99,6 +186,7 @@ class ImageUploadService {
 
       await dbRef.set({
         'url': downloadUrl,
+        'thumbnailUrl': thumbnailUrl,
         'maHieu': maHieu ?? '',
         'timestamp': timestamp.millisecondsSinceEpoch,
         'processed': maHieu != null,
@@ -152,33 +240,29 @@ class ImageUploadService {
     }
   }
 
-  /// Workflow hoàn chỉnh: Upload ảnh + metadata
+  /// Workflow hoàn chỉnh: Upload ảnh + metadata (kept for backward compatibility)
   Future<UploadResult> uploadImageWithMetadata({
     required ImageItem imageItem,
     required String batchId,
     Function(double)? onProgress,
   }) async {
     try {
-      // 1. Upload ảnh lên Storage
-      final downloadUrl = await uploadImageToStorage(
-        imageItem.file,
-        batchId,
-        imageItem.id,
-        onProgress,
-      );
+      // Upload to Telegram (truyền ImageItem để dùng originalFile làm cache key)
+      final urlMap = await TelegramService.instance.uploadImage(imageItem);
 
-      // 2. Lưu metadata vào Database
+      // Save metadata to database
       await saveImageMetadata(
         batchId: batchId,
         imageId: imageItem.id,
-        downloadUrl: downloadUrl,
+        downloadUrl: urlMap['downloadUrl']!,
+        thumbnailUrl: urlMap['thumbnailUrl']!,
         maHieu: imageItem.maHieu,
         timestamp: imageItem.timestamp,
       );
 
       return UploadResult(
         isSuccess: true,
-        downloadUrl: downloadUrl,
+        downloadUrl: urlMap['downloadUrl']!,
       );
     } catch (e) {
       return UploadResult(
@@ -188,13 +272,12 @@ class ImageUploadService {
     }
   }
 
-  /// Xóa ảnh từ Storage (nếu cần retry)
-  Future<void> deleteImage(String downloadUrl) async {
+  /// Xóa ảnh metadata từ Database (Telegram URLs không cần xóa khỏi storage)
+  Future<void> deleteImage(String imageId) async {
     try {
-      final ref = _storage.refFromURL(downloadUrl);
-      await ref.delete();
+      await rootPath.child('imported_images').child(imageId).remove();
     } catch (e) {
-      _debugLog('Lỗi khi xóa ảnh: $e');
+      _debugLog('Lỗi khi xóa metadata ảnh: $e');
     }
   }
 
@@ -241,5 +324,20 @@ class UploadResult {
     required this.isSuccess,
     this.downloadUrl,
     this.errorMessage,
+  });
+}
+
+/// Kết quả batch upload
+class BatchUploadResult {
+  final bool isSuccess;
+  final int successCount;
+  final int failCount;
+  final int totalCount;
+
+  BatchUploadResult({
+    required this.isSuccess,
+    required this.successCount,
+    required this.failCount,
+    required this.totalCount,
   });
 }

@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:phone_auto_portal/app/modules/import_images/controllers/image_import_controller.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_batch_model.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
+import 'package:phone_auto_portal/app/modules/import_images/services/image_batch_service.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 class ImportImagesView extends StatelessWidget {
@@ -491,48 +492,91 @@ class ImportImagesView extends StatelessWidget {
     });
   }
 
-  /// Hiển thị dialog cài đặt thư mục
+  /// Hiển thị dialog cài đặt thư mục và batch tolerance
   void _showFolderSettings(BuildContext context) {
     Get.dialog(
       Dialog(
         child: Container(
           width: 600,
-          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxHeight: 700),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.folder_open, size: 28),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Thư mục',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              // Header (fixed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.settings, size: 28),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Cài đặt Import',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Get.back(),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Batch Tolerance Setting
+                      const Text(
+                        'Khoảng thời gian gom nhóm ảnh:',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Các ảnh cách nhau trong khoảng thời gian này sẽ được gom chung 1 nhóm',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      _BatchToleranceSlider(),
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 24),
+
+                      // Folder Selection
+                      const Text(
+                        'Thư mục chứa ảnh:',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Chọn các thư mục chứa ảnh cần import',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      _FolderSelector(),
+                    ],
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
+                ),
+              ),
+
+              // Footer button (fixed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
                     onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Đóng'),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Chọn các thư mục chứa ảnh:',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              _FolderSelector(),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Get.back(),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text('Đóng'),
                 ),
               ),
             ],
@@ -666,6 +710,145 @@ class _FolderSelectorState extends State<_FolderSelector> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Widget để cấu hình batch tolerance
+class _BatchToleranceSlider extends StatefulWidget {
+  @override
+  _BatchToleranceSliderState createState() => _BatchToleranceSliderState();
+}
+
+class _BatchToleranceSliderState extends State<_BatchToleranceSlider> {
+  late double _currentValue;
+  final _batchService = ImageBatchService();
+
+  @override
+  void initState() {
+    super.initState();
+    _currentValue = _batchService.getBatchToleranceMinutes().toDouble();
+  }
+
+  void _saveValue(double value) {
+    try {
+      _batchService.setBatchToleranceMinutes(value.round());
+      Get.snackbar(
+        'Đã lưu',
+        'Khoảng thời gian gom nhóm: ${value.round()} phút',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 1),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Lỗi',
+        'Không thể lưu cài đặt: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Icon(Icons.timer, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '${_currentValue.round()} phút',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '(1-5 phút)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.blue,
+              inactiveTrackColor: Colors.blue.withOpacity(0.3),
+              thumbColor: Colors.blue,
+              overlayColor: Colors.blue.withOpacity(0.2),
+              valueIndicatorColor: Colors.blue,
+              valueIndicatorTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            child: Slider(
+              value: _currentValue,
+              min: 1,
+              max: 5,
+              divisions: 4,
+              label: '${_currentValue.round()} phút',
+              onChanged: (value) {
+                setState(() {
+                  _currentValue = value;
+                });
+              },
+              onChangeEnd: (value) {
+                _saveValue(value);
+              },
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '1 phút',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              Text(
+                '5 phút',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 16, color: Colors.amber),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Giá trị nhỏ hơn sẽ tạo nhiều nhóm ảnh nhỏ. Giá trị lớn hơn sẽ gom nhiều ảnh vào 1 nhóm.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

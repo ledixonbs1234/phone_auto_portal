@@ -14,7 +14,8 @@ enum ImageProcessingStatus {
 /// Model cho từng ảnh trong batch
 class ImageItem {
   final String id;
-  final File file;
+  final File file; // Current file (có thể là rotated)
+  final File originalFile; // File gốc, không thay đổi
   final DateTime timestamp;
 
   String? maHieu;
@@ -27,6 +28,7 @@ class ImageItem {
   ImageItem({
     required this.id,
     required this.file,
+    File? originalFile, // Optional, default to file
     required this.timestamp,
     this.maHieu,
     this.firebaseUrl,
@@ -34,7 +36,7 @@ class ImageItem {
     this.status = ImageProcessingStatus.pending,
     this.errorMessage,
     this.uploadProgress = 0.0,
-  });
+  }) : originalFile = originalFile ?? file;
 
   ImageItem copyWith({
     File? file,
@@ -48,6 +50,7 @@ class ImageItem {
     return ImageItem(
       id: id,
       file: file ?? this.file,
+      originalFile: originalFile, // Giữ nguyên originalFile
       timestamp: timestamp,
       maHieu: maHieu ?? this.maHieu,
       firebaseUrl: firebaseUrl ?? this.firebaseUrl,

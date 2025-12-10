@@ -19,8 +19,27 @@ class ImageBatchService {
   final ImagePicker _picker = ImagePicker();
   final Uuid _uuid = const Uuid();
 
-  /// Thời gian tolerance để group các ảnh vào cùng 1 batch (5 phút)
-  static const int batchToleranceMinutes = 5;
+  /// Thời gian tolerance để group các ảnh vào cùng 1 batch (mặc định 5 phút)
+  /// Có thể thay đổi trong settings
+  static const int defaultBatchToleranceMinutes = 5;
+
+  /// Lấy batch tolerance từ settings (1-5 phút)
+  int getBatchToleranceMinutes() {
+    final storage = GetStorage();
+    final value = storage.read<int>('batch_tolerance_minutes');
+    if (value == null || value < 1 || value > 5) {
+      return defaultBatchToleranceMinutes;
+    }
+    return value;
+  }
+
+  /// Lưu batch tolerance vào settings
+  void setBatchToleranceMinutes(int minutes) {
+    if (minutes < 1 || minutes > 5) {
+      throw ArgumentError('Batch tolerance phải từ 1-5 phút');
+    }
+    GetStorage().write('batch_tolerance_minutes', minutes);
+  }
 
   /// Lấy danh sách thư mục đã chọn từ settings
   List<String> getSelectedFolders() {
@@ -148,11 +167,15 @@ class ImageBatchService {
     return todayFiles;
   }
 
-  /// Phân loại ảnh thành các batch (so sánh với ảnh cuối cùng, cách nhau 5 phút)
-  /// Logic: Ảnh tiếp theo cách ảnh cuối ≤5 phút → cùng batch
-  /// Khi kết thúc batch: kiểm tra ảnh cuối +5 phút có ảnh nào không
+  /// Phân loại ảnh thành các batch (so sánh với ảnh cuối cùng, cách nhau X phút)
+  /// Logic: Ảnh tiếp theo cách ảnh cuối ≤X phút → cùng batch
+  /// Khi kết thúc batch: kiểm tra ảnh cuối +X phút có ảnh nào không
   Future<List<ImageBatch>> createBatches(List<File> files) async {
     if (files.isEmpty) return [];
+
+    // Lấy batch tolerance từ settings
+    final batchToleranceMinutes = getBatchToleranceMinutes();
+    _debugLog('⏱️ Batch tolerance: $batchToleranceMinutes phút');
 
     // Tạo danh sách ImageItem với timestamp
     final List<ImageItem> imageItems = [];
@@ -188,11 +211,11 @@ class ImageBatchService {
             .inMinutes;
 
         if (timeDiff <= batchToleranceMinutes) {
-          // Cùng batch (cách nhau ≤ 5 phút)
+          // Cùng batch (cách nhau ≤ X phút)
           currentBatch.add(currentItem);
           i++;
         } else {
-          // Quá 5 phút → Kiểm tra ảnh cuối + 5 phút có ảnh nào không
+          // Quá X phút → Kiểm tra ảnh cuối + X phút có ảnh nào không
           final lastItemTime = currentBatch.last.timestamp;
           final checkUntil =
               lastItemTime.add(Duration(minutes: batchToleranceMinutes));
@@ -201,22 +224,22 @@ class ImageBatchService {
               '🔍 Batch đang có ${currentBatch.length} ảnh, ảnh cuối: $lastItemTime');
           _debugLog('📅 Kiểm tra khoảng mở rộng đến: $checkUntil');
 
-          // Tìm các ảnh trong khoảng [lastItemTime, lastItemTime + 5 phút]
+          // Tìm các ảnh trong khoảng [lastItemTime, lastItemTime + X phút]
           int addedCount = 0;
           while (i < imageItems.length) {
             final nextItem = imageItems[i];
             if (nextItem.timestamp.isBefore(checkUntil) ||
                 nextItem.timestamp.isAtSameMomentAs(checkUntil)) {
-              // Có ảnh trong khoảng +5 phút → thêm vào batch hiện tại
+              // Có ảnh trong khoảng +X phút → thêm vào batch hiện tại
               currentBatch.add(nextItem);
               addedCount++;
               _debugLog(
                   '  ✅ Thêm ảnh: ${path.basename(nextItem.file.path)} - ${nextItem.timestamp}');
               i++;
             } else {
-              // Đã quá khoảng +5 phút → dừng lại
+              // Đã quá khoảng +X phút → dừng lại
               _debugLog(
-                  '  ❌ Ảnh ${path.basename(nextItem.file.path)} (${nextItem.timestamp}) quá khoảng +5 phút');
+                  '  ❌ Ảnh ${path.basename(nextItem.file.path)} (${nextItem.timestamp}) quá khoảng +$batchToleranceMinutes phút');
               break;
             }
           }

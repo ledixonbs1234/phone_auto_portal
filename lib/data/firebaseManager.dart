@@ -19,6 +19,7 @@ import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
 import '../app/modules/home/messageReceiveModel.dart';
 import '../app/modules/home/user_info.dart';
+import 'telegram_service.dart';
 
 class FirebaseManager with WidgetsBindingObserver {
   static final FirebaseManager _singleton = FirebaseManager._internal();
@@ -65,6 +66,15 @@ class FirebaseManager with WidgetsBindingObserver {
   String lastCalledNumber = '';
   void setUp() async {
     readKey();
+    
+    // Initialize TelegramService
+    try {
+      await TelegramService.instance.init();
+    } catch (e) {
+      print('Failed to initialize TelegramService: $e');
+      // Silently ignore errors, validation happens on first upload
+    }
+    
     if (streamTimeUpdate != null) streamTimeUpdate!.cancel();
     streamTimeUpdate =
         database.child('PNS/TimeUpdate').onValue.listen((event) async {
