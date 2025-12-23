@@ -52,6 +52,9 @@ class ImageCacheService {
 
   ImageCacheService._internal();
 
+  // Default compression quality (can be exposed to settings later)
+  static const int defaultQuality = 85;
+
   Directory? _compressedDir;
   File? _metadataFile;
   Map<String, ImageMetadata> _metadata = {};
@@ -174,6 +177,7 @@ class ImageCacheService {
     required File rotatedFile,
     required String? maHieu,
     required int rotationAngle,
+    int quality = defaultQuality,
   }) async {
     if (_compressedDir == null) {
       throw StateError('ImageCacheService not initialized');
@@ -190,7 +194,7 @@ class ImageCacheService {
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         rotatedFile.absolute.path,
         compressedPath,
-        quality: 85,
+        quality: quality,
         minWidth: 1920,
         minHeight: 1920,
         format: CompressFormat.jpeg,

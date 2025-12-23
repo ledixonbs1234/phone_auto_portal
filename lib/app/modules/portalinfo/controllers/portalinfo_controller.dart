@@ -272,10 +272,10 @@ class PortalinfoController extends GetxController {
     FirebaseManager().addMessage(
         MessageReceiveModel("xoanhieubg", jsonEncode(idCodesToDelete)));
 
-    // Cập nhật UI ngay lập tức
-    currentMaHieusInPortal.removeWhere((item) => item.selected);
-    _updateSelectedDialogItemCount();
-    update();
+    // // Cập nhật UI ngay lập tức
+    // currentMaHieusInPortal.removeWhere((item) => item.selected);
+    // _updateSelectedDialogItemCount();
+    // update();
 
     Get.snackbar(
         "Thành công", "Đã gửi yêu cầu xóa ${itemsToDelete.length} bưu gửi.");
@@ -900,6 +900,15 @@ class PortalinfoController extends GetxController {
       }
     } else if (message.Lenh == "message") {
       stateText.value = message.DoiTuong;
+      // Làm mới danh sách khi xóa thành công hoặc cập nhật KL thành công
+      final msg = message.DoiTuong?.toString() ?? "";
+      if (msg.contains("Xóa thành công") || msg.contains("Đã cập nhật KL")) {
+        if (iPotal.value >= 0 && iPotal.value < portals.length) {
+          getMaHieuToShow(iPotal.value);
+        } else {
+          refreshPortal(null);
+        }
+      }
     } else if (message.Lenh == "showNotification") {
       stateText.value = message.DoiTuong;
 

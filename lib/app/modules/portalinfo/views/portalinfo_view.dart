@@ -1003,9 +1003,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
             onPressed: () {
               Get.back(); // Đóng dialog xác nhận
               controller.deleteBG(item);
-              // Đợi một chút để server xử lý rồi làm mới
-              Future.delayed(const Duration(seconds: 1),
-                  () => controller.getMaHieuToShow(portalIndex));
             },
             child: const Text("Xóa", style: TextStyle(color: Colors.red)),
           ),
@@ -1062,9 +1059,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
             onPressed: () {
               Get.back();
               controller.updateWeight(item, weightController.text);
-              // Đợi một chút rồi cập nhật lại list
-              Future.delayed(const Duration(seconds: 1),
-                  () => controller.getMaHieuToShow(index));
             },
             child: const Text("Lưu"),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:phone_auto_portal/data/image_cache_service.dart';
 import 'package:phone_auto_portal/app/modules/import_images/controllers/image_import_controller.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_batch_model.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
@@ -544,6 +545,8 @@ class ImportImagesView extends StatelessWidget {
                       const SizedBox(height: 12),
                       _BatchToleranceSlider(),
                       const SizedBox(height: 24),
+                      _QualitySetting(),
+                      const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 24),
 
@@ -846,6 +849,107 @@ class _BatchToleranceSliderState extends State<_BatchToleranceSlider> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget để cấu hình chất lượng nén ảnh (quality)
+class _QualitySetting extends StatefulWidget {
+  @override
+  _QualitySettingState createState() => _QualitySettingState();
+}
+
+class _QualitySettingState extends State<_QualitySetting> {
+  late double _currentValue;
+  final _storageKey = 'compress_quality';
+  final _storage = GetStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = _storage.read<int>(_storageKey);
+    _currentValue = (saved ?? ImageCacheService.defaultQuality).toDouble();
+  }
+
+  void _saveValue(double value) {
+    _storage.write(_storageKey, value.round());
+    Get.snackbar(
+      'Đã lưu',
+      'Chất lượng nén: ${value.round()}',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.photo_size_select_small,
+                  color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Chất lượng %',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const Spacer(),
+              Text(
+                '${_currentValue.round()}%',
+                style: const TextStyle(fontSize: 14, color: Colors.green),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.green,
+              inactiveTrackColor: Colors.green.withOpacity(0.3),
+              thumbColor: Colors.green,
+              overlayColor: Colors.green.withOpacity(0.2),
+              valueIndicatorColor: Colors.green,
+              valueIndicatorTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            child: Slider(
+              value: _currentValue,
+              min: 50,
+              max: 100,
+              divisions: 50,
+              label: '${_currentValue.round()}%',
+              onChanged: (value) {
+                setState(() {
+                  _currentValue = value;
+                });
+              },
+              onChangeEnd: (value) {
+                _saveValue(value);
+              },
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('50%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text('100%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            ],
           ),
         ],
       ),

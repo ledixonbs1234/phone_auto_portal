@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform, File;
 import 'package:phone_auto_portal/app/modules/import_images/models/image_batch_model.dart';
@@ -452,11 +453,13 @@ class ImageImportController extends GetxController {
           statusMessage.value = '[$progress] 🗜️ Đang nén và lưu: $fileName';
 
           // BƯỚC 3: Compress và lưu metadata
+          final savedQuality = GetStorage().read<int>('compress_quality') ?? ImageCacheService.defaultQuality;
           final savedMetadata = await ImageCacheService.instance.processAndSave(
             originalFile: image.originalFile,
             rotatedFile: rotatedFile,
             maHieu: maHieu,
             rotationAngle: rotationAngle,
+            quality: savedQuality,
           );
 
           processedFile = File(savedMetadata.compressedPath);
