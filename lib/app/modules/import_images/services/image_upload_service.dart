@@ -24,21 +24,50 @@ class ImageUploadService {
     return _database.child("PORTAL/CHILD/$keyData");
   }
 
-  /// Upload nhiều ảnh dùng Media Group (tối đa 10 ảnh/lần) với retry mechanism
+  /// Upload nhiều ảnh lên Telegram Bot API dùng Media Group
+  ///
+  /// LUỒNG HOẠT ĐỘNG:
+  /// 1️⃣ CHIA NHÓM: Chia ảnh thành các nhóm nhỏ (tối đa 10 ảnh/nhóm theo giới hạn Telegram)
+  /// 2️⃣ UPLOAD VỚI RETRY: Cho mỗi nhóm:
+  ///    - Upload lên Telegram (tối đa 3 lần thử nếu lỗi)
+  ///    - Chờ exponential backoff trước mỗi lần retry (1s, 2s, 3s)
+  ///    - Gọi callback [onProgress] để cập nhật UI
+  /// 3️⃣ LƯU METADATA: Sau khi upload thành công, lưu metadata vào Firebase Realtime DB:
+  ///    - URL ảnh, thumbnailUrl, mã hiệu, timestamp...
+  ///    - Lưu imageId vào danh sách [successfulImageIds] để tracking
+  /// 4️⃣ ROLLBACK NẾU LỖI: Nếu upload toàn bộ thất bại:
+  ///    - Xóa metadata của tất cả ảnh đã upload thành công
+  ///    - Ném exception [TelegramBatchUploadFailedException]
+  ///    - Điều này đảm bảo data integrity (không có ảnh orphan)
+  ///
+  /// RETRY MECHANISM:
+  /// - Mỗi nhóm ảnh có tối đa 3 lần thử
+  /// - Nếu lần thứ 3 vẫn lỗi → fail toàn bộ batch (không tiếp tục nhóm tiếp theo)
+  /// - Exponential backoff: delay = số lần retry hiện tại (1s, 2s, 3s)
+  ///
+  /// TRACKING:
+  /// - [successfulImageIds]: Danh sách ID ảnh đã upload thành công (dùng cho rollback)
+  /// - [onProgress]: Callback để UI theo dõi tiến độ upload từng nhóm
+  ///
+  /// RETURN:
+  /// - [BatchUploadResult]: Chứa số ảnh thành công/thất bại
+  ///
+  /// THROWS:
+  /// - [TelegramBatchUploadFailedException]: Nếu upload thất bại + rollback xong
   Future<BatchUploadResult> uploadImagesInBatches({
     required List<ImageItem> images,
     required String batchId,
     Function(int current, int total, String status)? onProgress,
   }) async {
-    // Track successfully uploaded image IDs for rollback
+    // Theo dõi ID ảnh đã upload thành công để rollback nếu cần
     final List<String> successfulImageIds = [];
     int successCount = 0;
     int failCount = 0;
     const maxRetries = 3;
-    const maxImagesPerGroup = 10; // Telegram limit
+    const maxImagesPerGroup = 10; // Giới hạn Media Group của Telegram
 
     try {
-      // Split images into groups of 10 (Telegram Media Group limit)
+      // 1️⃣ CHIA NHÓM: Split images into groups of 10 (Telegram Media Group limit)
       for (int groupStart = 0;
           groupStart < images.length;
           groupStart += maxImagesPerGroup) {
@@ -59,27 +88,27 @@ class ImageUploadService {
         List<Map<String, String>>? downloadUrls;
         Exception? lastException;
 
-        // Retry up to 3 times for each media group
+        // 2️⃣ RETRY LOOP: Thử upload nhóm này tối đa 3 lần
         while (retryCount < maxRetries && !uploadSuccess) {
           try {
+            // Nếu này không phải lần đầu, chờ exponential backoff
             if (retryCount > 0) {
               _debugLog(
                   '🔄 Retry ${retryCount}/$maxRetries for media group $groupNumber');
               onProgress?.call(groupStart, images.length,
                   'Thử lại lần $retryCount nhóm $groupNumber/$totalGroups');
-              // Wait before retry with exponential backoff
+              // Exponential backoff: chờ (retryCount) giây
               await Future.delayed(Duration(seconds: retryCount));
             }
 
-            // Upload entire group as media group to Telegram
-            // Truyền ImageItem để TelegramService dùng originalFile làm cache key
+            // 🚀 Upload nhóm ảnh lên Telegram
             onProgress?.call(groupStart, images.length,
                 'Upload nhóm $groupNumber/$totalGroups (${imageGroup.length} ảnh)');
 
             downloadUrls =
                 await TelegramService.instance.uploadMediaGroup(imageGroup);
 
-            // Save metadata for all images in the group
+            // 💾 LƯU METADATA: Lưu thông tin mỗi ảnh vào Firebase Realtime DB
             onProgress?.call(groupStart, images.length,
                 'Lưu metadata nhóm $groupNumber/$totalGroups');
 
@@ -87,6 +116,7 @@ class ImageUploadService {
               final imageItem = imageGroup[i];
               final urlMap = downloadUrls[i];
 
+              // Lưu metadata vào database
               await saveImageMetadata(
                 batchId: batchId,
                 imageId: imageItem.id,
@@ -96,6 +126,7 @@ class ImageUploadService {
                 timestamp: imageItem.timestamp,
               );
 
+              // Ghi nhận ảnh đã upload thành công (để rollback sau nếu cần)
               successfulImageIds.add(imageItem.id);
               successCount++;
               _debugLog('✅ Uploaded image: ${imageItem.id}');
@@ -113,8 +144,8 @@ class ImageUploadService {
             _debugLog(
                 '❌ Media group upload failed (attempt $retryCount/$maxRetries): $e');
 
+            // Nếu vượt quá số lần retry → fail toàn bộ batch
             if (retryCount >= maxRetries) {
-              // Max retries reached, fail the entire batch
               failCount += imageGroup.length;
               _debugLog('❌ Max retries reached for media group');
               throw lastException;
@@ -123,7 +154,7 @@ class ImageUploadService {
         }
       }
 
-      // All uploads successful
+      // ✅ TẤT CẢ UPLOAD THÀNH CÔNG
       return BatchUploadResult(
         isSuccess: true,
         successCount: successCount,
@@ -131,13 +162,14 @@ class ImageUploadService {
         totalCount: images.length,
       );
     } catch (e) {
+      // ❌ UPLOAD THẤT BẠI → ROLLBACK
       _debugLog(
           '❌ Batch upload failed. Rolling back ${successfulImageIds.length} uploaded images...');
 
-      // Rollback: Delete all successfully uploaded image metadata
+      // 🔙 XÓA METADATA của tất cả ảnh đã upload (rollback to maintain data integrity)
       await _rollbackUploadedImages(successfulImageIds);
 
-      // Throw batch upload failed exception
+      // ⚠️ Ném exception với danh sách ảnh đã được rollback
       throw TelegramBatchUploadFailedException(
         message:
             'Upload thất bại sau $maxRetries lần thử. Đã dừng xử lý và xóa ${successfulImageIds.length} ảnh đã upload.',
