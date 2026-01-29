@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:phone_auto_portal/app/modules/home/ExtractedData.dart';
+import 'package:phone_auto_portal/app/modules/home/GeminiChatService.dart';
 import 'dart:io' show Platform, File;
 import 'package:phone_auto_portal/app/modules/import_images/models/image_batch_model.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
@@ -11,6 +13,7 @@ import 'package:phone_auto_portal/app/modules/import_images/services/image_proce
 import 'package:phone_auto_portal/app/modules/import_images/services/barcode_ocr_service.dart';
 import 'package:phone_auto_portal/app/modules/import_images/services/image_upload_service.dart';
 import 'package:phone_auto_portal/data/exceptions/telegram_exceptions.dart';
+import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/data/image_cache_service.dart';
 
 // Safe logging function that only prints in debug mode
@@ -26,7 +29,18 @@ class ImageImportController extends GetxController {
   final ImageProcessingService _processingService = ImageProcessingService();
   final BarcodeOcrService _ocrService = BarcodeOcrService();
   final ImageUploadService _uploadService = ImageUploadService();
+  // final String _geminiApiKey =
+  //     'AIzaSyC8C-KzIrDn9QyB35luLR2nbxaXvjHEwmU'; // Key lấy từ HomeController code cũ
+  final String _modelId =
+      'gemini-3-flash-preview'; // Sử dụng model flash cho nhanh
+  late GeminiChatService _geminiService;
+// Key mặc định (fallback)
+  final String _defaultApiKey = 'AIzaSyC8C-KzIrDn9QyB35luLR2nbxaXvjHEwmU';
 
+  // Observable cho danh sách key và key đang chọn
+  final aiKeysList = <AiKeyModel>[].obs;
+  final selectedAiKeyName = ''.obs; // Hiển thị tên
+  String _currentActiveApiKey = ''; // Lưu giá trị key thực tế
   // Observable state
   final batches = <ImageBatch>[].obs;
   final isLoading = false.obs;
@@ -39,12 +53,152 @@ class ImageImportController extends GetxController {
   final processedImages = 0.obs;
   final successImages = 0.obs;
   final errorImages = 0.obs;
+  @override
+  void onInit() {
+    super.onInit();
+    // Khởi tạo Gemini Service
+    _loadSavedAiKey(); // Tải key đã lưu
+    _initGeminiService(); // Khởi tạo service
+  }
+
+  void _initGeminiService() {
+    // Nếu chưa có key nào được chọn, dùng default
+    if (_currentActiveApiKey.isEmpty) {
+      _currentActiveApiKey = _defaultApiKey;
+    }
+
+    final apiUrl = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$_modelId:streamGenerateContent?key=$_currentActiveApiKey');
+    _geminiService = GeminiChatService(apiUrl: apiUrl.toString());
+
+    _debugLog(
+        'Gemini Service initialized with key ending in: ...${_currentActiveApiKey.substring(_currentActiveApiKey.length - 4)}');
+  }
+
+  Future<void> fetchAndLoadAiKeys() async {
+    final keys = await FirebaseManager().getAiKeys();
+    aiKeysList.value = keys;
+
+    // Kiểm tra xem key hiện tại có khớp với cái nào trong list không để hiển thị đúng
+    if (aiKeysList.isNotEmpty) {
+      final current =
+          aiKeysList.firstWhereOrNull((e) => e.key == _currentActiveApiKey);
+      if (current != null) {
+        selectedAiKeyName.value = current.name;
+      }
+    }
+  }
+
+  // Hàm chọn key mới
+  void selectAiKey(AiKeyModel aiKey) {
+    _currentActiveApiKey = aiKey.key;
+    selectedAiKeyName.value = aiKey.name;
+
+    // Lưu vào storage
+    GetStorage().write('selected_ai_api_key', aiKey.key);
+    GetStorage().write('selected_ai_key_name', aiKey.name);
+
+    // Khởi tạo lại service với key mới
+    _initGeminiService();
+
+    Get.snackbar('Đã đổi AI Key', 'Đang sử dụng key: ${aiKey.name}');
+  }
+
+  // Tải key đã lưu từ Storage
+  void _loadSavedAiKey() {
+    final savedKey = GetStorage().read<String>('selected_ai_api_key');
+    final savedName = GetStorage().read<String>('selected_ai_key_name');
+
+    if (savedKey != null && savedKey.isNotEmpty) {
+      _currentActiveApiKey = savedKey;
+      selectedAiKeyName.value = savedName ?? 'Custom Key';
+    } else {
+      _currentActiveApiKey = _defaultApiKey;
+      selectedAiKeyName.value = 'Mặc định';
+    }
+  }
 
   @override
   void onClose() {
     _processingService.dispose();
     _ocrService.dispose();
     super.onClose();
+  }
+
+  /// === HÀM MỚI: Xử lý AI cho các ảnh đã chọn ===
+  Future<void> processSelectedImagesWithAI() async {
+    // 1. Lấy danh sách ảnh từ các batch được chọn
+    final selectedImages = <ImageItem>[];
+    final selectedImageMap =
+        <int, ImageItem>{}; // Map để track vị trí cập nhật lại batch
+
+    // Duyệt qua tất cả batch để tìm ảnh (Logic: Xử lý tất cả ảnh trong batch được tick chọn)
+    for (var batch in batches) {
+      if (batch.isSelected) {
+        selectedImages.addAll(batch.images);
+      }
+    }
+
+    if (selectedImages.isEmpty) {
+      Get.snackbar('Thông báo', 'Vui lòng chọn ít nhất 1 batch để xử lý AI');
+      return;
+    }
+
+    if (selectedImages.length > 15) {
+      Get.snackbar('Cảnh báo',
+          'AI chỉ nên xử lý tối đa khoảng 15 ảnh một lần để đảm bảo chính xác. Bạn đã chọn ${selectedImages.length}.');
+      // Vẫn cho chạy hoặc return tùy bạn
+    }
+
+    try {
+      isLoading.value = true;
+      statusMessage.value =
+          'Đang gửi ${selectedImages.length} ảnh lên AI xử lý...';
+
+      // 2. Chuẩn bị file
+      List<File> filesToSend = selectedImages.map((e) => e.file).toList();
+
+      // 3. Gọi Gemini
+      List<ExtractedData> results =
+          await _geminiService.extractInfoFromImages(filesToSend);
+
+      if (results.isEmpty) {
+        Get.snackbar('Lỗi AI', 'Không nhận được dữ liệu phản hồi từ AI');
+        return;
+      }
+
+      if (results.length != selectedImages.length) {
+        Get.snackbar('Cảnh báo',
+            'Số lượng kết quả (${results.length}) không khớp số lượng ảnh (${selectedImages.length}). Dữ liệu có thể bị lệch.');
+      }
+
+      statusMessage.value = 'Đang cập nhật thông tin...';
+
+      if (results.isNotEmpty) {
+        statusMessage.value = 'Đang gửi dữ liệu sang Chrome Extension...';
+        FirebaseManager().sendAiOrder(results);
+
+        Get.snackbar(
+          'Hoàn thành',
+          'Đã gửi ${results.length} đơn hàng lên hệ thống',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar(
+          'Thất bại',
+          'Không trích xuất được thông tin nào',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Lỗi xử lý AI: $e');
+      statusMessage.value = 'Lỗi: $e';
+    } finally {
+      isLoading.value = false;
+      statusMessage.value = '';
+    }
   }
 
   /// Chọn ảnh và tạo batch (từ image picker)
@@ -453,7 +607,8 @@ class ImageImportController extends GetxController {
           statusMessage.value = '[$progress] 🗜️ Đang nén và lưu: $fileName';
 
           // BƯỚC 3: Compress và lưu metadata
-          final savedQuality = GetStorage().read<int>('compress_quality') ?? ImageCacheService.defaultQuality;
+          final savedQuality = GetStorage().read<int>('compress_quality') ??
+              ImageCacheService.defaultQuality;
           final savedMetadata = await ImageCacheService.instance.processAndSave(
             originalFile: image.originalFile,
             rotatedFile: rotatedFile,

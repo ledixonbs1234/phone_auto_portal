@@ -8,6 +8,7 @@ import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_co
 import 'package:phone_auto_portal/app/modules/createnew/model/dingoaistateinfo.dart';
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
+import 'package:phone_auto_portal/app/modules/home/ExtractedData.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
@@ -362,6 +363,37 @@ class FirebaseManager with WidgetsBindingObserver {
       _checkAndReconnectFirebase();
     }
   }
+void sendAiOrder(List<ExtractedData> data) {
+    try {
+      // 1. Chuyển đổi List<ExtractedData> thành chuỗi JSON
+      final List<Map<String, dynamic>> jsonList = 
+          data.map((e) => e.toJson()).toList();
+      String jsonString = jsonEncode(jsonList);
+
+      // 2. Tạo đối tượng MessageReceiveModel
+      // - Lenh: "aiorders" (Để Extension nhận biết đây là dữ liệu AI)
+      // - DoiTuong: Chuỗi JSON chứa danh sách đơn hàng
+      // - NameMay: Tên máy hiện tại
+      MessageReceiveModel message = MessageReceiveModel(
+        "aiorders", 
+        jsonString,
+        nameMay: keyData ?? "maychu"
+      );
+
+      // 3. Sử dụng hàm addMessage có sẵn để gửi
+      // Hàm này sẽ tự động:
+      // - Gắn thêm username/password từ HomeController (nếu có)
+      // - Gửi vào path 'message/topc'
+      // - Xử lý timeout
+      addMessage(message);
+
+      showSnackBar("Đã gửi lệnh xử lý ${data.length} đơn hàng");
+      
+    } catch (e) {
+      print("Error sending AI orders: $e");
+      showSnackBar("Lỗi gửi dữ liệu AI: $e");
+    }
+  }
 
   Future<List<KhachHangs>> getKhachHangs() async {
     var datas = await database.child('PNS/KhachHangs').get();
@@ -594,5 +626,44 @@ class FirebaseManager with WidgetsBindingObserver {
       printInfo(info: 'Lỗi khi xóa: $e');
       // Xử lý lỗi tại đây
     }
+  }
+
+  Future<List<AiKeyModel>> getAiKeys() async {
+    try {
+      final snapshot = await database.child('AI_KEYS').get();
+      if (snapshot.exists && snapshot.value != null) {
+        final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+        final List<AiKeyModel> keys = [];
+        
+        data.forEach((key, value) {
+          if (value is Map) {
+            keys.add(AiKeyModel.fromJson(key.toString(), value));
+          }
+        });
+        
+        // Sắp xếp theo tên cho dễ nhìn
+        keys.sort((a, b) => a.name.compareTo(b.name));
+        return keys;
+      }
+      return [];
+    } catch (e) {
+      print("Lỗi lấy AI Keys: $e");
+      return [];
+    }
+  }
+}
+class AiKeyModel {
+  String id;
+  String key;
+  String name;
+
+  AiKeyModel({required this.id, required this.key, required this.name});
+
+  factory AiKeyModel.fromJson(String id, Map<dynamic, dynamic> json) {
+    return AiKeyModel(
+      id: id,
+      key: json['key'] ?? '',
+      name: json['name'] ?? 'Unknown',
+    );
   }
 }

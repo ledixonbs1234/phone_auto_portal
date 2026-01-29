@@ -425,20 +425,18 @@ class ImportImagesView extends StatelessWidget {
       if (controller.batches.isEmpty) return const SizedBox();
 
       return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
             // Status message
             if (controller.statusMessage.value.isNotEmpty)
               Padding(
@@ -467,29 +465,49 @@ class ImportImagesView extends StatelessWidget {
               const SizedBox(height: 12),
             ],
 
-            // Action button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: controller.isLoading.value
-                    ? null
-                    : controller.processSelectedBatches,
-                icon: const Icon(Icons.cloud_upload),
-                label: Text(
-                  controller.isLoading.value
-                      ? 'Đang xử lý...'
-                      : 'Xử lý & Upload',
+            Row(
+              children: [
+                // Nút AI Extract (MỚI)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : controller.processSelectedImagesWithAI,
+                    icon: const Icon(Icons.auto_awesome), // Icon AI/Magic
+                    label: const Text('AI Extract'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor:
+                          Colors.deepPurple, // Màu khác để phân biệt
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+
+                const SizedBox(width: 8),
+
+                // Nút Upload cũ
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : controller.processSelectedBatches,
+                    icon: const Icon(Icons.cloud_upload),
+                    label: Text(
+                      controller.isLoading.value
+                          ? 'Đang xử lý...'
+                          : 'Upload Tele',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      );
+          ]));
     });
   }
 
@@ -547,6 +565,7 @@ class ImportImagesView extends StatelessWidget {
                       const SizedBox(height: 24),
                       _QualitySetting(),
                       const SizedBox(height: 24),
+                      _AiKeySelector(),
                       const Divider(),
                       const SizedBox(height: 24),
 
@@ -953,6 +972,78 @@ class _QualitySettingState extends State<_QualitySetting> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AiKeySelector extends StatefulWidget {
+  @override
+  __AiKeySelectorState createState() => __AiKeySelectorState();
+}
+
+class __AiKeySelectorState extends State<_AiKeySelector> {
+  final ImageImportController controller = Get.find<ImageImportController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Tải danh sách key khi mở dialog
+    controller.fetchAndLoadAiKeys();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Chọn nguồn AI:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            Obx(() => Text(
+                  controller.selectedAiKeyName.value,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.purple),
+                )),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Obx(() {
+            if (controller.aiKeysList.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            return Column(
+              children: controller.aiKeysList.map((aiKey) {
+                final isSelected =
+                    controller.selectedAiKeyName.value == aiKey.name;
+                return RadioListTile<String>(
+                  title: Text(aiKey.name),
+                  subtitle: Text(
+                      '...${aiKey.key.substring(aiKey.key.length > 6 ? aiKey.key.length - 6 : 0)}'),
+                  value: aiKey.name,
+                  groupValue: controller.selectedAiKeyName.value,
+                  activeColor: Colors.purple,
+                  onChanged: (value) {
+                    controller.selectAiKey(aiKey);
+                  },
+                );
+              }).toList(),
+            );
+          }),
+        ),
+      ],
     );
   }
 }

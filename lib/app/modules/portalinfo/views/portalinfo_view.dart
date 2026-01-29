@@ -511,10 +511,11 @@ class PortalinfoView extends GetView<PortalinfoController> {
   }
 
   void showImprovedDialog(BuildContext context, int index) {
-    // controller.getMaHieuToShow(index);
-
     final String? currentPortalStatus = controller.portals[index].trangThai;
     final bool showDeleteButton = currentPortalStatus == "2";
+
+    // Reset trạng thái highlight khi mở dialog mới
+    controller.similarIdCodes.clear();
 
     Get.dialog(
       barrierDismissible: true,
@@ -525,13 +526,13 @@ class PortalinfoView extends GetView<PortalinfoController> {
         ),
         child: PopScope(
           onPopInvoked: (didPop) {
-            // Hủy stream quét khi đóng dialog
             controller.cancelBulkQRScanInDialog();
           },
           child: GetBuilder<PortalinfoController>(
             builder: (dx) => ConstrainedBox(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.8,
+                maxHeight: MediaQuery.of(context).size.height *
+                    0.9, // Tăng chiều cao một chút
                 maxWidth: 400,
               ),
               child: Padding(
@@ -540,132 +541,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title, bộ đếm và nút QR
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            "Danh sách",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple,
-                                ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Obx(() {
-                          if (dx.selectedDialogItemCount.value == 0) {
-                            return const SizedBox.shrink();
-                          }
-                          return Chip(
-                            label: Text(
-                                '${dx.selectedDialogItemCount.value} đã chọn'),
-                            backgroundColor: Colors.deepPurple.shade100,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            labelStyle: TextStyle(
-                                color: Colors.deepPurple.shade900,
-                                fontSize: 12),
-                          );
-                        }),
-                        if (showDeleteButton)
-                          IconButton(
-                            icon: const Icon(Icons.qr_code_scanner,
-                                color: Colors.deepPurple),
-                            tooltip: 'Quét hàng loạt',
-                            onPressed: () =>
-                                controller.startBulkQRScanInDialog(),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    // Sorting buttons
-                    Row(
-                      children: [
-                        const Text(
-                          'Sort: ',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Obx(() => ElevatedButton.icon(
-                              onPressed: () {
-                                controller.sortDialogList('Trọng lượng');
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    controller.dialogSortOption.value ==
-                                            'Trọng lượng'
-                                        ? Colors.deepPurple
-                                        : Colors.grey.shade300,
-                                foregroundColor:
-                                    controller.dialogSortOption.value ==
-                                            'Trọng lượng'
-                                        ? Colors.white
-                                        : Colors.black87,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                minimumSize: const Size(0, 32),
-                              ),
-                              icon: controller.dialogSortOption.value ==
-                                      'Trọng lượng'
-                                  ? Icon(
-                                      controller.dialogSortAscending.value
-                                          ? Icons.arrow_upward
-                                          : Icons.arrow_downward,
-                                      size: 14,
-                                    )
-                                  : const SizedBox.shrink(),
-                              label: const Text(
-                                'Trọng Lượng',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            )),
-                        const SizedBox(width: 8),
-                        Obx(() => ElevatedButton.icon(
-                              onPressed: () {
-                                controller.sortDialogList('COD');
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    controller.dialogSortOption.value == 'COD'
-                                        ? Colors.green
-                                        : Colors.grey.shade300,
-                                foregroundColor:
-                                    controller.dialogSortOption.value == 'COD'
-                                        ? Colors.white
-                                        : Colors.black87,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                minimumSize: const Size(0, 32),
-                              ),
-                              icon: controller.dialogSortOption.value == 'COD'
-                                  ? Icon(
-                                      controller.dialogSortAscending.value
-                                          ? Icons.arrow_upward
-                                          : Icons.arrow_downward,
-                                      size: 14,
-                                    )
-                                  : const SizedBox.shrink(),
-                              label: const Text(
-                                'COD',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            )),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    const Divider(thickness: 1.0),
-                    const SizedBox(height: 12.0),
-                    // Thông tin Người Nhập
                     Row(
                       children: [
                         const Text(
@@ -682,181 +557,99 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    // Package counting section - Updates dynamically with dialog data
-                    if (dx.isShowEdit.value &&
-                        dx.currentMaHieusInPortal.isNotEmpty)
-                      FutureBuilder<Map<String, int>>(
-                        future: controller.countPackagesByCategories(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Đang tính toán thống kê...',
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-
-                          if (snapshot.hasError || !snapshot.hasData) {
-                            return Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.red.shade200),
-                              ),
-                              child: const Text(
-                                'Lỗi khi tính toán thống kê',
-                                style:
-                                    TextStyle(color: Colors.red, fontSize: 11),
-                              ),
-                            );
-                          }
-
-                          final counts = snapshot.data!;
-                          final totalPackages =
-                              dx.currentMaHieusInPortal.length;
-
-                          // Định nghĩa thứ tự ưu tiên và màu sắc cho các danh mục
-                          final categoryOrder = [
-                            'RA',
-                            'VÔ',
-                            'Quảng Nam',
-                            'Quảng Ngãi'
-                          ];
-                          final categoryColors = {
-                            'RA': Colors.red,
-                            'VÔ': Colors.green,
-                            'Quảng Nam': Colors.orange,
-                            'Quảng Ngãi': Colors.purple,
-                          };
-
-                          // Màu sắc cho các địa danh đặc biệt của Bình Định
-                          final binhDinhColors = [
-                            Colors.blue,
-                            Colors.teal,
-                            Colors.indigo,
-                            Colors.cyan,
-                            Colors.deepPurple,
-                            Colors.pink,
-                            Colors.amber,
-                            Colors.deepOrange,
-                            Colors.lime,
-                          ];
-
-                          // Tạo danh sách các mục để hiển thị
-                          final displayItems = <MapEntry<String, int>>[];
-
-                          // Thêm các danh mục chính theo thứ tự
-                          for (final category in categoryOrder) {
-                            if (counts.containsKey(category) &&
-                                counts[category]! > 0) {
-                              displayItems
-                                  .add(MapEntry(category, counts[category]!));
-                            }
-                          }
-
-                          // Thêm các địa danh đặc biệt của Bình Định (sắp xếp theo tên)
-                          final binhDinhLocations = counts.entries
-                              .where((entry) =>
-                                  !categoryOrder.contains(entry.key) &&
-                                  entry.value > 0)
-                              .toList()
-                            ..sort((a, b) => a.key.compareTo(b.key));
-
-                          displayItems.addAll(binhDinhLocations);
-
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Thống kê bưu gửi:',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Tổng: $totalPackages',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                    ),
-                                  ],
+                    const SizedBox(height: 8.0),
+                    // --- HEADER: Title & Counters ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            "Danh sách (${dx.currentMaHieusInPortal.length})",
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepPurple,
+                                  fontSize: 18,
                                 ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 4,
-                                  children:
-                                      displayItems.asMap().entries.map((entry) {
-                                    final index = entry.key;
-                                    final item = entry.value;
-                                    final category = item.key;
-                                    final count = item.value;
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (showDeleteButton)
+                          Row(
+                            children: [
+                              // Nút tìm tên trùng
+                              IconButton(
+                                icon: const Icon(Icons.person_search,
+                                    color: Colors.orange),
+                                tooltip: 'Tìm tên giống nhau > 90%',
+                                onPressed: () => controller.findSimilarNames(),
+                              ),
+                              // Nút quét QR
+                              IconButton(
+                                icon: const Icon(Icons.qr_code_scanner,
+                                    color: Colors.deepPurple),
+                                tooltip: 'Quét hàng loạt',
+                                onPressed: () =>
+                                    controller.startBulkQRScanInDialog(),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
 
-                                    // Chọn màu
-                                    Color color;
-                                    if (categoryColors.containsKey(category)) {
-                                      color = categoryColors[category]!;
-                                    } else {
-                                      // Địa danh Bình Định - sử dụng màu từ danh sách
-                                      final binhDinhIndex = index -
-                                          categoryOrder
-                                              .where((cat) =>
-                                                  counts.containsKey(cat) &&
-                                                  counts[cat]! > 0)
-                                              .length;
-                                      color = binhDinhColors[binhDinhIndex %
-                                          binhDinhColors.length];
-                                    }
+                    const SizedBox(height: 8.0),
 
-                                    return _buildCategoryCount(
-                                        category, count, color);
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 16),
-                    // Danh sách Mã hiệu
+                    // --- TOOLBAR: View Mode & Sorting ---
+                    Row(
+                      children: [
+                        // Toggle Đơn giản / Chi tiết
+                        const Text("Chi tiết:", style: TextStyle(fontSize: 12)),
+                        Obx(() => Switch(
+                              value: controller.isDetailedView.value,
+                              activeColor: Colors.blue,
+                              onChanged: (val) =>
+                                  controller.toggleViewMode(val),
+                            )),
+
+                        const Spacer(), // Đẩy Sort sang phải
+
+                        // Sort Buttons (Giữ nguyên logic cũ nhưng làm gọn)
+                        _buildSortButton(
+                            "KL", "Trọng lượng", Colors.deepPurple),
+                        const SizedBox(width: 4),
+                        _buildSortButton("\$", "COD", Colors.green),
+                      ],
+                    ),
+
+                    // --- SELECTED COUNTER ---
+                    Obx(() {
+                      if (dx.selectedDialogItemCount.value == 0)
+                        return const SizedBox.shrink();
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurple.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.deepPurple.shade200),
+                        ),
+                        child: Text(
+                          'Đã chọn: ${dx.selectedDialogItemCount.value} bưu gửi',
+                          style: TextStyle(
+                              color: Colors.deepPurple.shade900,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    }),
+
+                    const Divider(thickness: 1.0),
+
+                    // --- LIST VIEW ---
                     Expanded(
                       child: !dx.isShowEdit.value
                           ? const Center(child: CircularProgressIndicator())
@@ -870,93 +663,166 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                       const Divider(height: 1),
                                   itemBuilder: (context, i) {
                                     final item = dx.currentMaHieusInPortal[i];
-                                    return ListTile(
-                                      dense: true,
-                                      tileColor: item.selected
-                                          ? Colors.blue.withOpacity(0.2)
-                                          : null,
-                                      onTap: showDeleteButton
-                                          ? () => controller
-                                              .toggleItemSelectedInDialog(item)
-                                          : null,
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(
-                                        item.code ?? 'N/A',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Text(item.Date ?? 'N/A'),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
+
+                                    // Kiểm tra xem item có nằm trong danh sách trùng tên không
+                                    final isSimilar = controller.similarIdCodes
+                                        .contains(item.IDCODE);
+
+                                    // Xác định màu nền: Ưu tiên Selected -> Similar -> Default
+                                    Color? tileColor;
+                                    if (item.selected) {
+                                      tileColor = Colors.blue.withOpacity(0.2);
+                                    } else if (isSimilar) {
+                                      tileColor = Colors.amber.withOpacity(
+                                          0.3); // Highlight màu cam nhạt
+                                    }
+
+                                    return Obx(() => ListTile(
+                                          dense: true,
+                                          tileColor: tileColor,
+                                          onTap: showDeleteButton
+                                              ? () => controller
+                                                  .toggleItemSelectedInDialog(
+                                                      item)
+                                              : null,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 4, vertical: 0),
+
+                                          // Code (Mã hiệu)
+                                          title: Row(
                                             children: [
+                                              if (isSimilar)
+                                                const Padding(
+                                                  padding:
+                                                      EdgeInsets.only(right: 4),
+                                                  child: Icon(
+                                                      Icons
+                                                          .warning_amber_rounded,
+                                                      size: 16,
+                                                      color: Colors.orange),
+                                                ),
                                               Text(
-                                                item.Weight ?? 'N/A',
+                                                item.code ?? 'N/A',
                                                 style: const TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              Text(
-                                                item.Money ?? '0',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.green.shade700,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14),
                                               ),
                                             ],
                                           ),
-                                          if (showDeleteButton) ...[
-                                            const SizedBox(width: 4),
-                                            _buildIconDialogButton(
-                                              icon: Icons.scale,
-                                              color: Colors.blueAccent,
-                                              tooltip: 'Thay đổi trọng lượng',
-                                              onPressed: () {
-                                                _showChangeWeightDialog(
-                                                    context, item, index);
-                                              },
-                                            ),
-                                            const SizedBox(width: 4),
-                                            _buildIconDialogButton(
-                                              icon: Icons.delete,
-                                              color: Colors.redAccent,
-                                              tooltip: 'Xóa',
-                                              onPressed: () {
-                                                _showConfirmDeleteDialog(
-                                                    context, item, index);
-                                              },
-                                            ),
-                                          ]
-                                        ],
-                                      ),
-                                    );
+
+                                          // Hiển thị nội dung dựa trên Toggle
+                                          subtitle: controller
+                                                  .isDetailedView.value
+                                              ? Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      item.Name ??
+                                                          "Không có tên",
+                                                      style: const TextStyle(
+                                                          color: Colors.black87,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontSize: 13),
+                                                    ),
+                                                    Text(
+                                                      item.Address ??
+                                                          "Không có địa chỉ",
+                                                      style: TextStyle(
+                                                          color: Colors
+                                                              .grey.shade700,
+                                                          fontSize: 12),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    Text(item.Date ?? '',
+                                                        style: const TextStyle(
+                                                            fontSize: 11,
+                                                            fontStyle: FontStyle
+                                                                .italic,
+                                                            color:
+                                                                Colors.grey)),
+                                                  ],
+                                                )
+                                              : Text(item.Date ?? 'N/A',
+                                                  style: const TextStyle(
+                                                      fontSize: 12)),
+
+                                          // Cột bên phải: KL, Tiền, Actions
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    item.Weight ?? '0',
+                                                    style: const TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w500),
+                                                  ),
+                                                  Text(
+                                                    item.Money ?? '0',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          Colors.green.shade700,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              if (showDeleteButton) ...[
+                                                const SizedBox(width: 8),
+                                                _buildIconDialogButton(
+                                                  icon: Icons.scale,
+                                                  color: Colors.blueAccent,
+                                                  tooltip: 'Sửa KL',
+                                                  onPressed: () =>
+                                                      _showChangeWeightDialog(
+                                                          context, item, index),
+                                                ),
+                                                _buildIconDialogButton(
+                                                  icon: Icons.delete,
+                                                  color: Colors.redAccent,
+                                                  tooltip: 'Xóa',
+                                                  onPressed: () =>
+                                                      _showConfirmDeleteDialog(
+                                                          context, item, index),
+                                                ),
+                                              ]
+                                            ],
+                                          ),
+                                        ));
                                   },
                                 ),
                     ),
-                    // Nút xóa tất cả
+
+                    // Footer: Delete All Button
                     if (showDeleteButton && dx.isAnyItemSelectedInDialog)
                       Padding(
                         padding: const EdgeInsets.only(top: 12.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.delete_sweep, size: 18),
-                              label: const Text('Xóa đã chọn'),
-                              onPressed: () =>
-                                  _showConfirmDeleteAllDialog(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red[700],
-                                foregroundColor: Colors.white,
-                              ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.delete_sweep, size: 18),
+                            label: const Text('Xóa các mục đã chọn'),
+                            onPressed: () =>
+                                _showConfirmDeleteAllDialog(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red[700],
+                              foregroundColor: Colors.white,
                             ),
-                          ],
+                          ),
                         ),
                       )
                   ],
@@ -967,6 +833,41 @@ class PortalinfoView extends GetView<PortalinfoController> {
         ),
       ),
     );
+  }
+
+  // Helper widget cho nút sort để code gọn hơn
+  Widget _buildSortButton(String label, String sortType, Color color) {
+    return Obx(() => InkWell(
+          onTap: () => controller.sortDialogList(sortType),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: controller.dialogSortOption.value == sortType
+                  ? color
+                  : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: controller.dialogSortOption.value == sortType
+                            ? Colors.white
+                            : Colors.black54)),
+                if (controller.dialogSortOption.value == sortType)
+                  Icon(
+                    controller.dialogSortAscending.value
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward,
+                    size: 12,
+                    color: Colors.white,
+                  )
+              ],
+            ),
+          ),
+        ));
   }
 
   Widget _buildIconDialogButton({

@@ -64,7 +64,7 @@ class QuetmhController extends GetxController {
         await _playBeep();
 
         // Gửi lên Firebase ngay lập tức
-        _sendToFirebase(code);
+        _sendToFirebase("$code\n");
 
         Get.snackbar(
           'Đã quét #${totalScanned.value}',

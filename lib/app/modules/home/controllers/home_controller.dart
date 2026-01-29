@@ -469,10 +469,10 @@ class HomeController extends GetxController {
   }
 
   // --- THAY THẾ BẰNG KHÓA API CỦA BẠN ---
-  final String _geminiApiKey = 'AIzaSyA4nh1XgptxJGC6RRTXJ0cht9iRJEQqG30';
+  final String _geminiApiKey = 'AIzaSyDH5GCSoVSCDM-2PdKqzbEVEpmf8RGeZ_Y';
   // ------------------------------------
 
-  final String _modelId = 'gemini-2.0-flash'; // Hoặc 'gemini-1.5-flash'
+  final String _modelId = 'gemini-3-flash-preview'; // Hoặc 'gemini-1.5-flash'
   late final Uri _apiUrl = Uri.parse(
       'https://generativelanguage.googleapis.com/v1beta/models/$_modelId:streamGenerateContent?key=$_geminiApiKey');
 

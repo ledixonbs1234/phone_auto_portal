@@ -30,7 +30,9 @@ class PortalinfoController extends GetxController {
   final iPotal = 0.obs;
 
   final maychus = <String>["maychu", "mayphu", "mayphusan", "maytest"].obs;
-
+  final isDetailedView = false.obs; // false: Đơn giản, true: Chi tiết
+  final similarIdCodes =
+      <String>{}.obs; // Set chứa IDCODE của các mục trùng tên
   final selectedMayChu = "mayphu".obs;
 
   bool isAutoRunBD = false;
@@ -45,6 +47,119 @@ class PortalinfoController extends GetxController {
   // Sort state management
   final sortColumnIndex = 1.obs; // Default sort by name column
   final sortAscending = false.obs; // Default descending order
+
+  // 2. Hàm chuyển đổi chế độ xem
+  void toggleViewMode(bool value) {
+    isDetailedView.value = value;
+    update(); // Cập nhật UI dialog
+  }
+
+  // 3. Hàm chuẩn hóa chuỗi (bỏ dấu, lowercase) để so sánh chính xác hơn
+  String _normalizeString(String str) {
+    const withDiacritics =
+        'áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ';
+    const withoutDiacritics =
+        'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd';
+
+    String lower = str.toLowerCase().trim();
+    for (int i = 0; i < withDiacritics.length; i++) {
+      lower = lower.replaceAll(withDiacritics[i], withoutDiacritics[i]);
+    }
+    return lower;
+  }
+
+  // 4. Thuật toán Levenshtein Distance để tính khoảng cách giữa 2 chuỗi
+  int _levenshteinDistance(String s1, String s2) {
+    if (s1 == s2) return 0;
+    if (s1.isEmpty) return s2.length;
+    if (s2.isEmpty) return s1.length;
+
+    List<int> v0 = List<int>.filled(s2.length + 1, 0);
+    List<int> v1 = List<int>.filled(s2.length + 1, 0);
+
+    for (int i = 0; i < s2.length + 1; i++) v0[i] = i;
+
+    for (int i = 0; i < s1.length; i++) {
+      v1[0] = i + 1;
+      for (int j = 0; j < s2.length; j++) {
+        int cost = (s1.codeUnitAt(i) == s2.codeUnitAt(j)) ? 0 : 1;
+        v1[j + 1] = [v1[j] + 1, v0[j + 1] + 1, v0[j] + cost]
+            .reduce((curr, next) => curr < next ? curr : next);
+      }
+      for (int j = 0; j < s2.length + 1; j++) v0[j] = v1[j];
+    }
+    return v1[s2.length];
+  }
+
+  // 5. Tính phần trăm giống nhau (0.0 -> 1.0)
+  double _calculateSimilarity(String s1, String s2) {
+    String norm1 = _normalizeString(s1);
+    String norm2 = _normalizeString(s2);
+
+    if (norm1.isEmpty && norm2.isEmpty) return 1.0;
+    if (norm1.isEmpty || norm2.isEmpty) return 0.0;
+
+    int maxLength = norm1.length > norm2.length ? norm1.length : norm2.length;
+    if (maxLength == 0) return 1.0;
+
+    int distance = _levenshteinDistance(norm1, norm2);
+    return 1.0 - (distance / maxLength);
+  }
+
+  // 6. Hàm chính: Tìm và đánh dấu các tên giống nhau >= 90%
+  void findSimilarNames() {
+    similarIdCodes.clear();
+    int count = 0;
+
+    for (int i = 0; i < currentMaHieusInPortal.length; i++) {
+      bool isCurrentSimilar = false;
+      for (int j = i + 1; j < currentMaHieusInPortal.length; j++) {
+        final item1 = currentMaHieusInPortal[i];
+        final item2 = currentMaHieusInPortal[j];
+
+        // Lấy tên, nếu null thì bỏ qua
+        final name1 = item1.Name ?? "";
+        final name2 = item2.Name ?? "";
+
+        // Bỏ qua nếu tên quá ngắn (dưới 3 ký tự) để tránh báo ảo
+        if (name1.length < 3 || name2.length < 3) continue;
+
+        double similarity = _calculateSimilarity(name1, name2);
+
+        // Ngưỡng 70% (0.7)
+        if (similarity >= 0.9) {
+          similarIdCodes.add(item1.IDCODE!);
+          similarIdCodes.add(item2.IDCODE!);
+          isCurrentSimilar = true;
+
+          // Debug log
+          printInfo(
+              info:
+                  "Similar found (${(similarity * 100).toStringAsFixed(1)}%): $name1 <-> $name2");
+        }
+      }
+      if (isCurrentSimilar) count++;
+    }
+
+    if (similarIdCodes.isNotEmpty) {
+      // Sắp xếp lại danh sách để đưa các mục trùng lên đầu (Tùy chọn, ở đây mình chỉ highlight)
+      // currentMaHieusInPortal.sort((a, b) {
+      //   bool aSim = similarIdCodes.contains(a.IDCODE);
+      //   bool bSim = similarIdCodes.contains(b.IDCODE);
+      //   if (aSim && !bSim) return -1;
+      //   if (!aSim && bSim) return 1;
+      //   return 0;
+      // });
+
+      Get.snackbar("Kết quả tìm kiếm",
+          "Tìm thấy ${similarIdCodes.length} mục có tên tương tự nhau.",
+          backgroundColor: Colors.amber, colorText: Colors.black);
+    } else {
+      Get.snackbar("Thông báo", "Không tìm thấy tên nào giống nhau trên 70%.");
+    }
+
+    update(); // Refresh UI
+  }
 
   // Method to handle sorting of portals
   void sortPortals(int columnIndex, bool ascending) {

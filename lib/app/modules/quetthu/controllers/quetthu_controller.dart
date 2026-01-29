@@ -20,10 +20,10 @@ class QuetThuController extends GetxController {
   late GeminiChatService geminiSevice;
 
   // --- THAY THẾ BẰNG KHÓA API CỦA BẠN ---
-  final String _geminiApiKey = 'AIzaSyC7a4dX-wRZIB9HJppHSYkiZ1uO10ZO7Zs';
+  final String _geminiApiKey = 'AIzaSyC8C-KzIrDn9QyB35luLR2nbxaXvjHEwmU';
   // ------------------------------------
 
-  final String _modelId = 'gemini-2.0-flash'; // Hoặc 'gemini-1.5-flash'
+  final String _modelId = 'gemini-3-flash-preview'; // Hoặc 'gemini-1.5-flash'
   late final Uri _apiUrl = Uri.parse(
       'https://generativelanguage.googleapis.com/v1beta/models/$_modelId:streamGenerateContent?key=$_geminiApiKey');
 
