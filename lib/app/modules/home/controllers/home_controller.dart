@@ -655,4 +655,12 @@ class HomeController extends GetxController {
     // Navigate to the import images view
     Get.toNamed(Routes.IMPORT_IMAGES);
   }
+
+  void goToCaptureImage() async {
+    final result = await Get.toNamed(Routes.CAPTURE_IMAGE);
+    if (result != null) {
+      Get.snackbar("Thành công", "Đã chụp và lưu ảnh.",
+          snackPosition: SnackPosition.BOTTOM);
+    }
+  }
 }

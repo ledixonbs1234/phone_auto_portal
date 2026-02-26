@@ -36,6 +36,12 @@ class PortalinfoView extends GetView<PortalinfoController> {
     );
   }
 
+  String _getLastWords(String? text, int count) {
+    if (text == null || text.isEmpty) return "Không có địa chỉ";
+    if (text.length <= count) return text;
+    return "...${text.substring(text.length - count)}";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,22 +79,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   },
                 ),
                 const SizedBox(width: 8),
-                _buildActionButton(
-                  icon: Icons.calendar_today,
-                  color: Colors.green,
-                  label: "",
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime.now());
-                    if (pickedDate != null) {
-                      controller.selectedDate.value = pickedDate;
-                      controller.refreshPortal(controller.selectedDate.value);
-                    }
-                  },
-                ),
+
                 Obx(() => IconButton(
                       icon: Icon(
                         controller.isScanSectionVisible.value
@@ -105,27 +96,33 @@ class PortalinfoView extends GetView<PortalinfoController> {
               ],
             ),
           ),
-          // Collapsible barcode scanning section
+          // Collapsible search & filter section
           Obx(() => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                height: controller.isScanSectionVisible.value ? 50 : 0,
+                height: controller.isScanSectionVisible.value ? null : 0,
+                constraints: controller.isScanSectionVisible.value
+                    ? BoxConstraints(
+                        minHeight: 0,
+                        maxHeight: MediaQuery.of(context).size.height * 0.6,
+                      )
+                    : const BoxConstraints(maxHeight: 0),
                 clipBehavior: Clip.hardEdge,
                 decoration: const BoxDecoration(),
                 child: controller.isScanSectionVisible.value
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8.0, vertical: 4.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: SizedBox(
-                                height: 40, // Reduced height for compact design
+                    ? ListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(8.0),
+                        children: [
+                          // Row 1: Barcode scanning
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
                                 child: TextField(
                                   controller: controller.barcodeInputController,
-                                  style: const TextStyle(
-                                      fontSize: 14), // Smaller font
+                                  style: const TextStyle(fontSize: 14),
                                   decoration: InputDecoration(
                                     labelText: 'Mã sản phẩm',
                                     hintText: 'Nhập hoặc quét mã',
@@ -156,19 +153,16 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                   },
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              flex: 1,
-                              child: SizedBox(
-                                height: 40, // Matching height with text field
+                              const SizedBox(width: 6),
+                              Expanded(
+                                flex: 1,
                                 child: Obx(() => ElevatedButton.icon(
                                       icon: Icon(
                                         controller.isScanning.value
                                             ? Icons.hourglass_empty
                                             : Icons.qr_code_scanner,
                                         color: Colors.purple,
-                                        size: 16, // Smaller icon
+                                        size: 16,
                                       ),
                                       label: Text(
                                         controller.isScanning.value
@@ -177,7 +171,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                         style: const TextStyle(
                                           color: Colors.purple,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 12, // Smaller font
+                                          fontSize: 12,
                                         ),
                                       ),
                                       style: ElevatedButton.styleFrom(
@@ -196,9 +190,203 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                       },
                                     )),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Row 2: Từ ngày đến ngày
+                          Row(children: [
+                            Expanded(
+                              child: Obx(
+                                () => InkWell(
+                                  onTap: () async {
+                                    DateTime? pickedDate = await showDatePicker(
+                                      context: context,
+                                      initialDate: controller.fromDate.value,
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (pickedDate != null) {
+                                      controller.fromDate.value = pickedDate;
+                                    }
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.grey.shade400),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 8),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.calendar_today,
+                                          size: 18,
+                                          color: Colors.blue,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            "Từ: ${controller.fromDate.value.day}/${controller.fromDate.value.month}/${controller.fromDate.value.year}",
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
+
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: SizedBox(
+                                height: 40,
+                                child: Obx(
+                                  () => InkWell(
+                                    onTap: () async {
+                                      DateTime? pickedDate =
+                                          await showDatePicker(
+                                        context: context,
+                                        initialDate: controller.toDate.value,
+                                        firstDate: DateTime(2025),
+                                        lastDate: DateTime.now(),
+                                      );
+                                      if (pickedDate != null) {
+                                        controller.toDate.value = pickedDate;
+                                      }
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: Colors.grey.shade400),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.calendar_today,
+                                            size: 18,
+                                            color: Colors.green,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              "Đến: ${controller.toDate.value.day}/${controller.toDate.value.month}/${controller.toDate.value.year}",
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 8),
+                            // Row 3: Tên người nhận
+                          ]),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 50,
+                            child: TextField(
+                              controller: controller.recipientNameController,
+                              onChanged: (value) {
+                                controller.recipientNameFilter.value = value;
+                              },
+                              style: const TextStyle(fontSize: 14),
+                              decoration: InputDecoration(
+                                labelText: 'Tên người nhận',
+                                hintText: 'Nhập tên người nhận',
+                                labelStyle: const TextStyle(fontSize: 12),
+                                hintStyle: const TextStyle(fontSize: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6.0),
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.person,
+                                  size: 18,
+                                  color: Colors.orange,
+                                ),
+                                suffixIcon: Obx(
+                                  () => controller
+                                          .recipientNameFilter.value.isNotEmpty
+                                      ? IconButton(
+                                          icon:
+                                              const Icon(Icons.clear, size: 16),
+                                          onPressed: () {
+                                            controller.recipientNameController
+                                                .clear();
+                                            controller
+                                                .recipientNameFilter.value = "";
+                                          },
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                              minWidth: 24, minHeight: 24),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Row 4: Search Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.search, size: 18),
+                              label: const Text(
+                                'Tìm kiếm',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.blue.shade700,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6.0),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 16,
+                                ),
+                              ),
+                              onPressed: () {
+                                // Trigger search/filter with all parameters
+                                controller.refreshPortal(
+                                  null,
+                                  fromDate: controller.fromDate.value,
+                                  toDate: controller.toDate.value,
+                                  recipientName:
+                                      controller.recipientNameFilter.value,
+                                );
+                                Get.snackbar(
+                                  'Tìm kiếm',
+                                  'Đang tìm kiếm với bộ lọc đã chọn...',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.blue,
+                                  colorText: Colors.white,
+                                  duration: const Duration(seconds: 2),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       )
                     : const SizedBox.shrink(),
               )),
@@ -577,24 +765,25 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (showDeleteButton)
+                        if (showDeleteButton || currentPortalStatus == "3")
                           Row(
                             children: [
-                              // Nút tìm tên trùng
+                              // Nút tìm tên trùng - Hiện cho cả status 2 và 3
                               IconButton(
                                 icon: const Icon(Icons.person_search,
                                     color: Colors.orange),
                                 tooltip: 'Tìm tên giống nhau > 90%',
                                 onPressed: () => controller.findSimilarNames(),
                               ),
-                              // Nút quét QR
-                              IconButton(
-                                icon: const Icon(Icons.qr_code_scanner,
-                                    color: Colors.deepPurple),
-                                tooltip: 'Quét hàng loạt',
-                                onPressed: () =>
-                                    controller.startBulkQRScanInDialog(),
-                              ),
+                              // Nút quét QR - Hiện cho cả status 2 và 3 (nếu muốn) hoặc chỉ 2
+                              if (showDeleteButton)
+                                IconButton(
+                                  icon: const Icon(Icons.qr_code_scanner,
+                                      color: Colors.deepPurple),
+                                  tooltip: 'Quét hàng loạt',
+                                  onPressed: () =>
+                                      controller.startBulkQRScanInDialog(),
+                                ),
                             ],
                           ),
                       ],
@@ -729,8 +918,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                                           fontSize: 13),
                                                     ),
                                                     Text(
-                                                      item.Address ??
-                                                          "Không có địa chỉ",
+                                                      _getLastWords(
+                                                          item.Address, 50),
                                                       style: TextStyle(
                                                           color: Colors
                                                               .grey.shade700,
@@ -738,6 +927,9 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                                       maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
+                                                      textAlign: TextAlign.left,
+                                                      textDirection:
+                                                          TextDirection.ltr,
                                                     ),
                                                     Text(item.Date ?? '',
                                                         style: const TextStyle(

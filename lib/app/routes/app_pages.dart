@@ -22,6 +22,8 @@ import '../modules/quetmh/bindings/quetmh_binding.dart';
 import '../modules/quetmh/views/quetmh_view.dart';
 import '../modules/import_images/views/import_images_view.dart';
 import '../modules/import_images/controllers/image_import_controller.dart';
+import '../modules/capture_image/bindings/capture_image_binding.dart';
+import '../modules/capture_image/views/capture_image_view.dart';
 
 part 'app_routes.dart';
 
@@ -87,6 +89,11 @@ class AppPages {
       name: _Paths.DIRECTION_SCANNING,
       page: () => const DirectionScanningView(),
       binding: DirectionScanningBinding(),
+    ),
+    GetPage(
+      name: _Paths.CAPTURE_IMAGE,
+      page: () => const CaptureImageView(),
+      binding: CaptureImageBinding(),
     ),
   ];
 }

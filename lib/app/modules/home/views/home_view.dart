@@ -545,6 +545,18 @@ class HomeView extends GetView<HomeController> {
                                 },
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 130,
+                              child: _buildActionButton(
+                                icon: Icons.camera_alt,
+                                label: 'Chụp Ảnh',
+                                color: Colors.purpleAccent,
+                                onPressed: () {
+                                  controller.goToCaptureImage();
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),

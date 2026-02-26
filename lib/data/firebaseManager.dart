@@ -67,7 +67,7 @@ class FirebaseManager with WidgetsBindingObserver {
   String lastCalledNumber = '';
   void setUp() async {
     readKey();
-    
+
     // Initialize TelegramService
     try {
       await TelegramService.instance.init();
@@ -75,7 +75,7 @@ class FirebaseManager with WidgetsBindingObserver {
       print('Failed to initialize TelegramService: $e');
       // Silently ignore errors, validation happens on first upload
     }
-    
+
     if (streamTimeUpdate != null) streamTimeUpdate!.cancel();
     streamTimeUpdate =
         database.child('PNS/TimeUpdate').onValue.listen((event) async {
@@ -363,10 +363,11 @@ class FirebaseManager with WidgetsBindingObserver {
       _checkAndReconnectFirebase();
     }
   }
-void sendAiOrder(List<ExtractedData> data) {
+
+  void sendAiOrder(List<ExtractedData> data) {
     try {
       // 1. Chuyển đổi List<ExtractedData> thành chuỗi JSON
-      final List<Map<String, dynamic>> jsonList = 
+      final List<Map<String, dynamic>> jsonList =
           data.map((e) => e.toJson()).toList();
       String jsonString = jsonEncode(jsonList);
 
@@ -374,11 +375,8 @@ void sendAiOrder(List<ExtractedData> data) {
       // - Lenh: "aiorders" (Để Extension nhận biết đây là dữ liệu AI)
       // - DoiTuong: Chuỗi JSON chứa danh sách đơn hàng
       // - NameMay: Tên máy hiện tại
-      MessageReceiveModel message = MessageReceiveModel(
-        "aiorders", 
-        jsonString,
-        nameMay: keyData ?? "maychu"
-      );
+      MessageReceiveModel message = MessageReceiveModel("aiorders", jsonString,
+          nameMay: keyData ?? "maychu");
 
       // 3. Sử dụng hàm addMessage có sẵn để gửi
       // Hàm này sẽ tự động:
@@ -388,7 +386,6 @@ void sendAiOrder(List<ExtractedData> data) {
       addMessage(message);
 
       showSnackBar("Đã gửi lệnh xử lý ${data.length} đơn hàng");
-      
     } catch (e) {
       print("Error sending AI orders: $e");
       showSnackBar("Lỗi gửi dữ liệu AI: $e");
@@ -521,24 +518,49 @@ void sendAiOrder(List<ExtractedData> data) {
     });
   }
 
-  refreshPortal(DateTime? time, {String? maHieus}) {
-    String content = "";
+  refreshPortal(
+    DateTime? time, {
+    String? maHieus,
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? recipientName,
+  }) {
+    // Build JSON object for easier backend processing
+    Map<String, dynamic> filterData = {};
 
+    // Add time if provided
     if (time != null) {
       String formattedDate =
           "${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}/${time.year}";
-      content = formattedDate;
+      filterData['time'] = formattedDate;
     }
 
-    // If maHieus is provided, append it to the content
+    // Add maHieus if provided
     if (maHieus != null && maHieus.isNotEmpty) {
-      if (content.isNotEmpty) {
-        content += "|$maHieus"; // Use pipe separator between date and maHieus
-      } else {
-        content = "|$maHieus";
-      }
+      filterData['maHieus'] = maHieus;
     }
 
+    // Add fromDate if provided
+    if (fromDate != null) {
+      String formattedFromDate =
+          "${fromDate.day.toString().padLeft(2, '0')}/${fromDate.month.toString().padLeft(2, '0')}/${fromDate.year}";
+      filterData['fromDate'] = formattedFromDate;
+    }
+
+    // Add toDate if provided
+    if (toDate != null) {
+      String formattedToDate =
+          "${toDate.day.toString().padLeft(2, '0')}/${toDate.month.toString().padLeft(2, '0')}/${toDate.year}";
+      filterData['toDate'] = formattedToDate;
+    }
+
+    // Add recipientName if provided
+    if (recipientName != null && recipientName.isNotEmpty) {
+      filterData['recipientName'] = recipientName;
+    }
+
+    // Convert to JSON string for transmission
+    String content = jsonEncode(filterData);
     addMessage(MessageReceiveModel("getPortal", content));
   }
 
@@ -632,15 +654,16 @@ void sendAiOrder(List<ExtractedData> data) {
     try {
       final snapshot = await database.child('AI_KEYS').get();
       if (snapshot.exists && snapshot.value != null) {
-        final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+        final Map<dynamic, dynamic> data =
+            snapshot.value as Map<dynamic, dynamic>;
         final List<AiKeyModel> keys = [];
-        
+
         data.forEach((key, value) {
           if (value is Map) {
             keys.add(AiKeyModel.fromJson(key.toString(), value));
           }
         });
-        
+
         // Sắp xếp theo tên cho dễ nhìn
         keys.sort((a, b) => a.name.compareTo(b.name));
         return keys;
@@ -652,6 +675,7 @@ void sendAiOrder(List<ExtractedData> data) {
     }
   }
 }
+
 class AiKeyModel {
   String id;
   String key;

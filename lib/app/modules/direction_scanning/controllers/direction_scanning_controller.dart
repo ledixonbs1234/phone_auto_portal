@@ -12,6 +12,7 @@ class DirectionScanningController extends GetxController {
   // Data passed from PortalInfo
   final selectedPortalIds = <String>[].obs;
   final allMaHieus = <StateMaHieu>[].obs;
+  late List<StateMaHieu> _originalMaHieus = []; // Backup dữ liệu gốc để restore
 
   // Direction-based scanning
   final selectedDirection = "".obs;
@@ -72,6 +73,9 @@ class DirectionScanningController extends GetxController {
       print(
           '- First few packages: ${allMaHieus.take(3).map((p) => p.code).toList()}');
     }
+
+    // Backup dữ liệu gốc để có thể restore khi quét lại
+    _originalMaHieus = List.from(allMaHieus);
 
     // Auto prepare data when initialized
     if (allMaHieus.isNotEmpty) {
@@ -272,6 +276,10 @@ class DirectionScanningController extends GetxController {
 
     // Reset scan session để tránh duplicate check với session cũ
     scannedPackagesInSession.clear();
+    
+    // QUAN TRỌNG: Reset packagesByDirection để có thể quét lại
+    // Rebuild từ allMaHieus nếu có dữ liệu gốc
+    await _rebuildPackagesByDirection();
 
     // Tạo session mới
     currentScanSession.value = DirectionScanSession(
@@ -333,6 +341,106 @@ class DirectionScanningController extends GetxController {
         colorText: Colors.white,
       );
       isDirectionScanActive.value = false;
+    }
+  }
+
+  /// Reset packagesByDirection để có thể quét lại
+  /// Rebuild từ _originalMaHieus (backup dữ liệu gốc)
+  Future<void> _rebuildPackagesByDirection() async {
+    try {
+      // Reset các list packages theo hướng
+      for (final direction in availableDirections) {
+        packagesByDirection[direction] = [];
+      }
+
+      // Restore allMaHieus từ backup gốc
+      allMaHieus.value = List.from(_originalMaHieus);
+      print('✅ Restored allMaHieus from backup (${allMaHieus.length} items)');
+
+      // Rebuild từ allMaHieus
+      if (_provinceData == null) {
+        await _loadProvinceData();
+      }
+
+      if (_provinceData == null) {
+        print('❌ Cannot rebuild - province data is null');
+        return;
+      }
+
+      // Extract province codes từ data
+      final Set<String> voCodes = <String>{};
+      final Set<String> raCodes = <String>{};
+      final Set<String> quangNamCodes = <String>{};
+      final Set<String> quangNgaiCodes = <String>{};
+
+      if (_provinceData!['vo'] != null) {
+        for (final province in _provinceData!['vo']) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              voCodes.add(code.toString());
+            }
+          }
+        }
+      }
+
+      if (_provinceData!['ra'] != null) {
+        for (final province in _provinceData!['ra']) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              raCodes.add(code.toString());
+            }
+          }
+        }
+      }
+
+      if (_provinceData!['quangnam'] != null) {
+        for (final province in _provinceData!['quangnam']) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              quangNamCodes.add(code.toString());
+            }
+          }
+        }
+      }
+
+      if (_provinceData!['quangngai'] != null) {
+        for (final province in _provinceData!['quangngai']) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              quangNgaiCodes.add(code.toString());
+            }
+          }
+        }
+      }
+
+      // Re-classify packages theo hướng từ allMaHieus đã restore
+      for (final item in allMaHieus) {
+        if (item.provinceCode == null || item.provinceCode!.isEmpty) continue;
+
+        final provinceCode = item.provinceCode!.trim();
+
+        if (raCodes.contains(provinceCode)) {
+          packagesByDirection['RA']!.add(item);
+        }
+        if (voCodes.contains(provinceCode)) {
+          packagesByDirection['VÔ']!.add(item);
+        }
+        if (quangNamCodes.contains(provinceCode)) {
+          packagesByDirection['Quảng Nam']!.add(item);
+        }
+        if (quangNgaiCodes.contains(provinceCode)) {
+          packagesByDirection['Quảng Ngãi']!.add(item);
+        }
+      }
+
+      print('✅ Rebuilt packagesByDirection');
+      print('  - RA: ${packagesByDirection['RA']?.length ?? 0}');
+      print('  - VÔ: ${packagesByDirection['VÔ']?.length ?? 0}');
+      print('  - Quảng Nam: ${packagesByDirection['Quảng Nam']?.length ?? 0}');
+      print(
+          '  - Quảng Ngãi: ${packagesByDirection['Quảng Ngãi']?.length ?? 0}');
+    } catch (e) {
+      print('❌ Error rebuilding packagesByDirection: $e');
     }
   }
 

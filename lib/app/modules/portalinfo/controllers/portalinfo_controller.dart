@@ -204,6 +204,14 @@ class PortalinfoController extends GetxController {
 
   final selectedDate = DateTime.now().obs;
 
+  // Date range filter
+  final fromDate = DateTime.now().obs;
+  final toDate = DateTime.now().obs;
+
+  // Recipient name filter
+  final recipientNameFilter = "".obs;
+  final TextEditingController recipientNameController = TextEditingController();
+
   // Barcode scanning functionality
   final TextEditingController barcodeInputController = TextEditingController();
   final isScanning = false.obs;
@@ -806,12 +814,15 @@ class PortalinfoController extends GetxController {
     // Clear input when hiding the section
     if (!isScanSectionVisible.value) {
       barcodeInputController.clear();
+      recipientNameController.clear(); // Clear the text field
+      recipientNameFilter.value = ""; // Reset recipient name filter
     }
   }
 
   @override
   void onClose() {
     barcodeInputController.dispose();
+    recipientNameController.dispose();
     _barcodeSubscription?.cancel(); // Cancel continuous scanning subscription
 
     cancelBulkQRScanInDialog();
@@ -823,13 +834,62 @@ class PortalinfoController extends GetxController {
     super.onClose();
   }
 
-  Future<void> refreshPortal(DateTime? time) async {
-    await FirebaseManager()
-        .refreshPortal(time, maHieus: barcodeInputController.text);
+  Future<void> refreshPortal(
+    DateTime? time, {
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? recipientName,
+  }) async {
+    // Use provided filters or fall back to controller values
+    DateTime? dateFilterFrom = fromDate ?? this.fromDate.value;
+    DateTime? dateFilterTo = toDate ?? this.toDate.value;
+    String? nameFilter = recipientName ??
+        (this.recipientNameFilter.value.isEmpty
+            ? null
+            : this.recipientNameFilter.value);
 
+    // Helper function to check if two dates are the same day
+    bool isSameDay(DateTime date1, DateTime date2) {
+      return date1.year == date2.year &&
+          date1.month == date2.month &&
+          date1.day == date2.day;
+    }
+
+    // Check if all filters are at default values (today + no recipient name)
+    bool isDefaultFilters = isSameDay(dateFilterFrom, DateTime.now()) &&
+        isSameDay(dateFilterTo, DateTime.now()) &&
+        (nameFilter == null || nameFilter.isEmpty);
+
+    if (isDefaultFilters) {
+      // Call with just time and maHieus (old way)
+      await FirebaseManager()
+          .refreshPortal(time, maHieus: barcodeInputController.text);
+    } else {
+      // Call with all filter parameters
+      await FirebaseManager().refreshPortal(
+        time,
+        maHieus: barcodeInputController.text,
+        fromDate: dateFilterFrom,
+        toDate: dateFilterTo,
+        recipientName: nameFilter,
+      );
+    }
+
+    // Build status message
+    List<String> filterInfo = [];
     if (barcodeInputController.text.isNotEmpty) {
-      stateText.value =
-          "Đang cập nhật dữ liệu với ${barcodeInputController.text.split(',').length} mã đã quét";
+      filterInfo.add("Mã: ${barcodeInputController.text.split(',').length}");
+    }
+    if (nameFilter != null && nameFilter.isNotEmpty) {
+      filterInfo.add("Tên: $nameFilter");
+    }
+    if (dateFilterFrom != null && dateFilterTo != null) {
+      filterInfo.add(
+          "Từ ${dateFilterFrom.day}/${dateFilterFrom.month} đến ${dateFilterTo.day}/${dateFilterTo.month}");
+    }
+
+    if (filterInfo.isNotEmpty) {
+      stateText.value = "Đang cập nhật dữ liệu - ${filterInfo.join(", ")}";
     } else {
       stateText.value = "Đang cập nhật dữ liệu";
     }
