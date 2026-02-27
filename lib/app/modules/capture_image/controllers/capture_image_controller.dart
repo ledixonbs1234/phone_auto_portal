@@ -15,6 +15,7 @@ class CaptureImageController extends GetxController {
   final isProcessing = false.obs;
   final capturedCount = 0.obs;
   final capturedImagePaths = <String>[].obs;
+  final isFlashOn = false.obs;
 
   // MethodChannel để nhận sự kiện phím volume từ native Android
   static const _volumeChannel =
@@ -172,6 +173,22 @@ class CaptureImageController extends GetxController {
       }
     } catch (e) {
       Get.log("Lỗi tạo ảnh đánh dấu: $e");
+    }
+  }
+
+  Future<void> toggleFlash() async {
+    if (cameraController == null || !cameraController!.value.isInitialized)
+      return;
+    try {
+      if (isFlashOn.value) {
+        await cameraController!.setFlashMode(FlashMode.off);
+        isFlashOn.value = false;
+      } else {
+        await cameraController!.setFlashMode(FlashMode.torch);
+        isFlashOn.value = true;
+      }
+    } catch (e) {
+      Get.snackbar("Lỗi", "Không thể bật/tắt đèn flash: $e");
     }
   }
 

@@ -45,6 +45,29 @@ class CaptureImageView extends GetView<CaptureImageController> {
             CameraPreview(controller.cameraController!),
             Positioned(
               top: 40,
+              left: 20,
+              child: GestureDetector(
+                onTap: controller.toggleFlash,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    controller.isFlashOn.value
+                        ? Icons.flash_on
+                        : Icons.flash_off,
+                    color: controller.isFlashOn.value
+                        ? Colors.yellow
+                        : Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
               right: 20,
               child: Container(
                 padding:
