@@ -1,5 +1,5 @@
 name: phone_auto_portal
-version: 1.2.3+73
+version: 1.2.3+81
 publish_to: none
 description: A new Flutter project.
 environment: 
@@ -40,6 +40,8 @@ dependencies:
   google_mlkit_barcode_scanning: ^0.14.1
   image: ^4.5.4
   file_picker: ^10.3.7
+  gal: ^2.3.2
+  firebase_storage: ^13.0.6
 
 dev_dependencies: 
   flutter_lints: ^3.0.0

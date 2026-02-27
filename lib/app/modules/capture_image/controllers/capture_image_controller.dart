@@ -7,7 +7,6 @@ import 'package:get/get.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 class CaptureImageController extends GetxController {
   CameraController? cameraController;

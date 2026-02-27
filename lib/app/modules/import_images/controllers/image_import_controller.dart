@@ -12,7 +12,6 @@ import 'package:phone_auto_portal/app/modules/import_images/services/image_batch
 import 'package:phone_auto_portal/app/modules/import_images/services/image_processing_service.dart';
 import 'package:phone_auto_portal/app/modules/import_images/services/barcode_ocr_service.dart';
 import 'package:phone_auto_portal/app/modules/import_images/services/image_upload_service.dart';
-import 'package:phone_auto_portal/data/exceptions/telegram_exceptions.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/data/image_cache_service.dart';
 
@@ -382,7 +381,12 @@ class ImageImportController extends GetxController {
         batches.map((batch) => batch.copyWith(isSelected: false)).toList();
   }
 
-  /// Xử lý và upload các batch đã chọn
+  // Số lượng batch xử lý đồng thời tối đa
+  static const int _maxConcurrentBatches = 2;
+  // Số lượng ảnh xử lý đồng thời tối đa trong mỗi batch
+  static const int _maxConcurrentImages = 5;
+
+  /// Xử lý và upload các batch đã chọn (song song)
   Future<void> processSelectedBatches() async {
     final selectedBatchIndexes = <int>[];
 
@@ -418,9 +422,12 @@ class ImageImportController extends GetxController {
       statusMessage.value = 'Đang xóa ảnh cũ...';
       await _uploadService.clearOldImages();
 
-      for (var batchIndex in selectedBatchIndexes) {
-        await _processBatch(batchIndex);
-      }
+      // Xử lý các batch song song (tối đa _maxConcurrentBatches cùng lúc)
+      await _runWithConcurrencyLimit(
+        items: selectedBatchIndexes,
+        maxConcurrent: _maxConcurrentBatches,
+        processor: (batchIndex) => _processBatch(batchIndex),
+      );
 
       statusMessage.value =
           'Hoàn thành! Thành công: ${successImages.value}, Lỗi: ${errorImages.value}';
@@ -431,99 +438,40 @@ class ImageImportController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 5),
       );
-    } on TelegramConfigMissingException catch (e) {
-      Get.dialog(
-        AlertDialog(
-          title: const Text('Lỗi Cấu Hình'),
-          content: Text(e.message),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Đóng'),
-            ),
-          ],
-        ),
-      );
-      statusMessage.value = 'Thiếu cấu hình Telegram';
-    } on TelegramBatchUploadFailedException catch (e) {
-      Get.dialog(
-        AlertDialog(
-          title: const Text('Upload Thất Bại'),
-          content: Text('${e.message}\n\nTất cả thay đổi đã được hoàn tác.'),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Đóng'),
-            ),
-          ],
-        ),
-      );
-      statusMessage.value = 'Upload thất bại và đã rollback';
-    } on TelegramInvalidTokenException catch (e) {
-      Get.dialog(
-        AlertDialog(
-          title: const Text('Lỗi Token'),
-          content: Text(e.message),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Đóng'),
-            ),
-          ],
-        ),
-      );
-      statusMessage.value = 'Token Telegram không hợp lệ';
-    } on TelegramChatNotFoundException catch (e) {
-      Get.dialog(
-        AlertDialog(
-          title: const Text('Lỗi Chat'),
-          content: Text(e.message),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Đóng'),
-            ),
-          ],
-        ),
-      );
-      statusMessage.value = 'Không tìm thấy chat Telegram';
-    } on TelegramFileTooLargeException catch (e) {
-      Get.dialog(
-        AlertDialog(
-          title: const Text('File Quá Lớn'),
-          content: Text(e.message),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Đóng'),
-            ),
-          ],
-        ),
-      );
-      statusMessage.value = 'File ảnh quá lớn';
-    } on TelegramApiException catch (e) {
-      Get.dialog(
-        AlertDialog(
-          title: const Text('Lỗi Telegram API'),
-          content: Text('${e.message}\n\nStatus: ${e.statusCode}'),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Đóng'),
-            ),
-          ],
-        ),
-      );
-      statusMessage.value = 'Lỗi Telegram API';
     } catch (e) {
-      Get.snackbar(
-        'Lỗi',
-        'Có lỗi xảy ra: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      Get.dialog(
+        AlertDialog(
+          title: const Text('Lỗi Upload'),
+          content: Text('$e'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
       );
-      statusMessage.value = 'Lỗi: $e';
+      statusMessage.value = 'Lỗi upload: $e';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Helper: Chạy song song với giới hạn concurrency (pool pattern)
+  Future<void> _runWithConcurrencyLimit<T>({
+    required List<T> items,
+    required int maxConcurrent,
+    required Future<void> Function(T item) processor,
+  }) async {
+    // Chia thành các nhóm, mỗi nhóm chạy song song tối đa maxConcurrent
+    for (int start = 0; start < items.length; start += maxConcurrent) {
+      final end = (start + maxConcurrent).clamp(0, items.length);
+      final chunk = items.sublist(start, end);
+
+      // Chạy song song các item trong chunk, bắt lỗi từng cái
+      await Future.wait(
+        chunk.map((item) => processor(item).catchError((_) {})),
+      );
     }
   }
 
@@ -535,123 +483,131 @@ class ImageImportController extends GetxController {
     batches[batchIndex] = batch.copyWith(status: BatchStatus.processing);
     batches.refresh();
 
-    // Step 1: Process all images (check cache first, rotate + OCR only if needed)
-    final processedImages = <ImageItem>[];
+    // Step 1: Process all images SONG SONG (check cache first, rotate + OCR only if needed)
+    final processedImagesList = <ImageItem>[];
     final tempFilesToDelete = <File>[];
+    int completedCount = 0;
 
-    for (int i = 0; i < batch.images.length; i++) {
-      try {
-        final image = batch.images[i];
-        final fileName = image.originalFile.path.split('/').last;
-        final progress = '${i + 1}/${batch.images.length}';
+    // Tạo danh sách index để xử lý song song
+    final imageIndexes = List<int>.generate(batch.images.length, (i) => i);
 
-        // BƯỚC 0: Kiểm tra cache TRƯỚC KHI rotate
-        statusMessage.value = '[$progress] 🔍 Kiểm tra cache: $fileName';
+    await _runWithConcurrencyLimit(
+      items: imageIndexes,
+      maxConcurrent: _maxConcurrentImages,
+      processor: (int i) async {
+        try {
+          final image = batch.images[i];
+          final fileName = image.originalFile.path.split('/').last;
+          completedCount++;
+          final progress = '$completedCount/${batch.images.length}';
 
-        batch.images[i] =
-            image.copyWith(status: ImageProcessingStatus.rotating);
-        batches.refresh();
+          // BƯỚC 0: Kiểm tra cache TRƯỚC KHI rotate
+          statusMessage.value = '[$progress] 🔍 Kiểm tra cache: $fileName';
 
-        final cachedCompressed =
-            await ImageCacheService.instance.getMetadata(image.originalFile);
-
-        File processedFile;
-        int rotationAngle = 0;
-        String? maHieu;
-
-        if (cachedCompressed != null) {
-          // ✅ CÓ METADATA - Dùng file compressed và mã hiệu đã lưu
-          statusMessage.value =
-              '[$progress] ✅ Tìm thấy: ${cachedCompressed.maHieu ?? "no maHieu"}';
-          _debugLog('✅ Metadata found! MaHieu: ${cachedCompressed.maHieu}');
-
-          processedFile = File(cachedCompressed.compressedPath);
-          maHieu = cachedCompressed.maHieu;
-          rotationAngle = 0; // Already rotated
-
-          // Delay nhỏ để user thấy message
-          await Future.delayed(const Duration(milliseconds: 200));
-        } else {
-          // ❌ CHƯA CÓ METADATA - Phải rotate, OCR và compress
-          statusMessage.value = '[$progress] ⚙️ Chưa xử lý, bắt đầu...';
-          _debugLog('❌ No metadata. Processing: ${image.originalFile.path}');
-
-          // BƯỚC 1: Rotate
-          statusMessage.value = '[$progress] 🔄 Đang xoay ảnh: $fileName';
-
-          final processedResult =
-              await _processingService.processImage(image.originalFile);
-
-          if (!processedResult.isSuccess) {
-            throw Exception(processedResult.errorMessage ?? 'Lỗi xử lý ảnh');
-          }
-
-          final rotatedFile = processedResult.file;
-          rotationAngle = processedResult.rotationAngle;
-
-          // Lưu file rotated để xóa SAU
-          tempFilesToDelete.addAll(processedResult.tempFiles);
-
-          // BƯỚC 2: OCR để đọc mã hiệu
-          batch.images[i] = image.copyWith(
-            status: ImageProcessingStatus.readingBarcode,
-            rotationAngle: rotationAngle,
-          );
+          batch.images[i] =
+              image.copyWith(status: ImageProcessingStatus.rotating);
           batches.refresh();
 
-          statusMessage.value = '[$progress] 📖 Đang đọc mã hiệu: $fileName';
+          final cachedCompressed =
+              await ImageCacheService.instance.getMetadata(image.originalFile);
 
-          final maHieuResult = await _ocrService.readMaHieu(rotatedFile);
-          maHieu = maHieuResult.maHieu;
+          File processedFile;
+          int rotationAngle = 0;
+          String? maHieu;
 
-          statusMessage.value = '[$progress] 🗜️ Đang nén và lưu: $fileName';
+          if (cachedCompressed != null) {
+            // ✅ CÓ METADATA - Dùng file compressed và mã hiệu đã lưu
+            statusMessage.value =
+                '[$progress] ✅ Tìm thấy: ${cachedCompressed.maHieu ?? "no maHieu"}';
+            _debugLog('✅ Metadata found! MaHieu: ${cachedCompressed.maHieu}');
 
-          // BƯỚC 3: Compress và lưu metadata
-          final savedQuality = GetStorage().read<int>('compress_quality') ??
-              ImageCacheService.defaultQuality;
-          final savedMetadata = await ImageCacheService.instance.processAndSave(
-            originalFile: image.originalFile,
-            rotatedFile: rotatedFile,
+            processedFile = File(cachedCompressed.compressedPath);
+            maHieu = cachedCompressed.maHieu;
+            rotationAngle = 0; // Already rotated
+          } else {
+            // ❌ CHƯA CÓ METADATA - Phải rotate, OCR và compress
+            statusMessage.value = '[$progress] ⚙️ Chưa xử lý, bắt đầu...';
+            _debugLog('❌ No metadata. Processing: ${image.originalFile.path}');
+
+            // BƯỚC 1: Rotate
+            statusMessage.value = '[$progress] 🔄 Đang xoay ảnh: $fileName';
+
+            final processedResult =
+                await _processingService.processImage(image.originalFile);
+
+            if (!processedResult.isSuccess) {
+              throw Exception(processedResult.errorMessage ?? 'Lỗi xử lý ảnh');
+            }
+
+            final rotatedFile = processedResult.file;
+            rotationAngle = processedResult.rotationAngle;
+
+            // Lưu file rotated để xóa SAU (synchronized)
+            tempFilesToDelete.addAll(processedResult.tempFiles);
+
+            // BƯỚC 2: OCR để đọc mã hiệu
+            batch.images[i] = image.copyWith(
+              status: ImageProcessingStatus.readingBarcode,
+              rotationAngle: rotationAngle,
+            );
+            batches.refresh();
+
+            statusMessage.value = '[$progress] 📖 Đang đọc mã hiệu: $fileName';
+
+            final maHieuResult = await _ocrService.readMaHieu(rotatedFile);
+            maHieu = maHieuResult.maHieu;
+
+            statusMessage.value = '[$progress] 🗜️ Đang nén và lưu: $fileName';
+
+            // BƯỚC 3: Compress và lưu metadata
+            final savedQuality = GetStorage().read<int>('compress_quality') ??
+                ImageCacheService.defaultQuality;
+            final savedMetadata =
+                await ImageCacheService.instance.processAndSave(
+              originalFile: image.originalFile,
+              rotatedFile: rotatedFile,
+              maHieu: maHieu,
+              rotationAngle: rotationAngle,
+              quality: savedQuality,
+            );
+
+            processedFile = File(savedMetadata.compressedPath);
+          }
+
+          // Update image với kết quả (dù có metadata hay không)
+          final processedImage = image.copyWith(
+            file: processedFile,
             maHieu: maHieu,
             rotationAngle: rotationAngle,
-            quality: savedQuality,
+            status: ImageProcessingStatus.uploading,
           );
 
-          processedFile = File(savedMetadata.compressedPath);
+          batch.images[i] = processedImage;
+          processedImagesList.add(processedImage);
+          batches.refresh();
+
+          this.processedImages.value++;
+        } catch (e) {
+          batch.images[i] = batch.images[i].copyWith(
+            status: ImageProcessingStatus.error,
+            errorMessage: e.toString(),
+          );
+          errorImages.value++;
+          batches.refresh();
         }
-
-        // Update image với kết quả (dù có metadata hay không)
-        final processedImage = image.copyWith(
-          file: processedFile,
-          maHieu: maHieu,
-          rotationAngle: rotationAngle,
-          status: ImageProcessingStatus.uploading,
-        );
-
-        batch.images[i] = processedImage;
-        processedImages.add(processedImage);
-        batches.refresh();
-
-        this.processedImages.value++;
-      } catch (e) {
-        batch.images[i] = batch.images[i].copyWith(
-          status: ImageProcessingStatus.error,
-          errorMessage: e.toString(),
-        );
-        errorImages.value++;
-        batches.refresh();
-      }
-    }
+      },
+    );
 
     // Step 2: Upload all processed images as media groups
-    if (processedImages.isNotEmpty) {
+    if (processedImagesList.isNotEmpty) {
       try {
-        final total = processedImages.length;
-        statusMessage.value = '📤 Chuẩn bị upload $total ảnh lên Telegram...';
+        final total = processedImagesList.length;
+        statusMessage.value =
+            '📤 Chuẩn bị upload $total ảnh lên Firebase Storage...';
         await Future.delayed(const Duration(milliseconds: 300));
 
         final uploadResult = await _uploadService.uploadImagesInBatches(
-          images: processedImages,
+          images: processedImagesList,
           batchId: batch.id,
           onProgress: (current, total, status) {
             // Callback từ upload service để cập nhật progress
@@ -668,7 +624,7 @@ class ImageImportController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 500));
 
         // Update all images status to completed
-        for (var processedImage in processedImages) {
+        for (var processedImage in processedImagesList) {
           final index =
               batch.images.indexWhere((img) => img.id == processedImage.id);
           if (index != -1) {
@@ -686,7 +642,7 @@ class ImageImportController extends GetxController {
       } finally {
         // QUAN TRỌNG: Xóa file rotated tạm trong finally
         // Step 3: Cleanup temp rotated files SAU KHI UPLOAD XONG
-        // TelegramService đã tạo cache compressed từ file rotated này rồi
+        // Firebase Storage đã lưu ảnh, file tạm có thể xóa
         if (tempFilesToDelete.isNotEmpty) {
           statusMessage.value =
               '🗑️ Dọn dẹp ${tempFilesToDelete.length} file tạm...';
@@ -783,7 +739,7 @@ class ImageImportController extends GetxController {
       }
 
       // 4. Xóa file rotated tạm sau khi upload thành công
-      // TelegramService đã tạo cache compressed từ file rotated này rồi
+      // Firebase Storage đã lưu ảnh, file tạm có thể xóa
       for (var tempFile in tempFilesToDelete) {
         try {
           if (await tempFile.exists()) {

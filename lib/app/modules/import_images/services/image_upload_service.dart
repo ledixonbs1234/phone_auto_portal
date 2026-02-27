@@ -4,8 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
-import 'package:phone_auto_portal/data/telegram_service.dart';
-import 'package:phone_auto_portal/data/exceptions/telegram_exceptions.dart';
+import 'package:phone_auto_portal/data/firebase_storage_service.dart';
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
@@ -14,7 +13,7 @@ void _debugLog(String message) {
   }
 }
 
-/// Service upload ảnh lên Telegram Bot API và sync metadata với Realtime Database
+/// Service upload ảnh lên Firebase Storage và sync metadata với Realtime Database
 class ImageUploadService {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
@@ -24,12 +23,12 @@ class ImageUploadService {
     return _database.child("PORTAL/CHILD/$keyData");
   }
 
-  /// Upload nhiều ảnh lên Telegram Bot API dùng Media Group
+  /// Upload nhiều ảnh lên Firebase Storage
   ///
   /// LUỒNG HOẠT ĐỘNG:
-  /// 1️⃣ CHIA NHÓM: Chia ảnh thành các nhóm nhỏ (tối đa 10 ảnh/nhóm theo giới hạn Telegram)
+  /// 1️⃣ CHIA NHÓM: Chia ảnh thành các nhóm nhỏ (tối đa 10 ảnh/nhóm)
   /// 2️⃣ UPLOAD VỚI RETRY: Cho mỗi nhóm:
-  ///    - Upload lên Telegram (tối đa 3 lần thử nếu lỗi)
+  ///    - Upload lên Firebase Storage (tối đa 3 lần thử nếu lỗi)
   ///    - Chờ exponential backoff trước mỗi lần retry (1s, 2s, 3s)
   ///    - Gọi callback [onProgress] để cập nhật UI
   /// 3️⃣ LƯU METADATA: Sau khi upload thành công, lưu metadata vào Firebase Realtime DB:
@@ -37,23 +36,8 @@ class ImageUploadService {
   ///    - Lưu imageId vào danh sách [successfulImageIds] để tracking
   /// 4️⃣ ROLLBACK NẾU LỖI: Nếu upload toàn bộ thất bại:
   ///    - Xóa metadata của tất cả ảnh đã upload thành công
-  ///    - Ném exception [TelegramBatchUploadFailedException]
+  ///    - Xóa ảnh đã upload lên Firebase Storage
   ///    - Điều này đảm bảo data integrity (không có ảnh orphan)
-  ///
-  /// RETRY MECHANISM:
-  /// - Mỗi nhóm ảnh có tối đa 3 lần thử
-  /// - Nếu lần thứ 3 vẫn lỗi → fail toàn bộ batch (không tiếp tục nhóm tiếp theo)
-  /// - Exponential backoff: delay = số lần retry hiện tại (1s, 2s, 3s)
-  ///
-  /// TRACKING:
-  /// - [successfulImageIds]: Danh sách ID ảnh đã upload thành công (dùng cho rollback)
-  /// - [onProgress]: Callback để UI theo dõi tiến độ upload từng nhóm
-  ///
-  /// RETURN:
-  /// - [BatchUploadResult]: Chứa số ảnh thành công/thất bại
-  ///
-  /// THROWS:
-  /// - [TelegramBatchUploadFailedException]: Nếu upload thất bại + rollback xong
   Future<BatchUploadResult> uploadImagesInBatches({
     required List<ImageItem> images,
     required String batchId,
@@ -61,13 +45,15 @@ class ImageUploadService {
   }) async {
     // Theo dõi ID ảnh đã upload thành công để rollback nếu cần
     final List<String> successfulImageIds = [];
+    final List<String> successfulDownloadUrls =
+        []; // Track URLs để rollback trên Storage
     int successCount = 0;
     int failCount = 0;
     const maxRetries = 3;
-    const maxImagesPerGroup = 10; // Giới hạn Media Group của Telegram
+    const maxImagesPerGroup = 10; // Upload theo nhóm 10 ảnh
 
     try {
-      // 1️⃣ CHIA NHÓM: Split images into groups of 10 (Telegram Media Group limit)
+      // 1️⃣ CHIA NHÓM: Split images into groups of 10
       for (int groupStart = 0;
           groupStart < images.length;
           groupStart += maxImagesPerGroup) {
@@ -101,12 +87,12 @@ class ImageUploadService {
               await Future.delayed(Duration(seconds: retryCount));
             }
 
-            // 🚀 Upload nhóm ảnh lên Telegram
+            // 🚀 Upload nhóm ảnh lên Firebase Storage
             onProgress?.call(groupStart, images.length,
                 'Upload nhóm $groupNumber/$totalGroups (${imageGroup.length} ảnh)');
 
-            downloadUrls =
-                await TelegramService.instance.uploadMediaGroup(imageGroup);
+            downloadUrls = await FirebaseStorageService.instance
+                .uploadMediaGroup(imageGroup);
 
             // 💾 LƯU METADATA: Lưu thông tin mỗi ảnh vào Firebase Realtime DB
             onProgress?.call(groupStart, images.length,
@@ -128,6 +114,7 @@ class ImageUploadService {
 
               // Ghi nhận ảnh đã upload thành công (để rollback sau nếu cần)
               successfulImageIds.add(imageItem.id);
+              successfulDownloadUrls.add(urlMap['downloadUrl']!);
               successCount++;
               _debugLog('✅ Uploaded image: ${imageItem.id}');
             }
@@ -169,12 +156,14 @@ class ImageUploadService {
       // 🔙 XÓA METADATA của tất cả ảnh đã upload (rollback to maintain data integrity)
       await _rollbackUploadedImages(successfulImageIds);
 
-      // ⚠️ Ném exception với danh sách ảnh đã được rollback
-      throw TelegramBatchUploadFailedException(
-        message:
-            'Upload thất bại sau $maxRetries lần thử. Đã dừng xử lý và xóa ${successfulImageIds.length} ảnh đã upload.',
-        successfulImageIds: successfulImageIds,
-        originalException: e is Exception ? e : Exception(e.toString()),
+      // 🔙 XÓA ẢNH trên Firebase Storage
+      for (final url in successfulDownloadUrls) {
+        await FirebaseStorageService.instance.deleteImageByUrl(url);
+      }
+
+      // ⚠️ Ném exception
+      throw Exception(
+        'Upload thất bại sau $maxRetries lần thử. Đã dừng xử lý và xóa ${successfulImageIds.length} ảnh đã upload.',
       );
     }
   }
@@ -192,14 +181,22 @@ class ImageUploadService {
     }
   }
 
-  /// Xóa tất cả ảnh cũ trong Realtime Database
+  /// Xóa tất cả ảnh cũ trong Realtime Database VÀ Firebase Storage
   Future<void> clearOldImages() async {
+    // Xóa ảnh trên Firebase Storage (lỗi không ảnh hưởng xóa DB)
+    try {
+      await FirebaseStorageService.instance.clearOldImages();
+    } catch (e) {
+      _debugLog('⚠️ Lỗi khi xóa ảnh cũ trên Storage: $e');
+    }
+
+    // Xóa metadata trên Realtime Database (luôn chạy dù Storage lỗi)
     try {
       final dbRef = rootPath.child('imported_images');
       await dbRef.remove();
       _debugLog('🗑️ Đã xóa tất cả ảnh cũ trên Realtime Database');
     } catch (e) {
-      _debugLog('⚠️ Lỗi khi xóa ảnh cũ: $e');
+      _debugLog('⚠️ Lỗi khi xóa metadata cũ trên Database: $e');
     }
   }
 
@@ -279,8 +276,9 @@ class ImageUploadService {
     Function(double)? onProgress,
   }) async {
     try {
-      // Upload to Telegram (truyền ImageItem để dùng originalFile làm cache key)
-      final urlMap = await TelegramService.instance.uploadImage(imageItem);
+      // Upload to Firebase Storage
+      final urlMap =
+          await FirebaseStorageService.instance.uploadImage(imageItem);
 
       // Save metadata to database
       await saveImageMetadata(
@@ -304,7 +302,7 @@ class ImageUploadService {
     }
   }
 
-  /// Xóa ảnh metadata từ Database (Telegram URLs không cần xóa khỏi storage)
+  /// Xóa ảnh metadata từ Database
   Future<void> deleteImage(String imageId) async {
     try {
       await rootPath.child('imported_images').child(imageId).remove();

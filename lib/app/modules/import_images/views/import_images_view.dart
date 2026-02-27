@@ -496,7 +496,7 @@ class ImportImagesView extends StatelessWidget {
                     label: Text(
                       controller.isLoading.value
                           ? 'Đang xử lý...'
-                          : 'Upload Tele',
+                          : 'Upload Ảnh',
                     ),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),

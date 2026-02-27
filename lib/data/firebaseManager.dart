@@ -20,7 +20,7 @@ import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
 import '../app/modules/home/messageReceiveModel.dart';
 import '../app/modules/home/user_info.dart';
-import 'telegram_service.dart';
+import 'firebase_storage_service.dart';
 
 class FirebaseManager with WidgetsBindingObserver {
   static final FirebaseManager _singleton = FirebaseManager._internal();
@@ -68,11 +68,11 @@ class FirebaseManager with WidgetsBindingObserver {
   void setUp() async {
     readKey();
 
-    // Initialize TelegramService
+    // Initialize FirebaseStorageService
     try {
-      await TelegramService.instance.init();
+      await FirebaseStorageService.instance.init();
     } catch (e) {
-      print('Failed to initialize TelegramService: $e');
+      print('Failed to initialize FirebaseStorageService: $e');
       // Silently ignore errors, validation happens on first upload
     }
 
