@@ -14,6 +14,9 @@ import 'package:phone_auto_portal/app/modules/import_images/services/barcode_ocr
 import 'package:phone_auto_portal/app/modules/import_images/services/image_upload_service.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/data/image_cache_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
@@ -384,7 +387,7 @@ class ImageImportController extends GetxController {
   // Số lượng batch xử lý đồng thời tối đa
   static const int _maxConcurrentBatches = 2;
   // Số lượng ảnh xử lý đồng thời tối đa trong mỗi batch
-  static const int _maxConcurrentImages = 5;
+  static const int _maxConcurrentImages = 10;
 
   /// Xử lý và upload các batch đã chọn (song song)
   Future<void> processSelectedBatches() async {
@@ -529,21 +532,56 @@ class ImageImportController extends GetxController {
             statusMessage.value = '[$progress] ⚙️ Chưa xử lý, bắt đầu...';
             _debugLog('❌ No metadata. Processing: ${image.originalFile.path}');
 
-            // BƯỚC 1: Rotate
-            statusMessage.value = '[$progress] 🔄 Đang xoay ảnh: $fileName';
+            // BƯỚC 1: Phân tích góc xoay
+            statusMessage.value =
+                '[$progress] 🔄 Đang kiểm tra góc xoay: $fileName';
 
             final processedResult =
                 await _processingService.processImage(image.originalFile);
 
             if (!processedResult.isSuccess) {
-              throw Exception(processedResult.errorMessage ?? 'Lỗi xử lý ảnh');
+              throw Exception(
+                  processedResult.errorMessage ?? 'Lỗi phân tích góc xoay');
             }
 
-            final rotatedFile = processedResult.file;
             rotationAngle = processedResult.rotationAngle;
 
-            // Lưu file rotated để xóa SAU (synchronized)
-            tempFilesToDelete.addAll(processedResult.tempFiles);
+            final fileSize = await image.originalFile.length();
+            final isSmallFile = fileSize < 500 * 1024; // < 500KB
+
+            File fileForOcr;
+
+            if (isSmallFile && rotationAngle == 0) {
+              // Không nén, không xoay
+              fileForOcr = image.originalFile;
+            } else {
+              statusMessage.value =
+                  '[$progress] 🗜️ Đang xử lý góc và dung lượng: $fileName';
+              final tempDir = await getTemporaryDirectory();
+              final targetPath = path.join(tempDir.path,
+                  '${DateTime.now().millisecondsSinceEpoch}_${i}_temp.jpg');
+
+              final savedQuality = GetStorage().read<int>('compress_quality') ??
+                  ImageCacheService.defaultQuality;
+              final targetQuality = isSmallFile ? 100 : savedQuality;
+
+              final compressedFile =
+                  await FlutterImageCompress.compressAndGetFile(
+                image.originalFile.absolute.path,
+                targetPath,
+                quality: targetQuality,
+                minWidth: 1920,
+                minHeight: 1920,
+                rotate: rotationAngle,
+                format: CompressFormat.jpeg,
+              );
+
+              if (compressedFile == null)
+                throw Exception('Lỗi xử lý hình ảnh Native');
+              fileForOcr = File(compressedFile.path);
+              tempFilesToDelete
+                  .add(fileForOcr); // Đánh dấu xóa file tạm sau khi upload
+            }
 
             // BƯỚC 2: OCR để đọc mã hiệu
             batch.images[i] = image.copyWith(
@@ -554,21 +592,17 @@ class ImageImportController extends GetxController {
 
             statusMessage.value = '[$progress] 📖 Đang đọc mã hiệu: $fileName';
 
-            final maHieuResult = await _ocrService.readMaHieu(rotatedFile);
+            final maHieuResult = await _ocrService.readMaHieu(fileForOcr);
             maHieu = maHieuResult.maHieu;
 
-            statusMessage.value = '[$progress] 🗜️ Đang nén và lưu: $fileName';
+            statusMessage.value = '[$progress] � Đang lưu cache: $fileName';
 
-            // BƯỚC 3: Compress và lưu metadata
-            final savedQuality = GetStorage().read<int>('compress_quality') ??
-                ImageCacheService.defaultQuality;
-            final savedMetadata =
-                await ImageCacheService.instance.processAndSave(
+            // BƯỚC 3: Lưu metadata và file vào cache
+            final savedMetadata = await ImageCacheService.instance.saveToCache(
               originalFile: image.originalFile,
-              rotatedFile: rotatedFile,
+              processedFile: fileForOcr,
               maHieu: maHieu,
               rotationAngle: rotationAngle,
-              quality: savedQuality,
             );
 
             processedFile = File(savedMetadata.compressedPath);
@@ -694,7 +728,7 @@ class ImageImportController extends GetxController {
       statusMessage.value =
           'Đang xử lý ${image.originalFile.path.split('/').last}...';
 
-      // 1. Xoay và compress ảnh (LUÔN dùng originalFile)
+      // 1. Detect góc xoay và xử lý native
       batch.images[imageIndex] =
           image.copyWith(status: ImageProcessingStatus.rotating);
       batches.refresh();
@@ -703,22 +737,52 @@ class ImageImportController extends GetxController {
           await _processingService.processImage(image.originalFile);
 
       if (!processedResult.isSuccess) {
-        throw Exception(processedResult.errorMessage ?? 'Lỗi xử lý ảnh');
+        throw Exception(
+            processedResult.errorMessage ?? 'Lỗi phân tích góc xoay');
       }
 
-      // Lưu danh sách file tạm để xóa sau
-      tempFilesToDelete = processedResult.tempFiles;
+      final rotationAngle = processedResult.rotationAngle;
+      final fileSize = await image.originalFile.length();
+      final isSmallFile = fileSize < 500 * 1024; // 500KB
+
+      File fileForOcr;
+
+      if (isSmallFile && rotationAngle == 0) {
+        fileForOcr = image.originalFile;
+      } else {
+        final tempDir = await getTemporaryDirectory();
+        final targetPath = path.join(tempDir.path,
+            '${DateTime.now().millisecondsSinceEpoch}_retry_${imageIndex}.jpg');
+
+        final savedQuality = GetStorage().read<int>('compress_quality') ??
+            ImageCacheService.defaultQuality;
+        final targetQuality = isSmallFile ? 100 : savedQuality;
+
+        final compressedFile = await FlutterImageCompress.compressAndGetFile(
+          image.originalFile.absolute.path,
+          targetPath,
+          quality: targetQuality,
+          minWidth: 1920,
+          minHeight: 1920,
+          rotate: rotationAngle,
+          format: CompressFormat.jpeg,
+        );
+
+        if (compressedFile == null) throw Exception('Lỗi nén ảnh Native');
+        fileForOcr = File(compressedFile.path);
+        tempFilesToDelete.add(fileForOcr);
+      }
 
       // 2. Đọc mã hiệu
       batch.images[imageIndex] = image.copyWith(
         status: ImageProcessingStatus.readingBarcode,
-        rotationAngle: processedResult.rotationAngle,
+        rotationAngle: rotationAngle,
       );
       batches.refresh();
 
-      final maHieuResult = await _ocrService.readMaHieu(processedResult.file);
+      final maHieuResult = await _ocrService.readMaHieu(fileForOcr);
 
-      // 3. Upload lên Telegram (no progress callback, indeterminate progress)
+      // 3. Upload (cập nhật file MỚI vào item để upload thực lấy cái đó)
       batch.images[imageIndex] = image.copyWith(
         status: ImageProcessingStatus.uploading,
         maHieu: maHieuResult.maHieu,
@@ -727,9 +791,9 @@ class ImageImportController extends GetxController {
 
       final uploadResult = await _uploadService.uploadImageWithMetadata(
         imageItem: image.copyWith(
-          file: processedResult.file, // Upload file đã xoay MỚI
+          file: fileForOcr, // Upload file đã xử lý
           maHieu: maHieuResult.maHieu,
-          rotationAngle: processedResult.rotationAngle,
+          rotationAngle: rotationAngle,
         ),
         batchId: batch.id,
       );
@@ -753,11 +817,11 @@ class ImageImportController extends GetxController {
 
       // 5. Cập nhật thành công
       batch.images[imageIndex] = image.copyWith(
-        file: processedResult.file, // Cập nhật file rotated mới
+        file: fileForOcr, // Cập nhật file rotated mới
         status: ImageProcessingStatus.completed,
         firebaseUrl: uploadResult.downloadUrl,
         maHieu: maHieuResult.maHieu,
-        rotationAngle: processedResult.rotationAngle,
+        rotationAngle: rotationAngle,
         uploadProgress: 1.0,
       );
 

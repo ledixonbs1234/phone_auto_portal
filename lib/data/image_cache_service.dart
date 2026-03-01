@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 /// Model cho metadata của ảnh đã xử lý
 class ImageMetadata {
@@ -171,13 +170,12 @@ class ImageCacheService {
     }
   }
 
-  /// Xử lý và lưu ảnh: rotate, compress, save metadata
-  Future<ImageMetadata> processAndSave({
+  /// Thay thế hàm processAndSave cũ, bây giờ chỉ phụ trách lưu file đã xử lý vào cache
+  Future<ImageMetadata> saveToCache({
     required File originalFile,
-    required File rotatedFile,
+    required File processedFile,
     required String? maHieu,
     required int rotationAngle,
-    int quality = defaultQuality,
   }) async {
     if (_compressedDir == null) {
       throw StateError('ImageCacheService not initialized');
@@ -188,20 +186,10 @@ class ImageCacheService {
       final compressedPath =
           path.join(_compressedDir!.path, compressedFileName);
 
-      _debugLog('🗜️ Compressing: ${path.basename(originalFile.path)}');
+      _debugLog('🗜️ Saving to cache: ${path.basename(originalFile.path)}');
 
-      // Compress file rotated
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
-        rotatedFile.absolute.path,
-        compressedPath,
-        quality: quality,
-        minWidth: 1920,
-        minHeight: 1920,
-        format: CompressFormat.jpeg,
-      );
-
-      if (compressedFile == null) {
-        throw Exception('Failed to compress image');
+      if (processedFile.absolute.path != compressedPath) {
+        await processedFile.copy(compressedPath);
       }
 
       // Tạo metadata

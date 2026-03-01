@@ -1,11 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
@@ -110,107 +106,19 @@ class ImageProcessingService {
     }
   }
 
-  /// Xoay ảnh theo góc chỉ định
-  Future<File> rotateImage(File imageFile, int rotationAngle) async {
-    if (rotationAngle == 0) {
-      return imageFile; // Không cần xoay
-    }
-
-    try {
-      // Đọc ảnh
-      final bytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-
-      if (image == null) {
-        throw Exception('Không thể decode ảnh');
-      }
-
-      // Xoay ảnh
-      img.Image rotated;
-      switch (rotationAngle) {
-        case 90:
-          rotated = img.copyRotate(image, angle: 90);
-          break;
-        case 180:
-          rotated = img.copyRotate(image, angle: 180);
-          break;
-        case 270:
-          rotated = img.copyRotate(image, angle: 270);
-          break;
-        default:
-          rotated = image;
-      }
-
-      // Lưu ảnh đã xoay vào thư mục temp
-      final tempDir = await getTemporaryDirectory();
-      final fileName = path.basename(imageFile.path);
-      final rotatedPath = path.join(tempDir.path,
-          '${path.basenameWithoutExtension(fileName)}_rotated.jpg');
-      final rotatedFile = File(rotatedPath);
-      await rotatedFile.writeAsBytes(img.encodeJpg(rotated, quality: 95));
-
-      return rotatedFile;
-    } catch (e) {
-      _debugLog('Lỗi khi xoay ảnh: $e');
-      rethrow;
-    }
-  }
-
-  /// Compress ảnh trước khi upload
-  Future<File> compressImage(File imageFile, {int quality = 85}) async {
-    try {
-      // Lưu vào thư mục temp
-      final tempDir = await getTemporaryDirectory();
-      final fileName = path.basename(imageFile.path);
-      final targetPath = path.join(tempDir.path,
-          '${path.basenameWithoutExtension(fileName)}_compressed.jpg');
-
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
-        imageFile.absolute.path,
-        targetPath,
-        quality: quality,
-        minWidth: 1920,
-        minHeight: 1080,
-      );
-
-      if (compressedFile == null) {
-        throw Exception('Không thể compress ảnh');
-      }
-
-      return File(compressedFile.path);
-    } catch (e) {
-      _debugLog('Lỗi khi compress ảnh: $e');
-      return imageFile; // Trả về ảnh gốc nếu compress thất bại
-    }
-  }
-
-  /// Workflow hoàn chỉnh: Detect orientation -> Rotate (không compress để giữ chất lượng)
+  /// Workflow hoàn chỉnh: Detect orientation -> KHÔNG rotate trong dart nữa
   Future<ProcessedImageResult> processImage(File imageFile) async {
-    File? tempRotatedFile;
-
     try {
       // 1. Detect orientation
       final rotationAngle = await detectTextOrientation(imageFile);
 
-      // 2. Rotate nếu cần (không compress để giữ chất lượng OCR)
-      File processedFile = imageFile;
-      if (rotationAngle != 0) {
-        tempRotatedFile = await rotateImage(imageFile, rotationAngle);
-        processedFile = tempRotatedFile;
-      }
-
       return ProcessedImageResult(
-        file: processedFile,
+        file: imageFile,
         rotationAngle: rotationAngle,
         isSuccess: true,
-        tempFiles: tempRotatedFile != null ? [tempRotatedFile] : [],
+        tempFiles: [],
       );
     } catch (e) {
-      // Xóa file tạm nếu có lỗi
-      if (tempRotatedFile != null && await tempRotatedFile.exists()) {
-        await tempRotatedFile.delete();
-      }
-
       return ProcessedImageResult(
         file: imageFile,
         rotationAngle: 0,
