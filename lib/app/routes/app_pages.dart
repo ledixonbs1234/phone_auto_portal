@@ -24,6 +24,8 @@ import '../modules/import_images/views/import_images_view.dart';
 import '../modules/import_images/controllers/image_import_controller.dart';
 import '../modules/capture_image/bindings/capture_image_binding.dart';
 import '../modules/capture_image/views/capture_image_view.dart';
+import '../modules/dingoai_rt/bindings/dingoai_rt_binding.dart';
+import '../modules/dingoai_rt/views/dingoai_rt_view.dart';
 
 part 'app_routes.dart';
 
@@ -94,6 +96,11 @@ class AppPages {
       name: _Paths.CAPTURE_IMAGE,
       page: () => const CaptureImageView(),
       binding: CaptureImageBinding(),
+    ),
+    GetPage(
+      name: _Paths.DINGOAI_RT,
+      page: () => const DiNgoaiRtView(),
+      binding: DiNgoaiRtBinding(),
     ),
   ];
 }

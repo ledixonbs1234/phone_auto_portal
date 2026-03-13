@@ -16,6 +16,7 @@ abstract class Routes {
   static const IMPORT_IMAGES = _Paths.IMPORT_IMAGES;
   static const DIRECTION_SCANNING = _Paths.DIRECTION_SCANNING;
   static const CAPTURE_IMAGE = _Paths.CAPTURE_IMAGE;
+  static const DINGOAI_RT = _Paths.DINGOAI_RT;
 }
 
 abstract class _Paths {
@@ -33,4 +34,5 @@ abstract class _Paths {
   static const DIRECTION_SCANNING = '/direction-scanning';
   static const IMPORT_IMAGES = '/import-images';
   static const CAPTURE_IMAGE = '/capture-image';
+  static const DINGOAI_RT = '/dingoai-rt';
 }

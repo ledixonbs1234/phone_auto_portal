@@ -8,6 +8,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
+import 'package:phone_auto_portal/app/modules/dingoai_rt/controllers/dingoai_rt_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -1459,6 +1460,11 @@ class PortalinfoController extends GetxController {
       FirebaseManager()
           .addMessage(MessageReceiveModel("getMaHieus", jsonEncode(selecteds)));
     }
+  }
+
+  /// Điều hướng đến trang Đi Ngoài RT
+  void goToDiNgoaiRT() {
+    Get.toNamed(Routes.DINGOAI_RT);
   }
 
   void sendSplitAddress() {

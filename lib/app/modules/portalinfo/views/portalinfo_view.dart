@@ -689,6 +689,16 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           controller.goToDirectionScanning();
                         },
                       ),
+                      const SizedBox(width: 8),
+                      // Check Direction Button
+                      _buildActionButton(
+                        icon: Icons.qr_code_scanner,
+                        label: 'Di Ngoài RT',
+                        color: Colors.purple,
+                        onPressed: () {
+                          controller.goToDiNgoaiRT();
+                        },
+                      )
                     ],
                   ),
                 ])),
