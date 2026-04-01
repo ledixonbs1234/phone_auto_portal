@@ -20,7 +20,7 @@ import '../app/modules/home/controllers/home_controller.dart';
 import '../app/modules/home/khach_hangs_model.dart';
 import '../app/modules/home/messageReceiveModel.dart';
 import '../app/modules/home/user_info.dart';
-import 'firebase_storage_service.dart';
+import 'supabase_storage_service.dart';
 
 class FirebaseManager with WidgetsBindingObserver {
   static final FirebaseManager _singleton = FirebaseManager._internal();
@@ -68,11 +68,11 @@ class FirebaseManager with WidgetsBindingObserver {
   void setUp() async {
     readKey();
 
-    // Initialize FirebaseStorageService
+    // Initialize SupabaseStorageService
     try {
-      await FirebaseStorageService.instance.init();
+      await SupabaseStorageService.instance.init();
     } catch (e) {
-      print('Failed to initialize FirebaseStorageService: $e');
+      print('Failed to initialize SupabaseStorageService: $e');
       // Silently ignore errors, validation happens on first upload
     }
 

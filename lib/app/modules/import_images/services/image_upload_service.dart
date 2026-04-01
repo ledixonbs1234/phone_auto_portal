@@ -4,7 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
-import 'package:phone_auto_portal/data/firebase_storage_service.dart';
+import 'package:phone_auto_portal/data/supabase_storage_service.dart';
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
@@ -13,7 +13,7 @@ void _debugLog(String message) {
   }
 }
 
-/// Service upload ảnh lên Firebase Storage và sync metadata với Realtime Database
+/// Service upload ảnh lên Supabase Storage và sync metadata với Realtime Database
 class ImageUploadService {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
@@ -91,7 +91,7 @@ class ImageUploadService {
             onProgress?.call(groupStart, images.length,
                 'Upload nhóm $groupNumber/$totalGroups (${imageGroup.length} ảnh)');
 
-            downloadUrls = await FirebaseStorageService.instance
+            downloadUrls = await SupabaseStorageService.instance
                 .uploadMediaGroup(imageGroup);
 
             // 💾 LƯU METADATA: Lưu thông tin mỗi ảnh vào Firebase Realtime DB
@@ -158,7 +158,7 @@ class ImageUploadService {
 
       // 🔙 XÓA ẢNH trên Firebase Storage
       for (final url in successfulDownloadUrls) {
-        await FirebaseStorageService.instance.deleteImageByUrl(url);
+        await SupabaseStorageService.instance.deleteImageByUrl(url);
       }
 
       // ⚠️ Ném exception
@@ -185,7 +185,7 @@ class ImageUploadService {
   Future<void> clearOldImages() async {
     // Xóa ảnh trên Firebase Storage (lỗi không ảnh hưởng xóa DB)
     try {
-      await FirebaseStorageService.instance.clearOldImages();
+      await SupabaseStorageService.instance.clearOldImages();
     } catch (e) {
       _debugLog('⚠️ Lỗi khi xóa ảnh cũ trên Storage: $e');
     }
@@ -278,7 +278,7 @@ class ImageUploadService {
     try {
       // Upload to Firebase Storage
       final urlMap =
-          await FirebaseStorageService.instance.uploadImage(imageItem);
+          await SupabaseStorageService.instance.uploadImage(imageItem);
 
       // Save metadata to database
       await saveImageMetadata(
