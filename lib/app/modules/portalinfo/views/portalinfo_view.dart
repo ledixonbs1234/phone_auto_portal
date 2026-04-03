@@ -90,6 +90,17 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           ? 'Ẩn tìm kiếm'
                           : 'Hiện tìm kiếm',
                       onPressed: () {
+                        // Nếu đang ẩn (sẽ bật lên) thì reset bộ lọc về ngày hôm nay
+                        if (!controller.isScanSectionVisible.value) {
+                          // Reset ngày về hôm nay
+                          controller.fromDate.value = DateTime.now();
+                          controller.toDate.value = DateTime.now();
+                          // Xóa bộ lọc tên người nhận
+                          controller.recipientNameController.clear();
+                          controller.recipientNameFilter.value = "";
+                          // Xóa mã barcode
+                          controller.barcodeInputController.clear();
+                        }
                         controller.toggleScanSection();
                       },
                     ))

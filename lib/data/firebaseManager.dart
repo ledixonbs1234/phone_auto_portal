@@ -44,11 +44,11 @@ class FirebaseManager with WidgetsBindingObserver {
   String lastTimeUpdateStamp = "";
   String? keyData = "";
   void showSnackBar(String message) {
-    Get.snackbar('Thông báo', message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue,
-        duration: const Duration(milliseconds: 1000),
-        colorText: Colors.white);
+    // Get.snackbar('Thông báo', message,
+    //     snackPosition: SnackPosition.BOTTOM,
+    //     backgroundColor: Colors.blue,
+    //     duration: const Duration(milliseconds: 1000),
+    //     colorText: Colors.white);
   }
 
   String readKey() {

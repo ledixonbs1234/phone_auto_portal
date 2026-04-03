@@ -34,7 +34,7 @@ class ImageImportController extends GetxController {
   // final String _geminiApiKey =
   //     'AIzaSyC8C-KzIrDn9QyB35luLR2nbxaXvjHEwmU'; // Key lấy từ HomeController code cũ
   final String _modelId =
-      'gemini-3-flash-preview'; // Sử dụng model flash cho nhanh
+      'gemini-3.1-flash-lite-preview'; // Sử dụng model flash cho nhanh
   late GeminiChatService _geminiService;
 // Key mặc định (fallback)
   final String _defaultApiKey = 'AIzaSyC8C-KzIrDn9QyB35luLR2nbxaXvjHEwmU';
@@ -563,18 +563,31 @@ class ImageImportController extends GetxController {
 
               final savedQuality = GetStorage().read<int>('compress_quality') ??
                   ImageCacheService.defaultQuality;
-              final targetQuality = isSmallFile ? 100 : savedQuality;
 
-              final compressedFile =
-                  await FlutterImageCompress.compressAndGetFile(
-                image.originalFile.absolute.path,
-                targetPath,
-                quality: targetQuality,
-                minWidth: 1920,
-                minHeight: 1920,
-                rotate: rotationAngle,
-                format: CompressFormat.jpeg,
-              );
+              var compressedFile;
+              if (isSmallFile) {
+                // Chỉ xoay, không nén kích thước và giữ nguyên chất lượng cao nhất
+                compressedFile = await FlutterImageCompress.compressAndGetFile(
+                  image.originalFile.absolute.path,
+                  targetPath,
+                  quality: 100,
+                  minWidth: 10000, // Đảm bảo không bị thu nhỏ kích thước
+                  minHeight: 10000,
+                  rotate: rotationAngle,
+                  format: CompressFormat.jpeg,
+                );
+              } else {
+                // Ảnh lớn: giảm dung lượng
+                compressedFile = await FlutterImageCompress.compressAndGetFile(
+                  image.originalFile.absolute.path,
+                  targetPath,
+                  quality: savedQuality,
+                  minWidth: 1920,
+                  minHeight: 1920,
+                  rotate: rotationAngle,
+                  format: CompressFormat.jpeg,
+                );
+              }
 
               if (compressedFile == null)
                 throw Exception('Lỗi xử lý hình ảnh Native');
@@ -756,17 +769,29 @@ class ImageImportController extends GetxController {
 
         final savedQuality = GetStorage().read<int>('compress_quality') ??
             ImageCacheService.defaultQuality;
-        final targetQuality = isSmallFile ? 100 : savedQuality;
 
-        final compressedFile = await FlutterImageCompress.compressAndGetFile(
-          image.originalFile.absolute.path,
-          targetPath,
-          quality: targetQuality,
-          minWidth: 1920,
-          minHeight: 1920,
-          rotate: rotationAngle,
-          format: CompressFormat.jpeg,
-        );
+        var compressedFile;
+        if (isSmallFile) {
+          compressedFile = await FlutterImageCompress.compressAndGetFile(
+            image.originalFile.absolute.path,
+            targetPath,
+            quality: 100,
+            minWidth: 10000,
+            minHeight: 10000,
+            rotate: rotationAngle,
+            format: CompressFormat.jpeg,
+          );
+        } else {
+          compressedFile = await FlutterImageCompress.compressAndGetFile(
+            image.originalFile.absolute.path,
+            targetPath,
+            quality: savedQuality,
+            minWidth: 1920,
+            minHeight: 1920,
+            rotate: rotationAngle,
+            format: CompressFormat.jpeg,
+          );
+        }
 
         if (compressedFile == null) throw Exception('Lỗi nén ảnh Native');
         fileForOcr = File(compressedFile.path);
