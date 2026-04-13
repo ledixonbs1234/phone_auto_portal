@@ -1175,6 +1175,22 @@ class PortalinfoController extends GetxController {
     }
   }
 
+  // Show statistics for current portal (used in showImprovedDialog)
+  Future<void> showStatisticsForCurrentPortal() async {
+    if (currentMaHieusInPortal.isEmpty) {
+      Get.snackbar(
+        "Thông báo",
+        "Không có dữ liệu để thống kê",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    final counts = await countPackagesByCategories();
+    _showProvinceStatisticsDialog(currentMaHieusInPortal.length, counts);
+  }
+
   // Show province statistics for selected portals
   Future<void> showProvinceStatistics(List<StateMaHieu> codes) async {
     // Aggregate statistics from all selected portals

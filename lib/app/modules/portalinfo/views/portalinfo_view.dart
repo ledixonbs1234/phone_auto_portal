@@ -745,7 +745,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 maxWidth: 400,
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(8.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -805,6 +805,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                   onPressed: () =>
                                       controller.startBulkQRScanInDialog(),
                                 ),
+                              // Nút thống kê - Hiện cho 1 portal đang xem
+                              IconButton(
+                                icon: const Icon(Icons.analytics,
+                                    color: Colors.purple),
+                                tooltip: 'Thống kê portal này',
+                                onPressed: () =>
+                                    controller.showStatisticsForCurrentPortal(),
+                              ),
                             ],
                           ),
                       ],
