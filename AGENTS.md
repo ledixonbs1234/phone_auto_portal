@@ -38,6 +38,7 @@ lib/
 │   │   │   └── GeminiChatService.dart
 │   │   ├── detail/                # Detail view
 │   │   ├── createnew/             # Create new entry
+│   │   ├── khoi_tao_moi/         # Khởi tạo mới
 │   │   ├── portalinfo/            # Portal info module
 │   │   ├── printPage/             # Print functionality
 │   │   ├── edit_page/             # Edit page
@@ -264,6 +265,50 @@ Batch image upload to Firebase Storage with retry and rollback.
 // - Progress callbacks
 // - Rollback on complete failure
 // - Metadata sync with Realtime Database
+```
+
+### 5. KhoiTaoMoiController Message Handlers (lib/app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart)
+
+Xử lý các message từ Firebase trong `onListenNotification`:
+
+```dart
+// Các message handlers:
+// - checkstatemh: Cập nhật trạng thái bưu gửi (trangThaiRequest = "Xong", money)
+// - message: Hiển thị thông báo trạng thái (stateText)
+// - showdetailmessage: Hiển thị chi tiết thông báo (stateText)
+// - printDone: Thông báo in xong (stateText = "In xong")
+// - sendhdr: Nhận HDR ID từ Portal
+
+Future<void> onListenNotification(MessageReceiveModel message) async {
+  switch (message.Lenh) {
+    case "checkstatemh":
+      var splitText = message.DoiTuong.split("|");
+      var bg = buuGuis.firstWhereOrNull((e) => e.maBuuGui == splitText[0]);
+      bg?.trangThaiRequest = "Xong";
+      bg?.money = splitText[1];
+      _saveToFirebase();
+      update();
+      break;
+    case "message":
+    case "showdetailmessage":
+      stateText.value = message.DoiTuong;
+      break;
+    case "printDone":
+      stateText.value = "In xong";
+      break;
+    case "sendhdr":
+      try {
+        final data = jsonDecode(message.DoiTuong);
+        hdrId = data['hdrId']?.toString();
+        hdrIdText.value = hdrId ?? "";
+        stateText.value = "Đã nhận HDR: ${hdrIdText.value}";
+      } catch (e) {
+        stateText.value = "Lỗi nhận HDR";
+      }
+      update();
+      break;
+  }
+}
 ```
 
 ---

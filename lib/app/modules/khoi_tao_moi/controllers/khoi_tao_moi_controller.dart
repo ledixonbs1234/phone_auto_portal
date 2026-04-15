@@ -394,6 +394,9 @@ class KhoiTaoMoiController extends GetxController {
       case "showdetailmessage":
         stateText.value = message.DoiTuong;
         break;
+      case "printDone":
+        stateText.value = "In xong";
+        break;
       case "sendhdr":
         try {
           final data = jsonDecode(message.DoiTuong);

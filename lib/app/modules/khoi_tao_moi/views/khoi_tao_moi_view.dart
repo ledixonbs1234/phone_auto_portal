@@ -51,6 +51,27 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Obx(() => Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          controller.stateText.value.isEmpty
+                              ? 'Sẵn sàng'
+                              : controller.stateText.value,
+                          style: TextStyle(
+                            color: controller.stateText.value.contains('lỗi')
+                                ? Colors.red
+                                : Colors.blue.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Obx(() => Checkbox(
@@ -113,7 +134,7 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                               false;
                                           controller.refreshSuggestions();
                                         },
-                                        child: Icon(
+                                        child: const Icon(
                                           Icons.close,
                                           size: 14,
                                           color: Colors.grey,

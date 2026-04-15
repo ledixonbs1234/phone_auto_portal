@@ -10,6 +10,7 @@ import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controll
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 import 'package:phone_auto_portal/app/modules/home/ExtractedData.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
+import 'package:phone_auto_portal/app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart';
 import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
@@ -31,6 +32,7 @@ class FirebaseManager with WidgetsBindingObserver {
   late MyviewController? myView;
   late DetailController? detail;
   late CreatenewController? createNew;
+  late KhoiTaoMoiController? khoitaoMoi;
   late PortalinfoController? portalInfo;
   late EditPageController? editPage;
   // String? getKey() {
@@ -175,6 +177,7 @@ class FirebaseManager with WidgetsBindingObserver {
           home = Get.find<HomeController>();
           detail = Get.find<DetailController>();
           createNew = Get.find<CreatenewController>();
+          khoitaoMoi = Get.find<KhoiTaoMoiController>();
           portalInfo = Get.find<PortalinfoController>();
           editPage = Get.find<EditPageController>();
           myView = Get.find<MyviewController>();
@@ -185,6 +188,7 @@ class FirebaseManager with WidgetsBindingObserver {
           detail?.onListenNotification(message);
           home?.onListenNotification(message);
           createNew?.onListenNotification(message);
+          khoitaoMoi?.onListenNotification(message);
           editPage?.onListenNotification(message);
           //         maHieu?.onListenNotification(message);
           //         diNgoai?.onListenNotification(message);
