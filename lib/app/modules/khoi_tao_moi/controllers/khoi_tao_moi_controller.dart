@@ -122,6 +122,13 @@ class KhoiTaoMoiController extends GetxController {
         .any((bg) => bg.maBuuGui?.toUpperCase() == maBuuGui.toUpperCase());
   }
 
+  int? getKhoiLuongFromSuggestion(String maBuuGui) {
+    final upperMaBuuGui = maBuuGui.toUpperCase();
+    final found = allSuggestMHs.firstWhereOrNull(
+        (item) => item.maBuuGui.toUpperCase() == upperMaBuuGui);
+    return found?.khoiLuong;
+  }
+
   void onSelectedSuggestion(SuggestionItem item) {
     if (!isLockedCustomer.value) {
       toggleLockCustomer(item.maKH, item.tenKH);
@@ -280,8 +287,10 @@ class KhoiTaoMoiController extends GetxController {
       return;
     }
 
+    final resolvedKhoiLuong =
+        khoiLuong ?? getKhoiLuongFromSuggestion(barcodeFilled);
     var bgTemp = BuuGuis(index: buuGuis.length + 1, maBuuGui: barcodeFilled);
-    bgTemp.khoiLuong = khoiLuong ?? 0;
+    bgTemp.khoiLuong = resolvedKhoiLuong ?? 0;
     buuGuis.add(bgTemp);
     buuGuis.sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
