@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:path/path.dart' as path;
 
 import 'exceptions/telegram_exceptions.dart';
@@ -19,7 +20,7 @@ class TelegramService {
 
   void _debugLog(String message) {
     if (kDebugMode) {
-      print('[TelegramService] $message');
+      '[TelegramService] $message'.printInfo();
     }
   }
 
@@ -83,10 +84,10 @@ class TelegramService {
         }
       }
 
-      print(
-          'TelegramService initialized: configured=$isConfigured, concurrent=$_concurrentUploads');
+      'TelegramService initialized: configured=$isConfigured, concurrent=$_concurrentUploads'
+          .printInfo();
     } catch (e) {
-      print('TelegramService init error (silently ignored): $e');
+      'TelegramService init error (silently ignored): $e'.printInfo();
       // Silently ignore errors, validation happens on first upload
     }
   }
@@ -190,7 +191,7 @@ class TelegramService {
   /// Returns map with largestFileId and smallestFileId
   Future<Map<String, String>> _uploadWithRetry(File fileToUpload) async {
     const maxRetries = 3;
-    final retryDelays = [
+    const retryDelays = [
       Duration(seconds: 1),
       Duration(seconds: 2),
       Duration(seconds: 4),
@@ -290,7 +291,7 @@ class TelegramService {
   Future<List<Map<String, String>>> _uploadMediaGroupWithRetry(
       List<File> compressedFiles) async {
     const maxRetries = 3;
-    final retryDelays = [
+    const retryDelays = [
       Duration(seconds: 1),
       Duration(seconds: 2),
       Duration(seconds: 4),
@@ -304,7 +305,6 @@ class TelegramService {
         final mediaArray = <Map<String, dynamic>>[];
 
         for (int i = 0; i < compressedFiles.length; i++) {
-          final file = compressedFiles[i];
           mediaArray.add({
             'type': 'photo',
             'media': 'attach://photo$i',

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-
+import 'package:get/get.dart';
 /// Model cho metadata của ảnh đã xử lý
 class ImageMetadata {
   final String originalPath;
@@ -307,7 +307,7 @@ class ImageCacheService {
 
   void _debugLog(String message) {
     if (kDebugMode) {
-      print('[ImageCacheService] $message');
+      '[ImageCacheService] $message'.printInfo();
     }
   }
 }

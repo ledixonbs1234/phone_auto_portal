@@ -222,9 +222,9 @@ class ImportImagesView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -355,7 +355,7 @@ class ImportImagesView extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(8),
                     bottomRight: Radius.circular(8),
@@ -413,7 +413,7 @@ class ImportImagesView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.9),
+        color: color.withValues(alpha: 0.9),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, size: 12, color: Colors.white),
@@ -430,7 +430,7 @@ class ImportImagesView extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, -2),
               ),
@@ -775,9 +775,9 @@ class _BatchToleranceSliderState extends State<_BatchToleranceSlider> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
+        color: Colors.blue.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -809,9 +809,9 @@ class _BatchToleranceSliderState extends State<_BatchToleranceSlider> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: Colors.blue,
-              inactiveTrackColor: Colors.blue.withOpacity(0.3),
+              inactiveTrackColor: Colors.blue.withValues(alpha: 0.3),
               thumbColor: Colors.blue,
-              overlayColor: Colors.blue.withOpacity(0.2),
+              overlayColor: Colors.blue.withValues(alpha: 0.2),
               valueIndicatorColor: Colors.blue,
               valueIndicatorTextStyle: const TextStyle(
                 color: Colors.white,
@@ -852,9 +852,9 @@ class _BatchToleranceSliderState extends State<_BatchToleranceSlider> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.1),
+              color: Colors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -908,9 +908,9 @@ class _QualitySettingState extends State<_QualitySetting> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.04),
+        color: Colors.green.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.12)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -935,9 +935,9 @@ class _QualitySettingState extends State<_QualitySetting> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: Colors.green,
-              inactiveTrackColor: Colors.green.withOpacity(0.3),
+              inactiveTrackColor: Colors.green.withValues(alpha: 0.3),
               thumbColor: Colors.green,
-              overlayColor: Colors.green.withOpacity(0.2),
+              overlayColor: Colors.green.withValues(alpha: 0.2),
               valueIndicatorColor: Colors.green,
               valueIndicatorTextStyle: const TextStyle(
                 color: Colors.white,
@@ -1026,8 +1026,6 @@ class __AiKeySelectorState extends State<_AiKeySelector> {
 
             return Column(
               children: controller.aiKeysList.map((aiKey) {
-                final isSelected =
-                    controller.selectedAiKeyName.value == aiKey.name;
                 return RadioListTile<String>(
                   title: Text(aiKey.name),
                   subtitle: Text(

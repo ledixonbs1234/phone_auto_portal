@@ -1,15 +1,15 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
 import 'package:phone_auto_portal/data/supabase_storage_service.dart';
+import 'package:get/get.dart';
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
   if (kDebugMode) {
-    print(message);
+    message.printInfo();
   }
 }
 
@@ -48,7 +48,6 @@ class ImageUploadService {
     final List<String> successfulDownloadUrls =
         []; // Track URLs để rollback trên Storage
     int successCount = 0;
-    int failCount = 0;
     const maxRetries = 3;
     const maxImagesPerGroup = 10; // Upload theo nhóm 10 ảnh
 
@@ -133,7 +132,6 @@ class ImageUploadService {
 
             // Nếu vượt quá số lần retry → fail toàn bộ batch
             if (retryCount >= maxRetries) {
-              failCount += imageGroup.length;
               _debugLog('❌ Max retries reached for media group');
               throw lastException;
             }

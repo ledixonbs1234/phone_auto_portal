@@ -22,7 +22,7 @@ class UpdateService {
     if (Platform.isAndroid) {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      print("Device Supported ABIs: ${androidInfo.supportedAbis}");
+      "Device Supported ABIs: ${androidInfo.supportedAbis}".printInfo();
       return androidInfo.supportedAbis;
     }
     return [];
@@ -35,7 +35,7 @@ class UpdateService {
       if (abisData.containsKey(abi) && abisData[abi] is Map) {
         final abiInfo = abisData[abi] as Map<dynamic, dynamic>;
         if (abiInfo.containsKey('updateFileUrl')) {
-          print("Selected ABI: $abi, URL: ${abiInfo['updateFileUrl']}");
+          "Selected ABI: $abi, URL: ${abiInfo['updateFileUrl']}".printInfo();
           return abiInfo['updateFileUrl'] as String?;
         }
       }
@@ -45,13 +45,14 @@ class UpdateService {
     if (abisData.containsKey('default') && abisData['default'] is Map) {
       final defaultInfo = abisData['default'] as Map<String, dynamic>;
       if (defaultInfo.containsKey('updateFileUrl')) {
-        print("Selected ABI: default, URL: ${defaultInfo['updateFileUrl']}");
+        "Selected ABI: default, URL: ${defaultInfo['updateFileUrl']}"
+            .printInfo();
         return defaultInfo['updateFileUrl'] as String?;
       }
     }
 
-    print(
-        "No suitable update URL found for device ABIs: $deviceAbis and available ABIs in DB.");
+    "No suitable update URL found for device ABIs: $deviceAbis and available ABIs in DB."
+        .printInfo();
     return null; // Không tìm thấy URL phù hợp
   }
 
@@ -89,8 +90,8 @@ class UpdateService {
               // Cấu trúc cũ không có 'abis', có thể lấy một URL mặc định nếu có
               updateUrl =
                   data['updateFileUrl'] as String? ?? data['apkUrl'] as String?;
-              print(
-                  "Warning: 'abis' field not found in Firebase. Falling back to old URL structure if available.");
+              "Warning: 'abis' field not found in Firebase. Falling back to old URL structure if available."
+                  .printInfo();
             }
           } else if (Platform.isIOS) {
             updateUrl = data['storeUrl'] as String?;
@@ -99,20 +100,21 @@ class UpdateService {
           if (updateUrl != null && updateUrl.isNotEmpty) {
             _showUpdateDialog(latestVersionName, updateNotes, updateUrl);
           } else {
-            print("No suitable update URL found for this device/platform.");
+            "No suitable update URL found for this device/platform."
+                .printInfo();
             // Có thể thông báo cho người dùng rằng không có bản cập nhật phù hợp
           }
         } else {
           FirebaseManager().showSnackBar(
             "Bạn đang sử dụng phiên bản mới nhất: $currentVersionCode \n và lastest version code: $latestVersionCode",
           );
-          print("App is up to date.");
+          "App is up to date.".printInfo();
         }
       } else {
-        print("No update info found in Firebase for $platformKey.");
+        "No update info found in Firebase for $platformKey.".printInfo();
       }
     } catch (e) {
-      print("Error checking for update: $e");
+      "Error checking for update: $e".printInfo();
     } finally {
       _isCheckingUpdate = false;
     }
@@ -220,8 +222,8 @@ class UpdateService {
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
           if (total != -1) {
-            print(
-                "Download Progress: ${(received / total * 100).toStringAsFixed(0)}%");
+            "Download Progress: ${(received / total * 100).toStringAsFixed(0)}%"
+                .printInfo();
             // Có thể cập nhật UI nếu cần, GetX snackbar có progress indicator rồi
           }
         },
@@ -251,7 +253,7 @@ class UpdateService {
           outputStream.flush(); // Ép dữ liệu được ghi xuống đĩa
           await outputStream.close(); // Đóng
           apkFileToInstall = File("$extractDirPath/${file.name}");
-          print("APK extracted to: ${apkFileToInstall.path}");
+          "APK extracted to: ${apkFileToInstall.path}".printInfo();
           break; // Giả sử chỉ có một file APK hoặc lấy file đầu tiên
         }
       }
@@ -268,7 +270,7 @@ class UpdateService {
         await Future.delayed(
             const Duration(milliseconds: 500)); // Ví dụ: 0.5 giây
         final OpenResult result = await OpenFilex.open(apkFileToInstall.path);
-        print('OpenFile result: ${result.type} - ${result.message}');
+        'OpenFile result: ${result.type} - ${result.message}'.printInfo();
 
         if (result.type != ResultType.done &&
             result.type != ResultType.noAppToOpen) {
@@ -286,7 +288,7 @@ class UpdateService {
       }
     } catch (e) {
       if (Get.isSnackbarOpen) Get.back(); // Đóng bất kỳ snackbar nào đang mở
-      print("Error during update process: $e");
+      "Error during update process: $e".printInfo();
       if (e is DioException && e.type == DioExceptionType.cancel) {
         Get.snackbar("Đã hủy", "Việc tải xuống bản cập nhật đã bị hủy.",
             snackPosition: SnackPosition.BOTTOM);
@@ -311,7 +313,7 @@ class UpdateService {
         //   print("Deleted extracted update directory: $extractDirPath");
         // }
       } catch (e) {
-        print("Error during cleanup: $e");
+        "Error during cleanup: $e".printInfo();
       }
     }
   }

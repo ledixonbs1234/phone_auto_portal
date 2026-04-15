@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:get/get.dart';
 
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
   if (kDebugMode) {
-    print(message);
+    message.printInfo();
   }
 }
 

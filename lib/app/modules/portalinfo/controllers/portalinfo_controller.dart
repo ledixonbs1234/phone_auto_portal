@@ -8,7 +8,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
-import 'package:phone_auto_portal/app/modules/dingoai_rt/controllers/dingoai_rt_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -78,7 +77,9 @@ class PortalinfoController extends GetxController {
     List<int> v0 = List<int>.filled(s2.length + 1, 0);
     List<int> v1 = List<int>.filled(s2.length + 1, 0);
 
-    for (int i = 0; i < s2.length + 1; i++) v0[i] = i;
+    for (int i = 0; i < s2.length + 1; i++) {
+      v0[i] = i;
+    }
 
     for (int i = 0; i < s1.length; i++) {
       v1[0] = i + 1;
@@ -87,7 +88,9 @@ class PortalinfoController extends GetxController {
         v1[j + 1] = [v1[j] + 1, v0[j + 1] + 1, v0[j] + cost]
             .reduce((curr, next) => curr < next ? curr : next);
       }
-      for (int j = 0; j < s2.length + 1; j++) v0[j] = v1[j];
+      for (int j = 0; j < s2.length + 1; j++) {
+        v0[j] = v1[j];
+      }
     }
     return v1[s2.length];
   }
@@ -110,10 +113,8 @@ class PortalinfoController extends GetxController {
   // 6. Hàm chính: Tìm và đánh dấu các tên giống nhau >= 90%
   void findSimilarNames() {
     similarIdCodes.clear();
-    int count = 0;
 
     for (int i = 0; i < currentMaHieusInPortal.length; i++) {
-      bool isCurrentSimilar = false;
       for (int j = i + 1; j < currentMaHieusInPortal.length; j++) {
         final item1 = currentMaHieusInPortal[i];
         final item2 = currentMaHieusInPortal[j];
@@ -131,7 +132,6 @@ class PortalinfoController extends GetxController {
         if (similarity >= 0.9) {
           similarIdCodes.add(item1.IDCODE!);
           similarIdCodes.add(item2.IDCODE!);
-          isCurrentSimilar = true;
 
           // Debug log
           printInfo(
@@ -139,7 +139,6 @@ class PortalinfoController extends GetxController {
                   "Similar found (${(similarity * 100).toStringAsFixed(1)}%): $name1 <-> $name2");
         }
       }
-      if (isCurrentSimilar) count++;
     }
 
     if (similarIdCodes.isNotEmpty) {
@@ -419,7 +418,6 @@ class PortalinfoController extends GetxController {
             await rootBundle.loadString('assets/tinhthanh.json');
         _provinceData = jsonDecode(jsonString);
       } catch (e) {
-        print('Error loading province data: $e');
         _provinceData = {'vo': [], 'ra': []};
       }
     }
@@ -845,9 +843,7 @@ class PortalinfoController extends GetxController {
     DateTime? dateFilterFrom = fromDate ?? this.fromDate.value;
     DateTime? dateFilterTo = toDate ?? this.toDate.value;
     String? nameFilter = recipientName ??
-        (this.recipientNameFilter.value.isEmpty
-            ? null
-            : this.recipientNameFilter.value);
+        (recipientNameFilter.value.isEmpty ? null : recipientNameFilter.value);
 
     // Helper function to check if two dates are the same day
     bool isSameDay(DateTime date1, DateTime date2) {
@@ -884,10 +880,8 @@ class PortalinfoController extends GetxController {
     if (nameFilter != null && nameFilter.isNotEmpty) {
       filterInfo.add("Tên: $nameFilter");
     }
-    if (dateFilterFrom != null && dateFilterTo != null) {
-      filterInfo.add(
-          "Từ ${dateFilterFrom.day}/${dateFilterFrom.month} đến ${dateFilterTo.day}/${dateFilterTo.month}");
-    }
+    filterInfo.add(
+        "Từ ${dateFilterFrom.day}/${dateFilterFrom.month} đến ${dateFilterTo.day}/${dateFilterTo.month}");
 
     if (filterInfo.isNotEmpty) {
       stateText.value = "Đang cập nhật dữ liệu - ${filterInfo.join(", ")}";
@@ -1077,7 +1071,7 @@ class PortalinfoController extends GetxController {
     } else if (message.Lenh == "message") {
       stateText.value = message.DoiTuong;
       // Làm mới danh sách khi xóa thành công hoặc cập nhật KL thành công
-      final msg = message.DoiTuong?.toString() ?? "";
+      final msg = message.DoiTuong.toString();
       if (msg.contains("Xóa thành công") || msg.contains("Đã cập nhật KL")) {
         if (iPotal.value >= 0 && iPotal.value < portals.length) {
           getMaHieuToShow(iPotal.value);
@@ -1387,7 +1381,7 @@ class PortalinfoController extends GetxController {
                       const SizedBox(height: 8),
                   ],
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -1447,15 +1441,15 @@ class PortalinfoController extends GetxController {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Text(
             count.toString(),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
             ),
           ),
         ),

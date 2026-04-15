@@ -10,6 +10,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
+import 'package:phone_auto_portal/app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/home/GeminiChatService.dart';
@@ -154,7 +155,7 @@ class HomeController extends GetxController {
     if (usernameToSave != null && usernameToSave.isNotEmpty) {
       GetStorage().write(_selectedUserStorageKey, usernameToSave);
       GetStorage().write('selectedPortalPassword', passwordToSave ?? '');
-      print("Đã lưu lựa chọn username: '$usernameToSave'");
+      'Đã lưu lựa chọn username: \'$usernameToSave\''.printInfo();
     } else {
       // Xóa nếu username rỗng (đăng xuất)
       _storage.remove(_selectedUserStorageKey);
@@ -308,6 +309,19 @@ class HomeController extends GetxController {
         selectedUser.value!.password);
 
     Get.toNamed("/createnew");
+  }
+
+  void goToKhoiTaoMoi() {
+    var khoiTaoMoi = Get.find<KhoiTaoMoiController>();
+
+    if (selectedUser.value != null) {
+      khoiTaoMoi.setUpGlobal(
+          selectedUser.value!.username, selectedUser.value!.password);
+    } else {
+      khoiTaoMoi.setUpGlobal("", "");
+    }
+
+    Get.toNamed("/khoi-tao-moi");
   }
 
   void goToPrintPage() {
@@ -599,29 +613,31 @@ class HomeController extends GetxController {
           final String? diaChi = extractedData['diaChi'];
           final String? soDienThoai = extractedData['soDienThoai'];
 
-          print('Mã hiệu: $maHieu');
-          print('Tên người nhận: $tenNguoiNhan');
-          print('Địa chỉ: $diaChi');
-          print('Số điện thoại: $soDienThoai');
+          'Mã hiệu: $maHieu'.printInfo();
+          'Tên người nhận: $tenNguoiNhan'.printInfo();
+          'Địa chỉ: $diaChi'.printInfo();
+          'Số điện thoại: $soDienThoai'.printInfo();
 
           // TODO: Sử dụng các giá trị này theo nhu cầu của bạn (ví dụ: cập nhật UI, lưu vào biến trạng thái)
         } on FormatException catch (e) {
           // Xử lý lỗi nếu chuỗi đã làm sạch không phải là JSON hợp lệ
-          print('Error decoding cleaned JSON string: $e');
-          print('Problematic String: "$cleanedJsonString"');
+          'Error decoding cleaned JSON string: $e'.printInfo();
+          'Problematic String: "$cleanedJsonString"'.printInfo();
         } catch (e) {
           // Bắt các lỗi không mong muốn khác trong quá trình phân tích JSON
-          print('An unexpected error occurred during final JSON parsing: $e');
+          'An unexpected error occurred during final JSON parsing: $e'
+              .printInfo();
         }
       } else {
         // API request thất bại
-        print('API request failed with status code: ${response.statusCode}');
-        print(
-            'Response Body: ${response.body}'); // In ra body để xem lỗi từ server
+        'API request failed with status code: ${response.statusCode}'
+            .printInfo();
+        'Response Body: ${response.body}'
+            .printInfo(); // In ra body để xem lỗi từ server
       }
     } catch (e) {
       // Bắt các lỗi xảy ra trong quá trình gửi request hoặc xử lý ban đầu
-      print('An error occurred during API request: $e');
+      'An error occurred during API request: $e'.printInfo();
     }
   }
 

@@ -28,7 +28,7 @@ class DetailView extends GetView<DetailController> {
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white, // Nền trắng
-        side: BorderSide(color: color.withOpacity(0.5)),
+        side: BorderSide(color: color.withValues(alpha: 0.5)),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
@@ -279,7 +279,7 @@ class DetailView extends GetView<DetailController> {
                               return Theme.of(context)
                                   .colorScheme
                                   .primary
-                                  .withOpacity(0.6);
+                                  .withValues(alpha: 0.6);
                             }
                             return null; // Use the default value.
                           }),
@@ -458,7 +458,7 @@ class DetailView extends GetView<DetailController> {
               'Thành công',
               'Đã copy mã hiệu: ${dx.buuGuis[index].maBuuGui}',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.green.withOpacity(0.8),
+              backgroundColor: Colors.green.withValues(alpha: 0.8),
               colorText: Colors.white,
               duration: const Duration(seconds: 2),
             );

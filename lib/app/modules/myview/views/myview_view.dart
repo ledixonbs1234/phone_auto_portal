@@ -22,7 +22,7 @@ class MyviewView extends GetView<MyviewController> {
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        side: BorderSide(color: color.withOpacity(0.5)),
+        side: BorderSide(color: color.withValues(alpha: 0.5)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       ),
       onPressed: onPressed,

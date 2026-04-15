@@ -66,12 +66,11 @@ class DirectionScanningController extends GetxController {
             .where((id) => id.isNotEmpty)
             .toList();
       }
-
-      print('DirectionScanningController received:');
-      print('- allMaHieus count: ${allMaHieus.length}');
-      print('- selectedPortalIds: $selectedPortalIds');
-      print(
-          '- First few packages: ${allMaHieus.take(3).map((p) => p.code).toList()}');
+      'DirectionScanningController received:'.printInfo();
+      '- allMaHieus count: ${allMaHieus.length}'.printInfo();
+      '- selectedPortalIds: $selectedPortalIds'.printInfo();
+      '- First few packages: ${allMaHieus.take(3).map((p) => p.code).toList()}'
+          .printInfo();
     }
 
     // Backup dữ liệu gốc để có thể restore khi quét lại
@@ -81,7 +80,7 @@ class DirectionScanningController extends GetxController {
     if (allMaHieus.isNotEmpty) {
       prepareDirectionData();
     } else {
-      print('⚠️ No allMaHieus data to prepare');
+      '⚠️ No allMaHieus data to prepare'.printInfo();
     }
   }
 
@@ -98,7 +97,7 @@ class DirectionScanningController extends GetxController {
         mobileScannerController?.stop();
         isCameraStarted.value = false;
       } catch (e) {
-        print('❌ Error stopping camera in onClose: $e');
+        '❌ Error stopping camera in onClose: $e'.printInfo();
       }
     }
 
@@ -108,7 +107,7 @@ class DirectionScanningController extends GetxController {
         mobileScannerController?.dispose();
         isCameraInitialized.value = false;
       } catch (e) {
-        print('❌ Error disposing camera in onClose: $e');
+        '❌ Error disposing camera in onClose: $e'.printInfo();
       }
     }
 
@@ -124,7 +123,7 @@ class DirectionScanningController extends GetxController {
             await rootBundle.loadString('assets/tinhthanh.json');
         _provinceData = jsonDecode(jsonString);
       } catch (e) {
-        print('Error loading province data: $e');
+        'Error loading province data: $e'.printInfo();
         _provinceData = {'vo': [], 'ra': []};
       }
     }
@@ -133,20 +132,20 @@ class DirectionScanningController extends GetxController {
   /// Chuẩn bị dữ liệu cho việc quét theo hướng
   Future<void> prepareDirectionData() async {
     isLoading.value = true;
-    print('🔍 Starting prepareDirectionData...');
-    print('🔍 allMaHieus count: ${allMaHieus.length}');
+    '🔍 Starting prepareDirectionData...'.printInfo();
+    '🔍 allMaHieus count: ${allMaHieus.length}'.printInfo();
 
     try {
       await _loadProvinceData();
       packagesByDirection.clear();
 
       if (_provinceData == null) {
-        print('❌ Province data is null');
+        '❌ Province data is null'.printInfo();
         isLoading.value = false;
         return;
       }
 
-      print('✅ Province data loaded');
+      '✅ Province data loaded'.printInfo();
 
       // Extract province codes
       final Set<String> voCodes = <String>{};
@@ -195,11 +194,11 @@ class DirectionScanningController extends GetxController {
         }
       }
 
-      print('🔍 Province codes loaded:');
-      print('  - RA codes: ${raCodes.length}');
-      print('  - VÔ codes: ${voCodes.length}');
-      print('  - Quảng Nam codes: ${quangNamCodes.length}');
-      print('  - Quảng Ngãi codes: ${quangNgaiCodes.length}');
+      '🔍 Province codes loaded:'.printInfo();
+      '  - RA codes: ${raCodes.length}'.printInfo();
+      '  - VÔ codes: ${voCodes.length}'.printInfo();
+      '  - Quảng Nam codes: ${quangNamCodes.length}'.printInfo();
+      '  - Quảng Ngãi codes: ${quangNgaiCodes.length}'.printInfo();
 
       // Phân loại packages theo hướng
       packagesByDirection['RA'] = [];
@@ -226,16 +225,17 @@ class DirectionScanningController extends GetxController {
         }
       }
 
-      print('🔍 Packages distribution:');
-      print('  - RA: ${packagesByDirection['RA']?.length ?? 0}');
-      print('  - VÔ: ${packagesByDirection['VÔ']?.length ?? 0}');
-      print('  - Quảng Nam: ${packagesByDirection['Quảng Nam']?.length ?? 0}');
-      print(
-          '  - Quảng Ngãi: ${packagesByDirection['Quảng Ngãi']?.length ?? 0}');
+      '🔍 Packages distribution:'.printInfo();
+      '  - RA: ${packagesByDirection['RA']?.length ?? 0}'.printInfo();
+      '  - VÔ: ${packagesByDirection['VÔ']?.length ?? 0}'.printInfo();
+      '  - Quảng Nam: ${packagesByDirection['Quảng Nam']?.length ?? 0}'
+          .printInfo();
+      '  - Quảng Ngãi: ${packagesByDirection['Quảng Ngãi']?.length ?? 0}'
+          .printInfo();
 
       isDataPrepared.value = true;
-      print(
-          '✅ Data preparation completed, isDataPrepared: ${isDataPrepared.value}');
+      '✅ Data preparation completed, isDataPrepared: ${isDataPrepared.value}'
+          .printInfo();
 
       Get.snackbar(
         'Thành công',
@@ -245,7 +245,7 @@ class DirectionScanningController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      print('❌ Error in prepareDirectionData: $e');
+      '❌ Error in prepareDirectionData: $e'.printInfo();
       Get.snackbar(
         'Lỗi',
         'Không thể chuẩn bị dữ liệu: $e',
@@ -255,7 +255,8 @@ class DirectionScanningController extends GetxController {
       );
     } finally {
       isLoading.value = false;
-      print('🔍 prepareDirectionData completed, isLoading: ${isLoading.value}');
+      '🔍 prepareDirectionData completed, isLoading: ${isLoading.value}'
+          .printInfo();
     }
   }
 
@@ -276,7 +277,7 @@ class DirectionScanningController extends GetxController {
 
     // Reset scan session để tránh duplicate check với session cũ
     scannedPackagesInSession.clear();
-    
+
     // QUAN TRỌNG: Reset packagesByDirection để có thể quét lại
     // Rebuild từ allMaHieus nếu có dữ liệu gốc
     await _rebuildPackagesByDirection();
@@ -289,9 +290,9 @@ class DirectionScanningController extends GetxController {
       totalPackagesInDirection: packagesByDirection[direction]?.length ?? 0,
     );
 
-    print('🎯 Starting scan session for direction: $direction');
-    print(
-        '🎯 Total packages in this direction: ${packagesByDirection[direction]?.length ?? 0}');
+    '🎯 Starting scan session for direction: $direction'.printInfo();
+    '🎯 Total packages in this direction: ${packagesByDirection[direction]?.length ?? 0}'
+        .printInfo();
 
     // Khởi tạo mobile scanner với proper state management
     try {
@@ -355,7 +356,8 @@ class DirectionScanningController extends GetxController {
 
       // Restore allMaHieus từ backup gốc
       allMaHieus.value = List.from(_originalMaHieus);
-      print('✅ Restored allMaHieus from backup (${allMaHieus.length} items)');
+      '✅ Restored allMaHieus from backup (${allMaHieus.length} items)'
+          .printInfo();
 
       // Rebuild từ allMaHieus
       if (_provinceData == null) {
@@ -363,7 +365,7 @@ class DirectionScanningController extends GetxController {
       }
 
       if (_provinceData == null) {
-        print('❌ Cannot rebuild - province data is null');
+        '❌ Cannot rebuild - province data is null'.printInfo();
         return;
       }
 
@@ -433,14 +435,15 @@ class DirectionScanningController extends GetxController {
         }
       }
 
-      print('✅ Rebuilt packagesByDirection');
-      print('  - RA: ${packagesByDirection['RA']?.length ?? 0}');
-      print('  - VÔ: ${packagesByDirection['VÔ']?.length ?? 0}');
-      print('  - Quảng Nam: ${packagesByDirection['Quảng Nam']?.length ?? 0}');
-      print(
-          '  - Quảng Ngãi: ${packagesByDirection['Quảng Ngãi']?.length ?? 0}');
+      '✅ Rebuilt packagesByDirection'.printInfo();
+      '  - RA: ${packagesByDirection['RA']?.length ?? 0}'.printInfo();
+      '  - VÔ: ${packagesByDirection['VÔ']?.length ?? 0}'.printInfo();
+      '  - Quảng Nam: ${packagesByDirection['Quảng Nam']?.length ?? 0}'
+          .printInfo();
+      '  - Quảng Ngãi: ${packagesByDirection['Quảng Ngãi']?.length ?? 0}'
+          .printInfo();
     } catch (e) {
-      print('❌ Error rebuilding packagesByDirection: $e');
+      '❌ Error rebuilding packagesByDirection: $e'.printInfo();
     }
   }
 
@@ -496,7 +499,7 @@ class DirectionScanningController extends GetxController {
     final alreadyScanned =
         scannedPackagesInSession.any((pkg) => pkg.barcode == barcode);
     if (alreadyScanned) {
-      print('🔍 Barcode $barcode already scanned, skipping...');
+      '🔍 Barcode $barcode already scanned, skipping...'.printInfo();
       // Feedback nhẹ để người dùng biết mã đã quét
       return; // Bỏ qua không xử lý nữa
     }
@@ -582,9 +585,9 @@ class DirectionScanningController extends GetxController {
       try {
         await mobileScannerController!.stop();
         isCameraStarted.value = false;
-        print('📷 Camera stopped successfully');
+        '📷 Camera stopped successfully'.printInfo();
       } catch (e) {
-        print('❌ Error stopping camera: $e');
+        '❌ Error stopping camera: $e'.printInfo();
       }
     }
   }
@@ -597,9 +600,9 @@ class DirectionScanningController extends GetxController {
       try {
         await mobileScannerController!.start();
         isCameraStarted.value = true;
-        print('📷 Camera started successfully');
+        '📷 Camera started successfully'.printInfo();
       } catch (e) {
-        print('❌ Error starting camera: $e');
+        '❌ Error starting camera: $e'.printInfo();
         // Nếu lỗi start, thử reset controller
         await _resetCameraController();
       }
@@ -609,14 +612,14 @@ class DirectionScanningController extends GetxController {
   /// Helper method để reset camera controller
   Future<void> _resetCameraController() async {
     try {
-      print('🔄 Resetting camera controller...');
+      '🔄 Resetting camera controller...'.printInfo();
 
       // Stop nếu đang chạy
       if (isCameraStarted.value) {
         try {
           await mobileScannerController?.stop();
         } catch (e) {
-          print('❌ Error stopping during reset: $e');
+          '❌ Error stopping during reset: $e'.printInfo();
         }
       }
 
@@ -625,7 +628,7 @@ class DirectionScanningController extends GetxController {
         try {
           await mobileScannerController?.dispose();
         } catch (e) {
-          print('❌ Error disposing during reset: $e');
+          '❌ Error disposing during reset: $e'.printInfo();
         }
       }
 
@@ -634,9 +637,9 @@ class DirectionScanningController extends GetxController {
       isCameraInitialized.value = false;
       mobileScannerController = null;
 
-      print('✅ Camera controller reset completed');
+      '✅ Camera controller reset completed'.printInfo();
     } catch (e) {
-      print('❌ Error during camera reset: $e');
+      '❌ Error during camera reset: $e'.printInfo();
     }
   }
 

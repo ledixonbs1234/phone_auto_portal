@@ -72,7 +72,8 @@ class FirebaseManager with WidgetsBindingObserver {
     try {
       await SupabaseStorageService.instance.init();
     } catch (e) {
-      print('Failed to initialize SupabaseStorageService: $e');
+      'Failed to initialize SupabaseStorageService: $e'
+          .printInfo(info: 'FirebaseManager init');
       // Silently ignore errors, validation happens on first upload
     }
 
@@ -162,7 +163,7 @@ class FirebaseManager with WidgetsBindingObserver {
                 phoneNumber.replaceAll(RegExp(r'[.\s]'), '');
             // if (cleanedPhoneNumber != lastCalledNumber) {
             lastCalledNumber = cleanedPhoneNumber;
-            print("New call request received for: $cleanedPhoneNumber");
+            'New call request received for: $cleanedPhoneNumber'.printInfo();
             _makePhoneCall(cleanedPhoneNumber);
 
             // (Tùy chọn) Xóa yêu cầu sau khi đã xử lý
@@ -246,8 +247,8 @@ class FirebaseManager with WidgetsBindingObserver {
         } else {
           device = 'PHONE';
         }
-        print(
-            '[${convertTimestampToTime(data['_timestamp'])}] To $device ${data['Lenh']} ${data['DoiTuong']}');
+        '[${convertTimestampToTime(data['_timestamp'])}] To $device ${data['Lenh']} ${data['DoiTuong']}'
+            .printInfo();
       }
     });
   }
@@ -262,7 +263,7 @@ class FirebaseManager with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      print("Error adding user info to message: $e");
+      "Error adding user info to message: $e".printInfo();
     }
     rootPath
         .child('message/topc')
@@ -289,7 +290,7 @@ class FirebaseManager with WidgetsBindingObserver {
 
       printInfo(info: 'Forced Firebase reconnect on app resume');
     } catch (e) {
-      print('Reconnect error: $e');
+      'Reconnect error: $e'.printInfo();
     }
   }
 
@@ -327,16 +328,16 @@ class FirebaseManager with WidgetsBindingObserver {
       // Kiểm tra xem có thể gọi được không
       if (await canLaunchUrl(launchUri)) {
         await launchUrl(launchUri);
-        print('Successfully launched phone call to: $phoneNumber');
+        'Successfully launched phone call to: $phoneNumber'.printInfo();
       } else {
-        print(
-            'Cannot launch phone call - canLaunchUrl returned false for: $phoneNumber');
+        'Cannot launch phone call - canLaunchUrl returned false for: $phoneNumber'
+            .printInfo();
         // Thử sử dụng DIAL thay vì CALL (không cần permission)
         final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber);
         await launchUrl(dialUri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      print('Error making phone call to $phoneNumber: $e');
+      'Error making phone call to $phoneNumber: $e'.printInfo();
       // Hiển thị thông báo lỗi cho người dùng
       Get.snackbar(
         'Lỗi gọi điện',
@@ -387,7 +388,7 @@ class FirebaseManager with WidgetsBindingObserver {
 
       showSnackBar("Đã gửi lệnh xử lý ${data.length} đơn hàng");
     } catch (e) {
-      print("Error sending AI orders: $e");
+      "Error sending AI orders: $e".printInfo();
       showSnackBar("Lỗi gửi dữ liệu AI: $e");
     }
   }
@@ -586,11 +587,11 @@ class FirebaseManager with WidgetsBindingObserver {
         userList.sort((a, b) => a.name.compareTo(b.name));
         return userList;
       } else {
-        print('Node portalUsers không tồn tại hoặc rỗng trong RTDB.');
+        'Node portalUsers không tồn tại hoặc rỗng trong RTDB.'.printInfo();
         return []; // Trả về danh sách rỗng nếu không có dữ liệu
       }
     } catch (e) {
-      print("Lỗi khi lấy portalUsers từ RTDB: $e");
+      "Lỗi khi lấy portalUsers từ RTDB: $e".printInfo();
       // Ném lỗi để controller xử lý (ví dụ: hiển thị thông báo)
       throw Exception(
           'Không thể tải danh sách người dùng portal: ${e.toString()}');
@@ -670,7 +671,7 @@ class FirebaseManager with WidgetsBindingObserver {
       }
       return [];
     } catch (e) {
-      print("Lỗi lấy AI Keys: $e");
+      "Lỗi lấy AI Keys: $e".printInfo();
       return [];
     }
   }

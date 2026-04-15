@@ -6,11 +6,11 @@ import 'package:get_storage/get_storage.dart';
 import 'package:path/path.dart' as path;
 import 'package:phone_auto_portal/app/modules/import_images/models/image_batch_model.dart';
 import 'package:phone_auto_portal/app/modules/import_images/models/image_item_model.dart';
-
+import 'package:get/get.dart';
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
   if (kDebugMode) {
-    print(message);
+    message.printInfo();
   }
 }
 

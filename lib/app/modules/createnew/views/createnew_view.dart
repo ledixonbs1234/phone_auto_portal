@@ -140,8 +140,8 @@ class CreatenewView extends GetView<CreatenewController> {
                           onChanged: (e) {
                             controller.isNotCheckData.value = e ?? false;
                             controller.update(); // Force update
-                            print(
-                                'NOT checkbox changed to: ${controller.isNotCheckData.value}'); // Debug
+                            'NOT checkbox changed to: ${controller.isNotCheckData.value}'
+                                .printInfo();
                           }),
                       const Text('NOT'),
                     ],
@@ -538,7 +538,7 @@ class CreatenewView extends GetView<CreatenewController> {
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        side: BorderSide(color: color.withOpacity(0.5)),
+        side: BorderSide(color: color.withValues(alpha: 0.5)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       ),
       onPressed: onPressed,
@@ -562,7 +562,7 @@ class CreatenewView extends GetView<CreatenewController> {
                     return Theme.of(context)
                         .colorScheme
                         .primary
-                        .withOpacity(0.6);
+                        .withValues(alpha: 0.6);
                   }
                   return null; // Use the default value.
                 }),

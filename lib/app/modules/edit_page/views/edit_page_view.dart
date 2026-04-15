@@ -301,7 +301,7 @@ class EditPageView extends GetView<EditPageController> {
                                     return Theme.of(context)
                                         .colorScheme
                                         .primary
-                                        .withOpacity(0.6);
+                                        .withValues(alpha: 0.6);
                                   }
                                   return null; // Use the default value.
                                 }),

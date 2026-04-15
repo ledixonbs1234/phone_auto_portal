@@ -4,7 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:path/path.dart' as path;
-
+import 'package:get/get.dart';
 import 'image_cache_service.dart';
 import '../app/modules/import_images/models/image_item_model.dart';
 
@@ -19,7 +19,7 @@ class FirebaseStorageService {
 
   void _debugLog(String message) {
     if (kDebugMode) {
-      print('[FirebaseStorageService] $message');
+      '[FirebaseStorageService] $message'.printInfo();
     }
   }
 
@@ -38,7 +38,7 @@ class FirebaseStorageService {
       await ImageCacheService.instance.init();
       _debugLog('FirebaseStorageService initialized');
     } catch (e) {
-      print('FirebaseStorageService init error (silently ignored): $e');
+      'FirebaseStorageService init error (silently ignored): $e'.printInfo();
     }
   }
 

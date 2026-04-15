@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:path/path.dart' as path;
-
+import 'package:get/get.dart';
 import 'image_cache_service.dart';
 import '../app/modules/import_images/models/image_item_model.dart';
 
@@ -18,7 +18,7 @@ class SupabaseStorageService {
 
   void _debugLog(String message) {
     if (kDebugMode) {
-      print('[SupabaseStorageService] $message');
+      '[SupabaseStorageService] $message'.printInfo();
     }
   }
 
@@ -48,7 +48,7 @@ class SupabaseStorageService {
       await ImageCacheService.instance.init();
       _debugLog('SupabaseStorageService initialized');
     } catch (e) {
-      print('SupabaseStorageService init error (silently ignored): $e');
+      'SupabaseStorageService init error (silently ignored): $e'.printInfo();
     }
   }
 
@@ -218,10 +218,11 @@ class SupabaseStorageService {
         _debugLog('🗑️ Không có ảnh cũ để xóa trong Supabase');
         return;
       }
-      
+
       // Xoá tất cả resource theo metadata name (không bao gồm placeholder .emptyFolderPlaceholder)
       final filesToDelete = files
-          .where((f) => f['name'] != null && f['name'] != '.emptyFolderPlaceholder')
+          .where((f) =>
+              f['name'] != null && f['name'] != '.emptyFolderPlaceholder')
           .map((f) => '$_storagePath/${f['name']}')
           .toList();
 
@@ -232,11 +233,9 @@ class SupabaseStorageService {
 
       _debugLog('🗑️ Đang xóa ${filesToDelete.length} ảnh cũ...');
 
-      // DELETE /storage/v1/object/:bucketName 
+      // DELETE /storage/v1/object/:bucketName
       // body: { "prefixes": ["path/to/file1", "path/to/file2"] }
-      final deleteBody = {
-        'prefixes': filesToDelete
-      };
+      final deleteBody = {'prefixes': filesToDelete};
 
       await _dio.delete(
         '/object/$_bucketName',

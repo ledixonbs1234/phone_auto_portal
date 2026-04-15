@@ -21,7 +21,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 // Safe logging function that only prints in debug mode
 void _debugLog(String message) {
   if (kDebugMode) {
-    print(message);
+    message.printInfo();
   }
 }
 
@@ -633,7 +633,7 @@ class ImageImportController extends GetxController {
           processedImagesList.add(processedImage);
           batches.refresh();
 
-          this.processedImages.value++;
+          processedImages.value++;
         } catch (e) {
           batch.images[i] = batch.images[i].copyWith(
             status: ImageProcessingStatus.error,
@@ -765,12 +765,12 @@ class ImageImportController extends GetxController {
       } else {
         final tempDir = await getTemporaryDirectory();
         final targetPath = path.join(tempDir.path,
-            '${DateTime.now().millisecondsSinceEpoch}_retry_${imageIndex}.jpg');
+            '${DateTime.now().millisecondsSinceEpoch}_retry_$imageIndex.jpg');
 
         final savedQuality = GetStorage().read<int>('compress_quality') ??
             ImageCacheService.defaultQuality;
 
-        var compressedFile;
+        XFile? compressedFile;
         if (isSmallFile) {
           compressedFile = await FlutterImageCompress.compressAndGetFile(
             image.originalFile.absolute.path,

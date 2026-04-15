@@ -27,7 +27,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white, // Nền button màu trắng
-        side: BorderSide(color: color.withOpacity(0.5)),
+        side: BorderSide(color: color.withValues(alpha: 0.5)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       ),
@@ -188,8 +188,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white,
                                         side: BorderSide(
-                                            color:
-                                                Colors.purple.withOpacity(0.5)),
+                                            color: Colors.purple
+                                                .withValues(alpha: 0.5)),
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(6.0)),
@@ -505,7 +505,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                 return Theme.of(context)
                                     .colorScheme
                                     .primary
-                                    .withOpacity(0.6);
+                                    .withValues(alpha: 0.6);
                               }
                               return null;
                             }),
@@ -889,10 +889,11 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                     // Xác định màu nền: Ưu tiên Selected -> Similar -> Default
                                     Color? tileColor;
                                     if (item.selected) {
-                                      tileColor = Colors.blue.withOpacity(0.2);
+                                      tileColor =
+                                          Colors.blue.withValues(alpha: 0.2);
                                     } else if (isSimilar) {
-                                      tileColor = Colors.amber.withOpacity(
-                                          0.3); // Highlight màu cam nhạt
+                                      tileColor = Colors.amber.withValues(
+                                          alpha: 0.3); // Highlight màu cam nhạt
                                     }
 
                                     return Obx(() => ListTile(
@@ -1264,22 +1265,4 @@ class PortalinfoView extends GetView<PortalinfoController> {
   }
 
   // Helper method to build category count display
-  Widget _buildCategoryCount(String categoryName, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        '$categoryName: $count',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: color.withOpacity(0.8),
-        ),
-      ),
-    );
-  }
 }

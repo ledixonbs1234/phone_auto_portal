@@ -27,7 +27,7 @@ class HomeView extends GetView<HomeController> {
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        side: BorderSide(color: color.withOpacity(0.5)),
+        side: BorderSide(color: color.withValues(alpha: 0.5)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       ),
       onPressed: onPressed,
@@ -483,17 +483,15 @@ class HomeView extends GetView<HomeController> {
                                 },
                               ),
                             ),
-                            const SizedBox(
-                                width:
-                                    8), // khoảng cách giữa các button (nếu cần)
+                            const SizedBox(width: 8),
                             SizedBox(
                               width: 100,
                               child: _buildActionButton(
-                                icon: Icons.print,
-                                label: 'In MH',
-                                color: Colors.orange,
+                                icon: Icons.create_new_folder,
+                                label: 'BM',
+                                color: Colors.redAccent,
                                 onPressed: () {
-                                  controller.goToPrintPage();
+                                  controller.goToKhoiTaoMoi();
                                 },
                               ),
                             ),
@@ -506,6 +504,18 @@ class HomeView extends GetView<HomeController> {
                                 color: Colors.purple,
                                 onPressed: () {
                                   controller.goToCreateNew();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 100,
+                              child: _buildActionButton(
+                                icon: Icons.print,
+                                label: 'In MH',
+                                color: Colors.orange,
+                                onPressed: () {
+                                  controller.goToPrintPage();
                                 },
                               ),
                             ),

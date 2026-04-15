@@ -19,6 +19,7 @@ import 'package:phone_auto_portal/firebase_options.dart';
 import 'package:url_strategy/url_strategy.dart';
 
 import 'app/modules/home/controllers/home_controller.dart';
+import 'app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart';
 
 // --- HÀM CHO SERVICE NỀN ---
 String lastTimeStamp = "";
@@ -80,6 +81,7 @@ Future<void> main() async {
   Get.put(PrintPageController());
   Get.put(EditPageController());
   Get.put(MyviewController());
+  Get.put(KhoiTaoMoiController());
   // Get.put(DingoaiController());
   // Get.put(WebController());
   // Get.put(SavedMHController());

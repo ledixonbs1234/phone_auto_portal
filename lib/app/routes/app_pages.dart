@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 
 import '../modules/createnew/bindings/createnew_binding.dart';
 import '../modules/createnew/views/createnew_view.dart';
+import '../modules/khoi_tao_moi/bindings/khoi_tao_moi_binding.dart';
+import '../modules/khoi_tao_moi/views/khoi_tao_moi_view.dart';
 import '../modules/detail/bindings/detail_binding.dart';
 import '../modules/detail/views/detail_view.dart';
 import '../modules/direction_scanning/bindings/direction_scanning_binding.dart';
@@ -49,6 +51,11 @@ class AppPages {
       name: _Paths.CREATENEW,
       page: () => const CreatenewView(),
       binding: CreatenewBinding(),
+    ),
+    GetPage(
+      name: _Paths.KHOITAOMOI,
+      page: () => KhoiTaoMoiView(),
+      binding: KhoiTaoMoiBinding(),
     ),
     GetPage(
       name: _Paths.PORTALINFO,

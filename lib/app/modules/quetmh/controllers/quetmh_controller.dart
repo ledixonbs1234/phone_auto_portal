@@ -50,7 +50,7 @@ class QuetmhController extends GetxController {
           // Nếu chưa đủ 4 giây, bỏ qua
           if (difference < _blockDuration) {
             final remainingSeconds = (_blockDuration - difference).inSeconds;
-            print('Mã $code bị chặn, còn $remainingSeconds giây');
+            'Mã $code bị chặn, còn $remainingSeconds giây'.printInfo();
             return;
           }
         }
@@ -95,7 +95,7 @@ class QuetmhController extends GetxController {
       final audioPath = "assets/beep.mp3";
       await _playAudio(audioPath);
     } catch (e) {
-      print('Không thể phát âm thanh: $e');
+      'Không thể phát âm thanh: $e'.printInfo();
     }
   }
 
@@ -117,7 +117,7 @@ class QuetmhController extends GetxController {
         MessageReceiveModel('quetmh', code),
       );
     } catch (e) {
-      print('Lỗi gửi Firebase: $e');
+      'Lỗi gửi Firebase: $e'.printInfo();
     }
   }
 
