@@ -9,6 +9,8 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 import 'package:phone_auto_portal/app/modules/home/khach_hangs_model.dart';
+import 'package:phone_auto_portal/app/modules/home/controllers/home_controller.dart';
+import '../models/suggestion_item.dart';
 
 class KhoiTaoMoiController extends GetxController {
   String? hdrId;
@@ -21,6 +23,14 @@ class KhoiTaoMoiController extends GetxController {
   String lastmaKH = "";
   final isLoading = true.obs;
 
+  final isLockedCustomer = false.obs;
+  final lockedMaKH = "".obs;
+  final lockedTenKH = "".obs;
+  final allSuggestMHs = <SuggestionItem>[].obs;
+  final suggestMHs = <SuggestionItem>[].obs;
+  late TextEditingController textHintController;
+  late FocusNode focusHint;
+
   late MobileScannerController mobileScannerController;
   StreamSubscription<BarcodeCapture>? onListenBarcode;
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -28,6 +38,9 @@ class KhoiTaoMoiController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    textHintController = TextEditingController();
+    focusHint = FocusNode();
+
     loadFromFirebase();
   }
 
@@ -35,6 +48,85 @@ class KhoiTaoMoiController extends GetxController {
   void onReady() {
     super.onReady();
     printInfo(info: "KhoiTaoMoiController onReady");
+  }
+
+  static const List<String> validStatuses = [
+    "Đang đi thu gom",
+    "Nhận hàng thành công",
+    "Đã phân hướng",
+    "Tạo đơn",
+    "Bưu tá nhận yêu cầu thu gom",
+    "Đã lấy hàng",
+  ];
+
+  bool _isValidStatus(String? status) {
+    if (status == null) return false;
+    return validStatuses.contains(status);
+  }
+
+  void loadAllSuggestions() {
+    try {
+      final homeController = Get.find<HomeController>();
+      allSuggestMHs.clear();
+      for (var kh in homeController.khachHangs) {
+        if (kh.buuGuis != null) {
+          for (var bg in kh.buuGuis!) {
+            if (bg.maBuuGui != null &&
+                bg.maBuuGui!.isNotEmpty &&
+                _isValidStatus(bg.trangThai)) {
+              allSuggestMHs.add(SuggestionItem(
+                maBuuGui: bg.maBuuGui!,
+                maKH: kh.maKH ?? '',
+                tenKH: kh.tenKH ?? '',
+                khoiLuong: bg.khoiLuong,
+              ));
+            }
+          }
+        }
+      }
+      refreshSuggestions();
+    } catch (e) {
+      'Error loading suggestions: $e'.printInfo();
+    }
+  }
+
+  void refreshSuggestions() {
+    if (isLockedCustomer.value && lockedMaKH.value.isNotEmpty) {
+      suggestMHs.value =
+          allSuggestMHs.where((item) => item.maKH == lockedMaKH.value).toList();
+    } else {
+      suggestMHs.value = allSuggestMHs.toList();
+    }
+  }
+
+  void toggleLockCustomer(String maKH, String tenKH) {
+    if (isLockedCustomer.value && lockedMaKH.value == maKH) {
+      isLockedCustomer.value = false;
+      lockedMaKH.value = "";
+      lockedTenKH.value = "";
+    } else {
+      isLockedCustomer.value = true;
+      lockedMaKH.value = maKH;
+      lockedTenKH.value = tenKH;
+    }
+    refreshSuggestions();
+  }
+
+  void unlockCustomer() {
+    isLockedCustomer.value = false;
+    refreshSuggestions();
+  }
+
+  bool isMaHieuExists(String maBuuGui) {
+    return buuGuis
+        .any((bg) => bg.maBuuGui?.toUpperCase() == maBuuGui.toUpperCase());
+  }
+
+  void onSelectedSuggestion(SuggestionItem item) {
+    if (!isLockedCustomer.value) {
+      toggleLockCustomer(item.maKH, item.tenKH);
+    }
+    addMaHieuFromText(item.maBuuGui, khoiLuong: item.khoiLuong);
   }
 
   void setUpGlobal(String account, String password) {
@@ -177,7 +269,8 @@ class KhoiTaoMoiController extends GetxController {
     );
   }
 
-  Future<void> _handleValidBarcode(String barcodeFilled) async {
+  Future<void> _handleValidBarcode(String barcodeFilled,
+      {int? khoiLuong}) async {
     if (buuGuis.any((element) => element.maBuuGui == barcodeFilled)) {
       var existingBG =
           buuGuis.firstWhereOrNull((m) => m.maBuuGui == barcodeFilled);
@@ -188,7 +281,7 @@ class KhoiTaoMoiController extends GetxController {
     }
 
     var bgTemp = BuuGuis(index: buuGuis.length + 1, maBuuGui: barcodeFilled);
-    bgTemp.khoiLuong = 0;
+    bgTemp.khoiLuong = khoiLuong ?? 0;
     buuGuis.add(bgTemp);
     buuGuis.sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
@@ -213,12 +306,12 @@ class KhoiTaoMoiController extends GetxController {
     return RegExp(pattern).hasMatch(maHieu);
   }
 
-  Future<void> addMaHieuFromText(String maHieu) async {
+  Future<void> addMaHieuFromText(String maHieu, {int? khoiLuong}) async {
     final trimmedCode = maHieu.trim().toUpperCase();
     if (trimmedCode.isEmpty) return;
 
     if (isValidMaHieu(trimmedCode)) {
-      await _handleValidBarcode(trimmedCode);
+      await _handleValidBarcode(trimmedCode, khoiLuong: khoiLuong);
     } else {
       Get.snackbar("Lỗi", "Mã không hợp lệ: $trimmedCode",
           snackPosition: SnackPosition.BOTTOM);
@@ -312,6 +405,8 @@ class KhoiTaoMoiController extends GetxController {
     try {
       mobileScannerController.dispose();
     } catch (e) {}
+    textHintController.dispose();
+    focusHint.dispose();
     _audioPlayer.dispose();
     WakelockPlus.disable();
     super.onClose();

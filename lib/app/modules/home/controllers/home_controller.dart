@@ -313,7 +313,7 @@ class HomeController extends GetxController {
 
   void goToKhoiTaoMoi() {
     var khoiTaoMoi = Get.find<KhoiTaoMoiController>();
-
+    khoiTaoMoi.loadAllSuggestions();
     if (selectedUser.value != null) {
       khoiTaoMoi.setUpGlobal(
           selectedUser.value!.username, selectedUser.value!.password);

@@ -6,11 +6,13 @@ import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 import '../controllers/khoi_tao_moi_controller.dart';
+import '../models/suggestion_item.dart';
 
 class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
   KhoiTaoMoiView({super.key});
 
   final TextEditingController textInputController = TextEditingController();
+  TextEditingController autocompleteTextController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -46,51 +48,288 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: textInputController,
-                      decoration: InputDecoration(
-                        hintText: 'Nhập mã bưu gửi',
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        isDense: true,
-                        suffixIcon: IconButton(
-                          icon:
-                              const Icon(Icons.add_circle, color: Colors.blue),
-                          onPressed: () {
-                            final code =
-                                textInputController.text.trim().toUpperCase();
-                            if (code.isNotEmpty) {
-                              HapticFeedback.lightImpact();
-                              controller.addMaHieuFromText(code);
-                              textInputController.clear();
+                  Row(
+                    children: [
+                      Obx(() => Checkbox(
+                            value: controller.isLockedCustomer.value,
+                            onChanged: (value) {
+                              if (value == true &&
+                                  controller.lockedMaKH.value.isNotEmpty) {
+                                controller.isLockedCustomer.value = true;
+                                controller.refreshSuggestions();
+                              } else if (value == false) {
+                                controller.unlockCustomer();
+                              }
+                            },
+                          )),
+                      Obx(() {
+                        final hasLocked =
+                            controller.lockedMaKH.value.isNotEmpty;
+                        return Row(
+                          children: [
+                            if (hasLocked)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: controller.isLockedCustomer.value
+                                      ? Colors.blue.withValues(alpha: 0.2)
+                                      : Colors.grey.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      controller.isLockedCustomer.value
+                                          ? Icons.lock
+                                          : Icons.lock_open,
+                                      size: 14,
+                                      color: controller.isLockedCustomer.value
+                                          ? Colors.blue
+                                          : Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${controller.lockedTenKH.value} (${controller.lockedMaKH.value})',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: controller.isLockedCustomer.value
+                                            ? Colors.blue
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                    if (hasLocked) ...[
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        onTap: () {
+                                          controller.lockedMaKH.value = "";
+                                          controller.lockedTenKH.value = "";
+                                          controller.isLockedCustomer.value =
+                                              false;
+                                          controller.refreshSuggestions();
+                                        },
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              )
+                            else
+                              const Text(
+                                'Chưa chọn KH',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Gợi ý: '),
+                      Expanded(
+                        child: Autocomplete<SuggestionItem>(
+                          optionsBuilder: (textEditingValue) {
+                            if (textEditingValue.text == '') {
+                              return const Iterable<SuggestionItem>.empty();
                             }
+                            final searchText =
+                                textEditingValue.text.toUpperCase();
+                            var filtered = controller.suggestMHs.where((item) =>
+                                item.maBuuGui
+                                    .toUpperCase()
+                                    .contains(searchText) &&
+                                !controller.isMaHieuExists(item.maBuuGui));
+
+                            if (filtered.length == 1 &&
+                                controller.isLockedCustomer.value) {
+                              final item = filtered.first;
+                              Future.delayed(const Duration(milliseconds: 100),
+                                  () {
+                                controller.onSelectedSuggestion(item);
+                                autocompleteTextController.clear();
+                              });
+                              return const Iterable<SuggestionItem>.empty();
+                            }
+
+                            return filtered;
+                          },
+                          displayStringForOption: (SuggestionItem item) =>
+                              '${item.maBuuGui} - ${item.tenKH}',
+                          fieldViewBuilder: (context, textEditingController,
+                              focusNode, onFieldSubmitted) {
+                            autocompleteTextController = textEditingController;
+                            return TextField(
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Nhập hoặc chọn mã bưu gửi',
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                isDense: true,
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.add_circle,
+                                      color: Colors.blue),
+                                  onPressed: () {
+                                    final code = textEditingController.text
+                                        .trim()
+                                        .toUpperCase();
+                                    if (code.isNotEmpty) {
+                                      HapticFeedback.lightImpact();
+                                      controller.addMaHieuFromText(code);
+                                      textEditingController.clear();
+                                    }
+                                  },
+                                ),
+                              ),
+                              textCapitalization: TextCapitalization.characters,
+                              onSubmitted: (value) {
+                                final code = value.trim().toUpperCase();
+                                if (code.isNotEmpty) {
+                                  HapticFeedback.lightImpact();
+                                  controller.addMaHieuFromText(code);
+                                  textEditingController.clear();
+                                }
+                              },
+                            );
+                          },
+                          onSelected: (SuggestionItem item) {
+                            controller.onSelectedSuggestion(item);
+                            autocompleteTextController.clear();
+                          },
+                          optionsViewBuilder: (context, onSelected,
+                              Iterable<SuggestionItem> options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                      maxHeight: 250, maxWidth: 350),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      final item = options.elementAt(index);
+                                      final isSelectedCustomer =
+                                          controller.isLockedCustomer.value &&
+                                              controller.lockedMaKH.value ==
+                                                  item.maKH;
+                                      return InkWell(
+                                        onTap: () => onSelected(item),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: isSelectedCustomer
+                                                ? Colors.blue
+                                                    .withValues(alpha: 0.1)
+                                                : null,
+                                            border: Border(
+                                              bottom: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.maBuuGui,
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.blue,
+                                                        decoration:
+                                                            isSelectedCustomer
+                                                                ? TextDecoration
+                                                                    .underline
+                                                                : null,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (item.khoiLuong != null &&
+                                                      item.khoiLuong! > 0)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors
+                                                            .orange.shade100,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        '${item.khoiLuong}g',
+                                                        style: const TextStyle(
+                                                          fontSize: 10,
+                                                          color:
+                                                              Colors.deepOrange,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  if (isSelectedCustomer) ...[
+                                                    const SizedBox(width: 4),
+                                                    const Icon(Icons.lock,
+                                                        size: 14,
+                                                        color: Colors.blue),
+                                                  ],
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${item.tenKH} (${item.maKH})',
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ),
-                      textCapitalization: TextCapitalization.characters,
-                      onSubmitted: (value) {
-                        final code = value.trim().toUpperCase();
-                        if (code.isNotEmpty) {
-                          HapticFeedback.lightImpact();
-                          controller.addMaHieuFromText(code);
-                          textInputController.clear();
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildActionButton(
-                    icon: Icons.barcode_reader,
-                    label: 'Quét QR',
-                    color: Colors.orange,
-                    onPressed: () => controller.addKhachHangAsQR(),
+                    ],
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 8),
+            _buildActionButton(
+              icon: Icons.barcode_reader,
+              label: 'Quét QR',
+              color: Colors.orange,
+              onPressed: () => controller.addKhachHangAsQR(),
             ),
             Expanded(
               child: GetBuilder<KhoiTaoMoiController>(
