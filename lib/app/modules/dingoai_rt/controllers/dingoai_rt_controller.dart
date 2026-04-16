@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 import 'package:phone_auto_portal/app/modules/dingoai_rt/models/di_ngoai_item_info.dart';
@@ -48,6 +50,12 @@ class DiNgoaiRtController extends GetxController {
   /// Stream subscription cho Firebase Real-time updates
   StreamSubscription<DatabaseEvent>? _diNgoaiSubscription;
 
+  /// Audio Player để phát âm thanh
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  /// Lưu vị trí item trùng gần đây để phát âm trùng đơn
+  final Map<String, int> _lastSeenIndex = {};
+
   // ── Lifecycle ──────────────────────────────────────────
 
   @override
@@ -67,6 +75,7 @@ class DiNgoaiRtController extends GetxController {
     // Hủy Firebase stream subscription khi đóng controller
     _diNgoaiSubscription?.cancel();
     scannerController.dispose();
+    _audioPlayer.dispose();
     super.onClose();
   }
 
@@ -187,16 +196,16 @@ class DiNgoaiRtController extends GetxController {
     _updateSelectedCount();
     diNgoaiItems.refresh();
 
-    // Gửi lệnh selectedItem lên Firebase nếu có item được chọn
-    if (diNgoaiItems[index].selected) {
-      _sendCommand('selectedItem', {
-        'code': diNgoaiItems[index].code,
-        'auto': isAuto.value,
-        'print': isPrint.value,
-      }).catchError((e) {
-        debugPrint('Lỗi gửi lệnh selectedItem: $e');
-      });
-    }
+    // // Gửi lệnh selectedItem lên Firebase nếu có item được chọn
+    // if (diNgoaiItems[index].selected) {
+    //   _sendCommand('selectedItem', {
+    //     'code': diNgoaiItems[index].code,
+    //     'auto': isAuto.value,
+    //     'print': isPrint.value,
+    //   }).catchError((e) {
+    //     debugPrint('Lỗi gửi lệnh selectedItem: $e');
+    //   });
+    // }
   }
 
   void _updateSelectedCount() {
@@ -251,9 +260,7 @@ class DiNgoaiRtController extends GetxController {
       final codes = selected.map((item) => item.code).toList();
 
       // Gửi lệnh xóa tới DiNgoaiVM qua Firebase commands
-      await _sendCommand('xoanhieubg', {
-        'codes': codes,
-      });
+      await _sendCommandRaw('xoanhieubg', codes);
 
       stateText.value =
           'Đã gửi yêu cầu xóa ${selected.length} bưu gửi tới DiNgoaiVM';
@@ -286,7 +293,7 @@ class DiNgoaiRtController extends GetxController {
       final codes = selected.map((item) => item.code).toList();
 
       // Gửi lệnh đi ngoài RT tới DiNgoaiVM qua Firebase commands
-      await _sendCommand('dingoaiRT', {
+      await _sendCommandRaw('dingoaiRT', {
         'codes': codes,
         'auto': isAuto.value,
         'print': isPrint.value,
@@ -331,6 +338,28 @@ class DiNgoaiRtController extends GetxController {
       debugPrint('✅ Command đã gửi thành công');
     } catch (e) {
       debugPrint('🔴 Error sending command: $e');
+      rethrow;
+    }
+  }
+
+  /// Gửi command với payload trực tiếp (không wrap trong JSON object)
+  /// Dùng cho commands như "xoanhieubg", "dingoaiRT" cần DoiTuong là List<String>
+  Future<void> _sendCommandRaw(String commandName, dynamic payload) async {
+    try {
+      final commandData = {
+        'Lenh': commandName,
+        'DoiTuong': jsonEncode(payload), // payload có thể là List hoặc Map
+        'TimeStamp': DateTime.now().toString(),
+      };
+
+      debugPrint('📤 Gửi command raw tới DiNgoaiVM: $commandName');
+      debugPrint('   Payload: $payload');
+
+      await _diNgoaiCommandRef.set(commandData);
+
+      debugPrint('✅ Command raw đã gửi thành công');
+    } catch (e) {
+      debugPrint('🔴 Error sending command raw: $e');
       rethrow;
     }
   }
@@ -413,17 +442,26 @@ class DiNgoaiRtController extends GetxController {
       barrierDismissible: false,
     ).then((_) {
       isScanning.value = false;
+      _lastSeenIndex.clear();
     });
   }
 
   /// Xử lý khi quét được barcode
-  void _onBarcodeDetect(BarcodeCapture capture) {
+  Future<void> _onBarcodeDetect(BarcodeCapture capture) async {
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       if (barcode.rawValue != null) {
+        if (_lastSeenIndex.containsKey(barcode.rawValue)) {
+          final lastIndex = _lastSeenIndex[barcode.rawValue]!;
+          if (lastIndex > diNgoaiItems.length - 5) {
+            // Item được thêm gần đây (< 5 vị trí từ cuối) - bỏ qua
+            debugPrint('Bỏ qua mã trùng gần đây: $barcode.rawValue');
+            return;
+          }
+        }
         final String scannedCode = barcode.rawValue!;
         debugPrint('📱 Đã quét: $scannedCode');
-        _processScannedCode(scannedCode);
+        await _processScannedCode(scannedCode);
       }
     }
   }
@@ -434,10 +472,12 @@ class DiNgoaiRtController extends GetxController {
     final index = diNgoaiItems.indexWhere((item) => item.code == code);
     if (index != -1) {
       // Item đã tồn tại trong danh sách
-      if (!diNgoaiItems[index].selected) {
-        toggleSelect(index);
-      }
+      // Kiểm tra trùng gần đây - nếu item mới được thêm gần đây thì bỏ qua
+
+      // Item trùng nhưng ở vị trí cũ - phát âm trùng đơn
       stateText.value = 'Mã $code đã có trong danh sách';
+
+      // Chọn item nếu chưa được chọn
     } else {
       // Item chưa có trong danh sách - gửi command để DiNgoaiVM xử lý
       // PC expects DoiTuong as string directly, not JSON encoded
@@ -449,12 +489,28 @@ class DiNgoaiRtController extends GetxController {
         };
         await _diNgoaiCommandRef.set(commandData);
         stateText.value = 'Mã $code đã được gửi tới DiNgoaiVM';
+
+        // Lưu vị trí của item mới được thêm
+        _lastSeenIndex[code] = diNgoaiItems.length;
+
+        // Phát haptic feedback khi thêm thành công
+        HapticFeedback.lightImpact();
       } catch (e) {
         stateText.value = 'Lỗi thêm mã: $e';
       }
     }
 
     scannedCount.value++;
+  }
+
+  /// Phát âm thanh
+  Future<void> _playAudio(String path) async {
+    try {
+      await _audioPlayer.setAsset(path);
+      await _audioPlayer.play();
+    } catch (e) {
+      debugPrint('Lỗi phát âm thanh: $e');
+    }
   }
 
   /// Toggle torch

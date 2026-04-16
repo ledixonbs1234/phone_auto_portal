@@ -14,6 +14,7 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         color: isSelected ? Colors.blue.shade50 : Colors.white,
         child: ListTile(
+          onTap: () => controller.toggleSelect(index),
           leading: CircleAvatar(
             backgroundColor: isSelected ? Colors.blue : Colors.grey.shade300,
             child: Text(
@@ -31,35 +32,15 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
               fontSize: 14,
             ),
           ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (item.buuCucNhanTemp != null &&
-                  item.buuCucNhanTemp!.isNotEmpty)
-                Text(
-                  item.buuCucNhanTemp!,
-                  style: const TextStyle(fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              if (item.buuCucNhanTemp != null &&
-                  item.buuCucNhanTemp!.isNotEmpty)
-                Text(
-                  item.buuCucNhanTemp!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-            ],
+          subtitle: Text(
+            item.buuCucNhanTemp ?? '',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          trailing: Checkbox(
-            value: isSelected,
-            onChanged: (_) => controller.toggleSelect(index),
-          ),
-          onTap: () => controller.toggleSelect(index),
         ),
       );
     });
@@ -118,12 +99,27 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                     if (controller.stateText.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          controller.stateText.value,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: Colors.grey,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Text(
+                            controller.stateText.value.isEmpty
+                                ? 'Quét QR hoặc chọn item để xử lý'
+                                : controller.stateText.value,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blue.shade900,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
