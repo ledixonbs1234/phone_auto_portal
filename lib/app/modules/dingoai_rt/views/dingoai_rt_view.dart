@@ -10,26 +10,68 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
       final item = controller.diNgoaiItems[index];
       final isSelected = item.selected;
 
+      // Determine colors based on state
+      Color cardColor;
+      Color avatarColor;
+      Widget? trailingIcon;
+
+      switch (item.state) {
+        case 1: // Thành công
+          cardColor = isSelected
+              ? Colors.green.shade100
+              : Colors.green.shade50;
+          avatarColor = Colors.green;
+          trailingIcon = const Icon(
+            Icons.check_circle,
+            color: Colors.green,
+            size: 22,
+          );
+          break;
+        case 2: // Thất bại
+          cardColor = isSelected
+              ? Colors.red.shade100
+              : Colors.red.shade50;
+          avatarColor = Colors.red;
+          trailingIcon = const Icon(
+            Icons.cancel,
+            color: Colors.red,
+            size: 22,
+          );
+          break;
+        default: // Chưa xử lý
+          cardColor =
+              isSelected ? Colors.blue.shade50 : Colors.white;
+          avatarColor =
+              isSelected ? Colors.blue : Colors.grey.shade300;
+          trailingIcon = null;
+      }
+
       return Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        color: isSelected ? Colors.blue.shade50 : Colors.white,
+        color: cardColor,
         child: ListTile(
           onTap: () => controller.toggleSelect(index),
           leading: CircleAvatar(
-            backgroundColor: isSelected ? Colors.blue : Colors.grey.shade300,
+            backgroundColor: avatarColor,
             child: Text(
               '${index + 1}',
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: item.state == 0 && !isSelected
+                    ? Colors.black
+                    : Colors.white,
                 fontSize: 12,
               ),
             ),
           ),
           title: Text(
             item.code,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
+              decoration: item.state == 1
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
+              color: item.state == 2 ? Colors.red.shade700 : null,
             ),
           ),
           subtitle: Text(
@@ -41,6 +83,7 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          trailing: trailingIcon,
         ),
       );
     });
@@ -56,6 +99,53 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
           onPressed: controller.goBack,
         ),
         actions: [
+          // Nút Ping kiểm tra kết nối PC
+          Obx(() {
+            Color pingColor;
+            IconData pingIcon;
+            String tooltip;
+
+            switch (controller.pingStatus.value) {
+              case 'online':
+                pingColor = Colors.green;
+                pingIcon = Icons.cell_tower;
+                tooltip =
+                    'PC Online - ${controller.pingResponseTime.value}ms';
+                break;
+              case 'offline':
+                pingColor = Colors.red;
+                pingIcon = Icons.signal_wifi_off;
+                tooltip = 'PC Offline';
+                break;
+              case 'pinging':
+                pingColor = Colors.orange;
+                pingIcon = Icons.sync;
+                tooltip = 'Đang ping...';
+                break;
+              default:
+                pingColor = Colors.grey.shade400;
+                pingIcon = Icons.cell_tower;
+                tooltip = 'Kiểm tra kết nối PC';
+            }
+
+            return IconButton(
+              icon: controller.isPinging.value
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation(Colors.orange),
+                      ),
+                    )
+                  : Icon(pingIcon, color: pingColor),
+              tooltip: tooltip,
+              onPressed: controller.isPinging.value
+                  ? null
+                  : controller.pingPC,
+            );
+          }),
           // Nút QR Scanner
           Obx(() => IconButton(
                 icon: Icon(

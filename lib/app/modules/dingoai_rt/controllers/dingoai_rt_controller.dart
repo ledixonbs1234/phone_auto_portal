@@ -36,6 +36,15 @@ class DiNgoaiRtController extends GetxController {
   /// Text trạng thái
   final stateText = ''.obs;
 
+  /// Ping status: 'none', 'pinging', 'online', 'offline'
+  final pingStatus = 'none'.obs;
+
+  /// Ping response time in milliseconds
+  final pingResponseTime = 0.obs;
+
+  /// Đang ping
+  final isPinging = false.obs;
+
   /// Scanner state
   final isScanning = false.obs;
   final scannedCount = 0.obs;
@@ -47,8 +56,23 @@ class DiNgoaiRtController extends GetxController {
   /// Firebase Database reference để gửi commands đến DiNgoaiVM
   late DatabaseReference _diNgoaiCommandRef;
 
+  /// Firebase Database reference để lắng nghe ping response
+  late DatabaseReference _pingResponseRef;
+
   /// Stream subscription cho Firebase Real-time updates
   StreamSubscription<DatabaseEvent>? _diNgoaiSubscription;
+
+  /// Stream subscription cho ping response
+  StreamSubscription<DatabaseEvent>? _pingSubscription;
+
+  /// Thời điểm gửi ping
+  DateTime? _pingSentAt;
+
+  /// Timer timeout cho ping
+  Timer? _pingTimeoutTimer;
+
+  /// Timer tự động ping định kỳ
+  Timer? _autoPingTimer;
 
   /// Audio Player để phát âm thanh
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -68,12 +92,26 @@ class DiNgoaiRtController extends GetxController {
       torchEnabled: false,
     );
     _initializeFirebase();
+
+    // Khi mở màn hình: refresh dữ liệu từ PC + ping (delay 2s để Firebase kết nối xong)
+    Future.delayed(const Duration(seconds: 2), () {
+      refreshData();
+      pingPC();
+    });
+
+    // Ping định kỳ mỗi 30 giây
+    _autoPingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      pingPC();
+    });
   }
 
   @override
   void onClose() {
     // Hủy Firebase stream subscription khi đóng controller
     _diNgoaiSubscription?.cancel();
+    _pingSubscription?.cancel();
+    _pingTimeoutTimer?.cancel();
+    _autoPingTimer?.cancel();
     scannerController.dispose();
     _audioPlayer.dispose();
     super.onClose();
@@ -93,8 +131,13 @@ class DiNgoaiRtController extends GetxController {
       _diNgoaiCommandRef =
           FirebaseDatabase.instance.ref('$keyData/dingoai/commands');
 
+      // Reference để lắng nghe ping response từ PC
+      _pingResponseRef =
+          FirebaseDatabase.instance.ref('$keyData/dingoai/pingresponse');
+
       // Tự động lắng nghe thay đổi từ Firebase (chỉ đọc)
       _listenToFirebaseUpdates();
+      _listenToPingResponse();
     } catch (e) {
       debugPrint('Error initializing Firebase: $e');
     }
@@ -361,6 +404,83 @@ class DiNgoaiRtController extends GetxController {
     } catch (e) {
       debugPrint('🔴 Error sending command raw: $e');
       rethrow;
+    }
+  }
+
+  // ── Ping ───────────────────────────────────────────────
+
+  /// Lắng nghe ping response từ PC
+  void _listenToPingResponse() {
+    _pingSubscription?.cancel();
+    _pingSubscription = _pingResponseRef.onValue.listen(
+      (DatabaseEvent event) {
+        if (event.snapshot.exists && isPinging.value && _pingSentAt != null) {
+          try {
+            final data = event.snapshot.value;
+            if (data is Map) {
+              final mapData = Map<String, dynamic>.from(data);
+              final responseTimestamp = mapData['timestamp']?.toString() ?? '';
+              // Kiểm tra đây là response mới (không phải cũ)
+              if (responseTimestamp.isNotEmpty) {
+                final responseTime =
+                    DateTime.now().difference(_pingSentAt!).inMilliseconds;
+                pingResponseTime.value = responseTime;
+                pingStatus.value = 'online';
+                isPinging.value = false;
+                _pingTimeoutTimer?.cancel();
+                stateText.value = 'PC Online - ${responseTime}ms';
+                debugPrint('🏓 Pong nhận được! Response time: ${responseTime}ms');
+              }
+            }
+          } catch (e) {
+            debugPrint('🔴 Lỗi xử lý ping response: $e');
+          }
+        }
+      },
+      onError: (error) {
+        debugPrint('🔴 Ping response listen error: $error');
+      },
+    );
+  }
+
+  /// Gửi ping tới PC để kiểm tra kết nối
+  Future<void> pingPC() async {
+    if (isPinging.value) return;
+
+    try {
+      isPinging.value = true;
+      pingStatus.value = 'pinging';
+      stateText.value = 'Đang ping PC...';
+      _pingSentAt = DateTime.now();
+
+      // Xóa response cũ trước khi ping
+      await _pingResponseRef.remove();
+
+      // Gửi command ping tới PC
+      final commandData = {
+        'Lenh': 'ping',
+        'DoiTuong': DateTime.now().millisecondsSinceEpoch.toString(),
+        'TimeStamp': DateTime.now().toString(),
+      };
+      await _diNgoaiCommandRef.set(commandData);
+
+      debugPrint('🏓 Ping đã gửi tới PC');
+
+      // Timeout sau 5 giây
+      _pingTimeoutTimer?.cancel();
+      _pingTimeoutTimer = Timer(const Duration(seconds: 5), () {
+        if (isPinging.value) {
+          isPinging.value = false;
+          pingStatus.value = 'offline';
+          stateText.value = 'PC Offline - Không phản hồi';
+          debugPrint('🔴 Ping timeout - PC không phản hồi');
+        }
+      });
+    } catch (e) {
+      isPinging.value = false;
+      pingStatus.value = 'offline';
+      stateText.value = 'Lỗi ping: $e';
+      debugPrint('🔴 Error sending ping: $e');
     }
   }
 
