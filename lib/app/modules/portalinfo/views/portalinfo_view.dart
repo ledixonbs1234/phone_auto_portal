@@ -672,15 +672,15 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           controller.sendThongKe();
                         },
                       ),
-                      const SizedBox(width: 8),
-                      _buildActionButton(
-                        icon: Icons.print,
-                        label: 'In Sort',
-                        color: Colors.teal,
-                        onPressed: () {
-                          controller.printPageSelectedAndSort();
-                        },
-                      ),
+                      // const SizedBox(width: 8),
+                      // _buildActionButton(
+                      //   icon: Icons.print,
+                      //   label: 'In Sort',
+                      //   color: Colors.teal,
+                      //   onPressed: () {
+                      //     controller.printPageSelectedAndSort();
+                      //   },
+                      // ),
                       const SizedBox(width: 8),
                       _buildActionButton(
                         icon: Icons.print_outlined,
@@ -691,6 +691,17 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         },
                       ),
                       const SizedBox(width: 8),
+
+                      _buildActionButton(
+                        icon: Icons.qr_code_scanner,
+                        label: 'Di Ngoài RT',
+                        color: Colors.lightBlueAccent,
+                        onPressed: () {
+                          controller.goToDiNgoaiRT();
+                        },
+                      ),
+                      // Check Direction Button
+                      const SizedBox(width: 8),
                       // Check Direction Button
                       _buildActionButton(
                         icon: Icons.qr_code_scanner,
@@ -700,16 +711,6 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           controller.goToDirectionScanning();
                         },
                       ),
-                      const SizedBox(width: 8),
-                      // Check Direction Button
-                      _buildActionButton(
-                        icon: Icons.qr_code_scanner,
-                        label: 'Di Ngoài RT',
-                        color: Colors.purple,
-                        onPressed: () {
-                          controller.goToDiNgoaiRT();
-                        },
-                      )
                     ],
                   ),
                 ])),

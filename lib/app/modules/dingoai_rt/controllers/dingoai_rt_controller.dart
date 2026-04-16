@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 import 'package:phone_auto_portal/app/modules/dingoai_rt/models/di_ngoai_item_info.dart';
 
@@ -33,6 +34,11 @@ class DiNgoaiRtController extends GetxController {
   /// Text trạng thái
   final stateText = ''.obs;
 
+  /// Scanner state
+  final isScanning = false.obs;
+  final scannedCount = 0.obs;
+  late MobileScannerController scannerController;
+
   /// Firebase Database reference để đọc dữ liệu từ DiNgoaiVM
   late DatabaseReference _diNgoaiDataRef;
 
@@ -48,6 +54,11 @@ class DiNgoaiRtController extends GetxController {
   void onInit() {
     super.onInit();
     // Dữ liệu sẽ được load từ PortalinfoController trước khi navigate
+    scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
     _initializeFirebase();
   }
 
@@ -55,6 +66,7 @@ class DiNgoaiRtController extends GetxController {
   void onClose() {
     // Hủy Firebase stream subscription khi đóng controller
     _diNgoaiSubscription?.cancel();
+    scannerController.dispose();
     super.onClose();
   }
 
@@ -96,13 +108,7 @@ class DiNgoaiRtController extends GetxController {
       },
       onError: (error) {
         debugPrint('🔴 Firebase listen error: $error');
-        Get.snackbar(
-          'Lỗi',
-          'Không thể kết nối Firebase: $error',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        stateText.value = 'Lỗi kết nối Firebase: $error';
       },
     );
   }
@@ -148,13 +154,7 @@ class DiNgoaiRtController extends GetxController {
       }
     } catch (e) {
       debugPrint('🔴 Error parsing Firebase data: $e');
-      Get.snackbar(
-        'Lỗi',
-        'Lỗi xử lý dữ liệu: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      stateText.value = 'Lỗi xử lý dữ liệu: $e';
     }
   }
 
@@ -228,24 +228,11 @@ class DiNgoaiRtController extends GetxController {
         diNgoaiItems.clear();
       }
 
-      Get.snackbar(
-        'Thành công',
-        'Đã refresh dữ liệu đi ngoài từ DiNgoaiVM.',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      stateText.value = 'Đã refresh dữ liệu thành công';
     } catch (e) {
       isLoading.value = false;
       stateText.value = 'Lỗi refresh: $e';
       debugPrint('🔴 Error refreshing data: $e');
-      Get.snackbar(
-        'Lỗi',
-        'Lỗi refresh dữ liệu: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
     }
   }
 
@@ -256,13 +243,7 @@ class DiNgoaiRtController extends GetxController {
   Future<void> deleteSelected() async {
     final selected = diNgoaiItems.where((item) => item.selected).toList();
     if (selected.isEmpty) {
-      Get.snackbar(
-        'Thông báo',
-        'Chưa có mục nào được chọn để xóa.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      stateText.value = 'Chưa có mục nào được chọn để xóa';
       return;
     }
 
@@ -274,13 +255,8 @@ class DiNgoaiRtController extends GetxController {
         'codes': codes,
       });
 
-      Get.snackbar(
-        'Thành công',
-        'Đã gửi yêu cầu xóa ${selected.length} bưu gửi tới DiNgoaiVM.',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      stateText.value =
+          'Đã gửi yêu cầu xóa ${selected.length} bưu gửi tới DiNgoaiVM';
 
       // ⚠️ KHÔNG update UI trực tiếp
       // DiNgoaiVM sẽ xóa items trong dữ liệu của nó
@@ -288,13 +264,7 @@ class DiNgoaiRtController extends GetxController {
       // → Flutter lắng nghe và cập nhật UI tự động
     } catch (e) {
       debugPrint('🔴 Error deleting items: $e');
-      Get.snackbar(
-        'Lỗi',
-        'Lỗi xóa bưu gửi: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      stateText.value = 'Lỗi xóa bưu gửi: $e';
     }
   }
 
@@ -305,13 +275,7 @@ class DiNgoaiRtController extends GetxController {
   Future<void> runAuto() async {
     final selected = diNgoaiItems.where((item) => item.selected).toList();
     if (selected.isEmpty) {
-      Get.snackbar(
-        'Thông báo',
-        'Chưa có mục nào được chọn.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      stateText.value = 'Chưa có mục nào được chọn';
       return;
     }
 
@@ -328,26 +292,12 @@ class DiNgoaiRtController extends GetxController {
         'print': isPrint.value,
       });
 
-      Get.snackbar(
-        'Đã gửi',
-        'Đã gửi yêu cầu xử lý ${selected.length} bưu gửi tới DiNgoaiVM.',
-        backgroundColor: Colors.blue,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-
-      stateText.value = 'Đang chờ DiNgoaiVM xử lý...';
+      stateText.value =
+          'Đã gửi yêu cầu xử lý ${selected.length} bưu gửi tới DiNgoaiVM. Đang chờ xử lý...';
     } catch (e) {
       isProcessing.value = false;
-      stateText.value = 'Lỗi: $e';
+      stateText.value = 'Lỗi gửi lệnh: $e';
       debugPrint('🔴 Error running auto: $e');
-      Get.snackbar(
-        'Lỗi',
-        'Lỗi gửi lệnh: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
     }
   }
 
@@ -390,5 +340,130 @@ class DiNgoaiRtController extends GetxController {
   /// Quay về trang trước
   void goBack() {
     Get.back();
+  }
+
+  // ── QR Scanner ──────────────────────────────────────────
+
+  /// Hiển thị dialog quét QR
+  void showScanner() {
+    isScanning.value = true;
+    Get.dialog(
+      Obx(() => Scaffold(
+            appBar: AppBar(
+              title: const Text('Quét QR Code'),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    scannerController.torchEnabled
+                        ? Icons.flash_on
+                        : Icons.flash_off,
+                  ),
+                  onPressed: () => scannerController.toggleTorch(),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.switch_camera),
+                  onPressed: () => scannerController.switchCamera(),
+                ),
+              ],
+            ),
+            body: Stack(
+              children: [
+                MobileScanner(
+                  controller: scannerController,
+                  onDetect: _onBarcodeDetect,
+                ),
+                Center(
+                  child: Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.green, width: 3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Đã quét: ${scannedCount.value} mã',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
+      barrierDismissible: false,
+    ).then((_) {
+      isScanning.value = false;
+    });
+  }
+
+  /// Xử lý khi quét được barcode
+  void _onBarcodeDetect(BarcodeCapture capture) {
+    final List<Barcode> barcodes = capture.barcodes;
+    for (final barcode in barcodes) {
+      if (barcode.rawValue != null) {
+        final String scannedCode = barcode.rawValue!;
+        debugPrint('📱 Đã quét: $scannedCode');
+        _processScannedCode(scannedCode);
+      }
+    }
+  }
+
+  /// Xử lý code đã quét
+  Future<void> _processScannedCode(String code) async {
+    // Tìm item trong danh sách
+    final index = diNgoaiItems.indexWhere((item) => item.code == code);
+    if (index != -1) {
+      // Item đã tồn tại trong danh sách
+      if (!diNgoaiItems[index].selected) {
+        toggleSelect(index);
+      }
+      stateText.value = 'Mã $code đã có trong danh sách';
+    } else {
+      // Item chưa có trong danh sách - gửi command để DiNgoaiVM xử lý
+      // PC expects DoiTuong as string directly, not JSON encoded
+      try {
+        final commandData = {
+          'Lenh': 'adddingoai',
+          'DoiTuong': code, // Send directly as string
+          'TimeStamp': DateTime.now().toString(),
+        };
+        await _diNgoaiCommandRef.set(commandData);
+        stateText.value = 'Mã $code đã được gửi tới DiNgoaiVM';
+      } catch (e) {
+        stateText.value = 'Lỗi thêm mã: $e';
+      }
+    }
+
+    scannedCount.value++;
+  }
+
+  /// Toggle torch
+  void toggleTorch() {
+    scannerController.toggleTorch();
+  }
+
+  /// Toggle camera
+  void toggleCamera() {
+    scannerController.switchCamera();
   }
 }

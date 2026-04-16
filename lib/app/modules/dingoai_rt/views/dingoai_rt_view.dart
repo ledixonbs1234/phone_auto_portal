@@ -25,7 +25,7 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
             ),
           ),
           title: Text(
-            item.code ?? 'N/A',
+            item.code,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
@@ -75,6 +75,17 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
           onPressed: controller.goBack,
         ),
         actions: [
+          // Nút QR Scanner
+          Obx(() => IconButton(
+                icon: Icon(
+                  controller.isScanning.value
+                      ? Icons.qr_code_scanner
+                      : Icons.qr_code_scanner,
+                ),
+                tooltip: 'Quét QR Code',
+                onPressed:
+                    controller.isScanning.value ? null : controller.showScanner,
+              )),
           // Nút Refresh từ Firebase
           Obx(() => IconButton(
                 icon: controller.isLoading.value
