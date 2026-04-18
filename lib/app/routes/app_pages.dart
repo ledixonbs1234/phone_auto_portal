@@ -28,6 +28,8 @@ import '../modules/capture_image/bindings/capture_image_binding.dart';
 import '../modules/capture_image/views/capture_image_view.dart';
 import '../modules/dingoai_rt/bindings/dingoai_rt_binding.dart';
 import '../modules/dingoai_rt/views/dingoai_rt_view.dart';
+import '../modules/danhsachbd/bindings/danhsachbd_binding.dart';
+import '../modules/danhsachbd/views/danhsachbd_view.dart';
 
 part 'app_routes.dart';
 
@@ -108,6 +110,11 @@ class AppPages {
       name: _Paths.DINGOAI_RT,
       page: () => const DiNgoaiRtView(),
       binding: DiNgoaiRtBinding(),
+    ),
+    GetPage(
+      name: _Paths.DANHSACHBD,
+      page: () => const DanhSachBDView(),
+      binding: DanhSachBDBinding(),
     ),
   ];
 }

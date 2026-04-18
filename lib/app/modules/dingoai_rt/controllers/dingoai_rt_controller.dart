@@ -323,33 +323,23 @@ class DiNgoaiRtController extends GetxController {
   /// 📍 DiNgoaiVM sẽ xử lý logic đi ngoài RT
   /// 📍 Dữ liệu được cập nhật từ DiNgoaiVM qua Firebase
   Future<void> runAuto() async {
-    final selected = diNgoaiItems.where((item) => item.selected).toList();
-    if (selected.isEmpty) {
-      stateText.value = 'Chưa có mục nào được chọn';
-      return;
-    }
-
-    try {
-      isProcessing.value = true;
-      stateText.value = 'Đang gửi lệnh đi ngoài RT tới DiNgoaiVM...';
-
-      final codes = selected.map((item) => item.code).toList();
-
-      // Gửi lệnh đi ngoài RT tới DiNgoaiVM qua Firebase commands
-      await _sendCommandRaw('dingoaiRT', {
-        'codes': codes,
-        'auto': isAuto.value,
-        'print': isPrint.value,
-      });
-
-      stateText.value =
-          'Đã gửi yêu cầu xử lý ${selected.length} bưu gửi tới DiNgoaiVM. Đang chờ xử lý...';
-    } catch (e) {
-      isProcessing.value = false;
-      stateText.value = 'Lỗi gửi lệnh: $e';
-      debugPrint('🔴 Error running auto: $e');
+    // Bỏ chọn tất cả các item trước khi thay đổi trạng thái
+    for (var item in diNgoaiItems) {
+      if (item.selected) {
+        _sendCommand('selectedItem', {
+          'code': item.code,
+          'auto': isAuto.value,
+          'print': isPrint.value,
+        }).catchError((e) {
+          debugPrint('Lỗi gửi lệnh selectedItem: $e');
+        });
+        break;
+      }
     }
   }
+  // // Gửi lệnh selectedItem lên Firebase nếu có item được chọn
+  // if (diNgoaiItems[index].selected) {
+  // }
 
   // ── Firebase Commands ─────────────────────────────────
 
@@ -429,7 +419,8 @@ class DiNgoaiRtController extends GetxController {
                 isPinging.value = false;
                 _pingTimeoutTimer?.cancel();
                 stateText.value = 'PC Online - ${responseTime}ms';
-                debugPrint('🏓 Pong nhận được! Response time: ${responseTime}ms');
+                debugPrint(
+                    '🏓 Pong nhận được! Response time: ${responseTime}ms');
               }
             }
           } catch (e) {

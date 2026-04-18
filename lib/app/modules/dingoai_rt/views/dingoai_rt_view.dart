@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dingoai_rt_controller.dart';
+import '../../../routes/app_pages.dart';
 
 class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
   const DiNgoaiRtView({super.key});
@@ -157,22 +158,12 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                 onPressed:
                     controller.isScanning.value ? null : controller.showScanner,
               )),
-          // Nút Refresh từ Firebase
-          Obx(() => IconButton(
-                icon: controller.isLoading.value
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.refresh),
-                tooltip: 'Refresh dữ liệu từ Firebase',
-                onPressed:
-                    controller.isLoading.value ? null : controller.refreshData,
-              )),
+          // Nút Danh Sách BĐ & Tự Động
+          IconButton(
+            icon: const Icon(Icons.list_alt),
+            tooltip: 'Mở Danh Sách BĐ & Tự Động',
+            onPressed: () => Get.toNamed(Routes.DANHSACHBD),
+          ),
         ],
       ),
       body: Column(
