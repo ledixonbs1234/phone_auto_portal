@@ -14,46 +14,7 @@ import '../user_info.dart';
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
-  // ── Action Button (dark style) ─────────────────────
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-    VoidCallback? onLongPress,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color.withValues(alpha: 0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   // ── Login Dialog ───────────────────────────────────
   void _showLoginDialog(BuildContext context) {
@@ -239,13 +200,13 @@ class HomeView extends GetView<HomeController> {
                 runSpacing: 8,
                 alignment: WrapAlignment.spaceBetween,
                 children: [
-                  _buildActionButton(
+                  AppTheme.actionButton(
                     icon: Icons.edit_rounded,
                     label: 'Sửa',
                     color: AppTheme.warningOrange,
                     onPressed: () => controller.editHopDong(),
                   ),
-                  _buildActionButton(
+                  AppTheme.actionButton(
                     icon: Icons.save_rounded,
                     label: 'Lưu',
                     color: AppTheme.primaryBlue,
@@ -253,7 +214,7 @@ class HomeView extends GetView<HomeController> {
                         ? () => controller.saveHopDong()
                         : () {},
                   ),
-                  _buildActionButton(
+                  AppTheme.actionButton(
                     icon: Icons.rocket_launch_rounded,
                     label: 'Khởi tạo',
                     color: AppTheme.accentCyan,
@@ -416,7 +377,7 @@ class HomeView extends GetView<HomeController> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: _buildActionButton(
+                          child: AppTheme.actionButton(
                             icon: Icons.cloud_download_rounded,
                             label: 'Get Portal Data',
                             color: AppTheme.primaryBlue,
@@ -425,7 +386,7 @@ class HomeView extends GetView<HomeController> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _buildActionButton(
+                          child: AppTheme.actionButton(
                             icon: Icons.add_box_rounded,
                             label: 'Get My Post',
                             color: AppTheme.successGreen,
@@ -469,14 +430,14 @@ class HomeView extends GetView<HomeController> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    _buildActionButton(
+                                    AppTheme.actionButton(
                                       icon: Icons.login_rounded,
                                       label: 'PNS',
                                       color: AppTheme.successGreen,
                                       onPressed: () => controller.loginPNS(),
                                     ),
                                     const SizedBox(width: 8),
-                                    _buildActionButton(
+                                    AppTheme.actionButton(
                                       icon: Icons.login_rounded,
                                       label: 'GD',
                                       color: const Color(0xFF9B5DE5),
@@ -692,7 +653,7 @@ class HomeView extends GetView<HomeController> {
                                   ],
                                 ),
                               ),
-                              _buildActionButton(
+                              AppTheme.actionButton(
                                 icon: Icons.rocket_launch_rounded,
                                 label: 'Khởi tạo',
                                 color: AppTheme.accentCyan,

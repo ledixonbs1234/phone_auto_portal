@@ -34,23 +34,20 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
       switch (item.state) {
         case 1: // Thành công
           accentColor = _successGreen;
-          bgColor = isSelected
-              ? _successGreen.withValues(alpha: 0.15)
-              : _surfaceCard;
+          bgColor =
+              isSelected ? _successGreen.withValues(alpha: 0.15) : _surfaceCard;
           stateIcon = Icons.check_circle_rounded;
           break;
         case 2: // Thất bại
           accentColor = _dangerRed;
-          bgColor = isSelected
-              ? _dangerRed.withValues(alpha: 0.15)
-              : _surfaceCard;
+          bgColor =
+              isSelected ? _dangerRed.withValues(alpha: 0.15) : _surfaceCard;
           stateIcon = Icons.cancel_rounded;
           break;
         default: // Chưa xử lý
           accentColor = isSelected ? _primaryBlue : _textSecondary;
-          bgColor = isSelected
-              ? _primaryBlue.withValues(alpha: 0.10)
-              : _surfaceCard;
+          bgColor =
+              isSelected ? _primaryBlue.withValues(alpha: 0.10) : _surfaceCard;
           stateIcon = Icons.radio_button_unchecked;
           showStateIcon = false;
       }
@@ -105,9 +102,8 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                               ],
                             )
                           : null,
-                      color: isSelected || item.state != 0
-                          ? null
-                          : _dividerColor,
+                      color:
+                          isSelected || item.state != 0 ? null : _dividerColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
@@ -143,7 +139,8 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                             decoration: item.state == 1
                                 ? TextDecoration.lineThrough
                                 : TextDecoration.none,
-                            decorationColor: _successGreen.withValues(alpha: 0.5),
+                            decorationColor:
+                                _successGreen.withValues(alpha: 0.5),
                           ),
                         ),
                         if (item.buuCucNhanTemp != null &&
@@ -324,9 +321,7 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                         ],
                       )
                     : null,
-                color: onPressed == null
-                    ? color.withValues(alpha: 0.3)
-                    : null,
+                color: onPressed == null ? color.withValues(alpha: 0.3) : null,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: onPressed != null
                     ? [
@@ -470,7 +465,7 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
           onPressed: controller.goBack,
         ),
         title: const Text(
-          'Đi Ngoài RT',
+          '',
           style: TextStyle(
             color: _textPrimary,
             fontSize: 18,
@@ -486,9 +481,8 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
           // QR Scanner
           Obx(() => _buildAppBarAction(
                 icon: Icons.qr_code_scanner_rounded,
-                onPressed: controller.isScanning.value
-                    ? null
-                    : controller.showScanner,
+                onPressed:
+                    controller.isScanning.value ? null : controller.showScanner,
                 color: _accentCyan,
               )),
 

@@ -100,6 +100,59 @@ class AppTheme {
     );
   }
 
+  // ── Action Button (dark chip) ───────────────────────
+  static Widget actionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: onPressed != null
+                ? color.withValues(alpha: 0.12)
+                : color.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: onPressed != null
+                  ? color.withValues(alpha: 0.25)
+                  : color.withValues(alpha: 0.10),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  color: onPressed != null
+                      ? color
+                      : color.withValues(alpha: 0.4),
+                  size: 18),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: onPressed != null
+                      ? color
+                      : color.withValues(alpha: 0.4),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Stat Chip ──────────────────────────────────────
   static Widget statChip(String label, String value, Color color) {
     return Container(
@@ -353,7 +406,7 @@ class AppTheme {
   }
 
   // ── Status Banner ──────────────────────────────────
-  static Widget statusBanner(String text) {
+  static Widget statusBanner(String text, {int? maxLines}) {
     if (text.isEmpty) return const SizedBox.shrink();
     return Container(
       width: double.infinity,
@@ -376,6 +429,8 @@ class AppTheme {
           color: textPrimary,
         ),
         textAlign: TextAlign.center,
+        maxLines: maxLines,
+        overflow: maxLines != null ? TextOverflow.ellipsis : null,
       ),
     );
   }
