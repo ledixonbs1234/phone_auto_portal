@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:phone_auto_portal/app/theme/app_theme.dart';
 import '../controllers/quetmh_controller.dart';
 
 class QuetmhView extends GetView<QuetmhController> {
@@ -9,23 +10,30 @@ class QuetmhView extends GetView<QuetmhController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quét Mã Hóa'),
+      backgroundColor: AppTheme.primaryDark,
+      appBar: AppTheme.buildAppBar(
+        title: 'Quét Mã Hóa',
+        onBack: () => Get.back(),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_on),
+          AppTheme.appBarAction(
+            icon: Icons.flash_on_rounded,
             onPressed: () => controller.toggleFlash(),
+            color: AppTheme.warningOrange,
           ),
-          IconButton(
-            icon: const Icon(Icons.switch_camera),
+          AppTheme.appBarAction(
+            icon: Icons.switch_camera_rounded,
             onPressed: () => controller.toggleCamera(),
+            color: AppTheme.accentCyan,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          // Scanner area
+          AppTheme.gradientSeparator(),
+
+          // ── Scanner Area ──
           Expanded(
             child: Stack(
               children: [
@@ -33,20 +41,21 @@ class QuetmhView extends GetView<QuetmhController> {
                   controller: controller.scannerController,
                   onDetect: controller.onBarcodeDetect,
                 ),
+                // Scan frame
                 Center(
                   child: Container(
                     width: 250,
                     height: 250,
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.red,
-                        width: 2,
+                        color: AppTheme.accentCyan.withValues(alpha: 0.7),
+                        width: 2.5,
                       ),
-                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
-                // Hiển thị số lượng đã quét
+                // Scan count badge
                 Positioned(
                   top: 20,
                   left: 0,
@@ -54,20 +63,29 @@ class QuetmhView extends GetView<QuetmhController> {
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                          horizontal: 18, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
+                        color: AppTheme.surfaceDark.withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.accentCyan.withValues(alpha: 0.3),
+                        ),
                       ),
-                      child: Obx(() => Text(
-                            'Đã quét: ${controller.totalScanned.value} mã',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      child: Obx(() => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.qr_code_scanner_rounded,
+                                  color: AppTheme.accentCyan, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Đã quét: ${controller.totalScanned.value} mã',
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           )),
                     ),
                   ),
@@ -76,158 +94,213 @@ class QuetmhView extends GetView<QuetmhController> {
             ),
           ),
 
-          // Control buttons
+          // ── Control Panel ──
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: AppTheme.surfaceDark,
+              border: Border(
+                top: BorderSide(
+                  color: AppTheme.dividerColor.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  Text(
+                    'Gửi lệnh điều khiển',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── Command Buttons Row 1 ──
+                  Row(
+                    children: [
+                      _buildCommandButton(
+                        label: 'mokntb',
+                        icon: Icons.looks_one_rounded,
+                        color: AppTheme.primaryBlue,
+                        onPressed: () => controller.sendMokntb(),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildCommandButton(
+                        label: 'moemsntb',
+                        icon: Icons.looks_two_rounded,
+                        color: AppTheme.successGreen,
+                        onPressed: () => controller.sendMoemsntb(),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildCommandButton(
+                        label: 'inbd8',
+                        icon: Icons.looks_3_rounded,
+                        color: AppTheme.warningOrange,
+                        onPressed: () => controller.sendInbd8(),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ── Control Buttons Row 2 ──
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => controller.toggleScanning(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Obx(() => Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF9B5DE5),
+                                        const Color(0xFF9B5DE5)
+                                            .withValues(alpha: 0.8),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF9B5DE5)
+                                            .withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        controller.isScanning.value
+                                            ? Icons.pause_rounded
+                                            : Icons.play_arrow_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        controller.isScanning.value
+                                            ? 'Tạm dừng'
+                                            : 'Tiếp tục',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => controller.resetCounter(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.textSecondary
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppTheme.textSecondary
+                                      .withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.refresh_rounded,
+                                      color: AppTheme.textSecondary,
+                                      size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Reset đếm',
+                                    style: TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommandButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [color, color.withValues(alpha: 0.8)],
+              ),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 5,
-                  offset: const Offset(0, -2),
+                  color: color.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Column(
               children: [
-                const Text(
-                  'Gửi lệnh điều khiển',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                Icon(icon, color: Colors.white, size: 24),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () => controller.sendMokntb(),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.looks_one, size: 28),
-                            SizedBox(height: 4),
-                            Text(
-                              'mokntb',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () => controller.sendMoemsntb(),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.looks_two, size: 28),
-                            SizedBox(height: 4),
-                            Text(
-                              'moemsntb',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () => controller.sendInbd8(),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.looks_3, size: 28),
-                            SizedBox(height: 4),
-                            Text(
-                              'inbd8',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Obx(() => Icon(
-                              controller.isScanning.value
-                                  ? Icons.pause
-                                  : Icons.play_arrow,
-                            )),
-                        label: Obx(() => Text(
-                              controller.isScanning.value
-                                  ? 'Tạm dừng'
-                                  : 'Tiếp tục',
-                            )),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => controller.toggleScanning(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Reset đếm'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueGrey,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => controller.resetCounter(),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

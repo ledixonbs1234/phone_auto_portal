@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
+import 'package:phone_auto_portal/app/theme/app_theme.dart';
 
 import '../controllers/home_controller.dart';
 
@@ -12,6 +13,8 @@ import '../user_info.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
+
+  // ── Action Button (dark style) ─────────────────────
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -19,22 +22,40 @@ class HomeView extends GetView<HomeController> {
     required VoidCallback onPressed,
     VoidCallback? onLongPress,
   }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, color: color),
-      label: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        side: BorderSide(color: color.withValues(alpha: 0.5)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-      ),
-      onPressed: onPressed,
-      onLongPress: onLongPress,
     );
   }
 
+  // ── Login Dialog ───────────────────────────────────
   void _showLoginDialog(BuildContext context) {
     final usernameController = TextEditingController(
         text: controller.selectedUser.value?.username ?? '');
@@ -43,17 +64,29 @@ class HomeView extends GetView<HomeController> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text("Cài đặt tài khoản Portal"),
+        backgroundColor: AppTheme.surfaceCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Cài đặt tài khoản Portal",
+            style: TextStyle(color: AppTheme.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: usernameController,
-              decoration: const InputDecoration(labelText: "Tài khoản"),
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: AppTheme.inputDecoration(
+                label: "Tài khoản",
+                prefixIcon: Icons.person_outline_rounded,
+              ),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: passwordController,
-              decoration: const InputDecoration(labelText: "Mật khẩu"),
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: AppTheme.inputDecoration(
+                label: "Mật khẩu",
+                prefixIcon: Icons.lock_outline_rounded,
+              ),
               obscureText: true,
             ),
           ],
@@ -61,16 +94,15 @@ class HomeView extends GetView<HomeController> {
         actions: [
           TextButton(
             onPressed: () {
-              // Logout
               controller.selectedUser.value =
                   UserInfo(name: 'Không chọn', username: '', password: '');
               Get.back();
             },
-            child: const Text("Thoát", style: TextStyle(color: Colors.red)),
+            child: const Text("Thoát",
+                style: TextStyle(color: AppTheme.dangerRed)),
           ),
           ElevatedButton(
             onPressed: () {
-              // Save
               if (usernameController.text.isNotEmpty) {
                 controller.selectedUser.value = UserInfo(
                   name: usernameController.text,
@@ -80,6 +112,12 @@ class HomeView extends GetView<HomeController> {
               }
               Get.back();
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
             child: const Text("Lưu"),
           ),
         ],
@@ -87,26 +125,73 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
+  // ── Quick Nav Button ───────────────────────────────
+  Widget _buildNavChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: 0.15),
+                color.withValues(alpha: 0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: AppTheme.primaryDark,
         resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          centerTitle: true,
-          title: const HostSelectionWidget(),
+        appBar: AppTheme.buildAppBar(
+          title: '',
+          titleWidget: const HostSelectionWidget(),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            controller.gotoPortalInfo();
-          },
-          child: const Icon(Icons.settings),
+          onPressed: () => controller.gotoPortalInfo(),
+          backgroundColor: AppTheme.primaryBlue,
+          child: const Icon(Icons.settings, color: Colors.white),
         ),
         body: SingleChildScrollView(
           child: Center(
             child: Obx(
               () => Column(
                 children: [
-                  // Host Selection Widget at the top
+                  AppTheme.gradientSeparator(),
+
+                  // ── User Account Section ──
                   Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Row(
@@ -118,22 +203,42 @@ class HomeView extends GetView<HomeController> {
                                 user != null && user.username.isNotEmpty;
                             return Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 16),
+                                  horizontal: 14, vertical: 14),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                border: Border.all(color: Colors.grey.shade400),
-                                borderRadius: BorderRadius.circular(8.0),
+                                color: AppTheme.surfaceCard,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: hasUser
+                                      ? AppTheme.accentCyan
+                                          .withValues(alpha: 0.3)
+                                      : AppTheme.dividerColor,
+                                ),
                               ),
-                              child: Text(
-                                hasUser
-                                    ? "TK: ${user.username}"
-                                    : "Chưa đăng nhập",
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    hasUser
+                                        ? Icons.account_circle_rounded
+                                        : Icons.person_off_rounded,
                                     color: hasUser
-                                        ? Colors.black
-                                        : Colors.grey.shade600),
+                                        ? AppTheme.accentCyan
+                                        : AppTheme.textSecondary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    hasUser
+                                        ? "TK: ${user.username}"
+                                        : "Chưa đăng nhập",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: hasUser
+                                          ? AppTheme.textPrimary
+                                          : AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           }),
@@ -141,440 +246,410 @@ class HomeView extends GetView<HomeController> {
                         const SizedBox(width: 8),
                         InkWell(
                           onTap: () => _showLoginDialog(context),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              border: Border.all(color: Colors.blue.shade200),
-                              borderRadius: BorderRadius.circular(8),
+                              color: AppTheme.primaryBlue
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppTheme.primaryBlue
+                                      .withValues(alpha: 0.25)),
                             ),
-                            child:
-                                const Icon(Icons.settings, color: Colors.blue),
+                            child: const Icon(Icons.settings_rounded,
+                                color: AppTheme.primaryBlue, size: 20),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.cloud_download,
-                        label: 'Get Portal Data',
-                        color: Colors.blue,
-                        onPressed: () {
-                          controller.getPortalData();
-                        },
-                      ),
-                      _buildActionButton(
-                        icon: Icons.add_box,
-                        label: 'Get My Post',
-                        color: Colors.green,
-                        onPressed: () {
-                          controller.goToMyPost();
-                        },
-                      ),
-                    ],
+
+                  // ── Data Action Row ──
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.cloud_download_rounded,
+                            label: 'Get Portal Data',
+                            color: AppTheme.primaryBlue,
+                            onPressed: () => controller.getPortalData(),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.add_box_rounded,
+                            label: 'Get My Post',
+                            color: AppTheme.successGreen,
+                            onPressed: () => controller.goToMyPost(),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+
+                  // ── Captcha / Login Section ──
                   controller.imageBytes.value.isNotEmpty
-                      ? Column(
-                          children: [
-                            Image.memory(
-                              const Base64Decoder()
-                                  .convert(controller.imageBytes.value),
-                              width: 250,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                      ? Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: AppTheme.cardContainer(
+                            child: Column(
                               children: [
-                                SizedBox(
-                                  width: 100,
-                                  child: TextField(
-                                    onSubmitted: (value) =>
-                                        controller.loginPNS(),
-                                    controller: controller.capcharController,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.memory(
+                                    const Base64Decoder()
+                                        .convert(controller.imageBytes.value),
+                                    width: 250,
                                   ),
                                 ),
-                                _buildActionButton(
-                                  icon: Icons.login,
-                                  label: 'Login PNS',
-                                  color: Colors.green,
-                                  onPressed: () {
-                                    controller.loginPNS();
-                                  },
-                                ),
-                                _buildActionButton(
-                                  icon: Icons.login_rounded,
-                                  label: 'Login GD',
-                                  color: Colors.purple,
-                                  onPressed: () {
-                                    controller.loginPNS(isGiaoDich: true);
-                                  },
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 100,
+                                      child: TextField(
+                                        onSubmitted: (value) =>
+                                            controller.loginPNS(),
+                                        controller:
+                                            controller.capcharController,
+                                        style: const TextStyle(
+                                            color: AppTheme.textPrimary),
+                                        decoration: AppTheme.inputDecoration(
+                                            label: 'Captcha'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildActionButton(
+                                      icon: Icons.login_rounded,
+                                      label: 'PNS',
+                                      color: AppTheme.successGreen,
+                                      onPressed: () => controller.loginPNS(),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildActionButton(
+                                      icon: Icons.login_rounded,
+                                      label: 'GD',
+                                      color: const Color(0xFF9B5DE5),
+                                      onPressed: () => controller.loginPNS(
+                                          isGiaoDich: true),
+                                    ),
+                                  ],
                                 ),
                               ],
-                            )
-                          ],
+                            ),
+                          ),
                         )
-                      : Container(),
+                      : const SizedBox.shrink(),
+
+                  // ── Customer Dropdown ──
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: DropdownButton(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.dividerColor),
+                      ),
+                      child: DropdownButton<KhachHangs>(
                         isExpanded: true,
-                        style:
-                            const TextStyle(fontSize: 15, color: Colors.black),
+                        dropdownColor: AppTheme.surfaceCard,
+                        underline: const SizedBox.shrink(),
+                        style: const TextStyle(
+                            fontSize: 14, color: AppTheme.textPrimary),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                            color: AppTheme.textSecondary),
                         value: controller.seKhachHangs.value,
                         items: controller.khachHangs
-                            .map<DropdownMenuItem<KhachHangs>>((KhachHangs e) {
+                            .map<DropdownMenuItem<KhachHangs>>(
+                                (KhachHangs e) {
                           return DropdownMenuItem<KhachHangs>(
-                              value: e,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
+                            value: e,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: Text(
                                     e.tenKH!.length > 30
                                         ? e.tenKH!
                                             .substring(e.tenKH!.length - 30)
                                         : e.tenKH!,
-                                    style: TextStyle(color: Colors.green[700]),
+                                    style: const TextStyle(
+                                        color: AppTheme.accentCyan),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "${e.countState!.countDangGom.toString().padLeft(3, ' ')} ${e.countState!.countPhanHuong.toString().padLeft(3, ' ')} ",
-                                        style:
-                                            TextStyle(color: Colors.blue[700]),
-                                      ),
-                                      Text(
-                                        "${e.countState!.countNhanHang.toString().padLeft(3, ' ')} ",
-                                        style:
-                                            TextStyle(color: Colors.red[600]),
-                                      ),
-                                      Text(
-                                        e.countState!.countChapNhan
-                                            .toString()
-                                            .padLeft(3, ' '),
-                                        style:
-                                            TextStyle(color: Colors.blue[400]),
-                                      )
-                                    ],
-                                  ),
-                                ],
-                              ));
+                                ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      "${e.countState!.countDangGom.toString().padLeft(3, ' ')} ${e.countState!.countPhanHuong.toString().padLeft(3, ' ')} ",
+                                      style: const TextStyle(
+                                          color: AppTheme.primaryBlue),
+                                    ),
+                                    Text(
+                                      "${e.countState!.countNhanHang.toString().padLeft(3, ' ')} ",
+                                      style: const TextStyle(
+                                          color: AppTheme.dangerRed),
+                                    ),
+                                    Text(
+                                      e.countState!.countChapNhan
+                                          .toString()
+                                          .padLeft(3, ' '),
+                                      style: TextStyle(
+                                          color: AppTheme.primaryBlue
+                                              .withValues(alpha: 0.6)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
                         }).toList(),
                         onChanged: (KhachHangs? value) async {
                           if (value == null) return;
-
                           controller.seKhachHangs.value = value;
                           controller.lastSelectKH = value.maKH!;
-
                           controller.checkHopDong(value);
-                        }),
+                        },
+                      ),
+                    ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Time Update: ${controller.timeUpdate.value}",
-                        style: TextStyle(color: Colors.pink[600], fontSize: 16),
-                      )
-                    ],
+
+                  // ── Time Update ──
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.access_time_rounded,
+                            color: AppTheme.warningOrange.withValues(alpha: 0.7),
+                            size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Time Update: ${controller.timeUpdate.value}",
+                          style: const TextStyle(
+                              color: AppTheme.warningOrange, fontSize: 13),
+                        ),
+                      ],
+                    ),
                   ),
-                  Row(
-                    children: [
-                      const Text('Tìm kiếm MH:'),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+
+                  // ── Search MH ──
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Row(
+                      children: [
+                        const Text('Tìm kiếm MH:',
+                            style: TextStyle(
+                                color: AppTheme.textSecondary, fontSize: 13)),
+                        const SizedBox(width: 8),
+                        Expanded(
                           child: TextField(
                             controller: controller.textMHController,
                             keyboardType: TextInputType.number,
+                            style:
+                                const TextStyle(color: AppTheme.textPrimary),
+                            decoration: AppTheme.inputDecoration(
+                                label: '', hint: 'Nhập mã hiệu'),
                             onChanged: (value) {
                               controller.textMH.value = value;
-
                               if (value.isNotEmpty && value.length >= 2) {
                                 controller.findKhachHangsByMH(value);
                               }
                             },
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            const Text('Trạng Thái : '),
-                            Text(
-                              '${controller.stateText}',
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue),
-                            )
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    width: Get.width,
-                    height: 260,
-                    child: Card(
-                      elevation: 4,
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-
-                      color: Colors.blue[50], // Add color to the card
-
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextField(
-                                  enabled:
-                                      false, // Set the TextField as read-only
-
-                                  onChanged: (s) {},
-
-                                  controller: controller.maKHController,
-
-                                  style: const TextStyle(
-                                      color: Colors.red, fontSize: 18),
-
-                                  decoration: const InputDecoration(
-                                    hintText: 'Mã KH',
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextField(
-                                  enabled: controller.isEditHopDong.value,
-                                  onChanged: (s) {},
-                                  controller: controller.addressController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Địa chỉ',
-                                  ),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                const Text(
-                                  'Có hợp đồng:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                Checkbox(
-                                  //set readonly
-
-                                  value: controller.isHaveHopDong.value,
-                                  activeColor: Colors.green, // Màu nền khi chọn
-                                  checkColor: Colors.white, // Màu dấu tích
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        4.0), // Bo góc cho checkbox
-                                  ),
-                                  onChanged: controller.isEditHopDong.value
-                                      ? (e) {
-                                          controller.isHaveHopDong.value = e!;
-                                        }
-                                      : null,
-                                ),
-                                const SizedBox(width: 20),
-                                const Text(
-                                  'STT HĐ:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 50,
-                                  child: TextField(
-                                    enabled: controller.isEditHopDong.value,
-                                    onChanged: (s) {},
-                                    keyboardType: TextInputType.number,
-                                    controller:
-                                        controller.numberHopDongController,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          ElevatedButton(
-                                              onPressed: () {
-                                                controller.editHopDong();
-                                              },
-                                              child: const Text('Sửa')),
-                                          const SizedBox(width: 10),
-                                          ElevatedButton(
-                                              onPressed: controller
-                                                      .isEditHopDong.value
-                                                  ? () {
-                                                      controller.saveHopDong();
-                                                    }
-                                                  : null,
-                                              style: ButtonStyle(
-                                                  backgroundColor:
-                                                      WidgetStateProperty.all(
-                                                          Colors.lightBlue
-                                                              .shade200)),
-                                              child: const Text('Lưu')),
-                                        ],
-                                      ),
-                                      ElevatedButton(
-                                          onPressed: () =>
-                                              controller.khoiTaoPortal(),
-                                          child: const Text('Khởi tạo')),
-                                    ]))
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
                   ),
+
+                  // ── State Text ──
                   Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: SizedBox(
-                      height: 40,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 100,
-                              child: _buildActionButton(
-                                icon: Icons.info_outline,
-                                label: 'Chi Tiết',
-                                color: Colors.indigo,
-                                onPressed: () {
-                                  controller.goToDetail();
-                                },
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: AppTheme.statusBanner('${controller.stateText}'),
+                  ),
+
+                  // ── Contract Card ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppTheme.cardContainer(
+                      child: Column(
+                        children: [
+                          TextField(
+                            enabled: false,
+                            controller: controller.maKHController,
+                            style: const TextStyle(
+                                color: AppTheme.dangerRed, fontSize: 16),
+                            decoration:
+                                AppTheme.inputDecoration(label: 'Mã KH'),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            enabled: controller.isEditHopDong.value,
+                            controller: controller.addressController,
+                            style:
+                                const TextStyle(color: AppTheme.textPrimary),
+                            decoration:
+                                AppTheme.inputDecoration(label: 'Địa chỉ'),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Text('Có hợp đồng:',
+                                  style: TextStyle(
+                                      color: AppTheme.textSecondary)),
+                              Checkbox(
+                                value: controller.isHaveHopDong.value,
+                                activeColor: AppTheme.successGreen,
+                                checkColor: Colors.white,
+                                side: const BorderSide(
+                                    color: AppTheme.textSecondary),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4)),
+                                onChanged: controller.isEditHopDong.value
+                                    ? (e) =>
+                                        controller.isHaveHopDong.value = e!
+                                    : null,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 100,
-                              child: _buildActionButton(
-                                icon: Icons.create_new_folder,
-                                label: 'BM',
-                                color: Colors.redAccent,
-                                onPressed: () {
-                                  controller.goToKhoiTaoMoi();
-                                },
+                              const SizedBox(width: 16),
+                              const Text('STT HĐ:',
+                                  style: TextStyle(
+                                      color: AppTheme.textSecondary)),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 50,
+                                child: TextField(
+                                  enabled: controller.isEditHopDong.value,
+                                  keyboardType: TextInputType.number,
+                                  controller:
+                                      controller.numberHopDongController,
+                                  style: const TextStyle(
+                                      color: AppTheme.textPrimary),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 8),
+                                    enabledBorder: UnderlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppTheme.dividerColor)),
+                                    focusedBorder: UnderlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppTheme.primaryBlue)),
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 100,
-                              child: _buildActionButton(
-                                icon: Icons.create,
-                                label: 'Tạo Mới',
-                                color: Colors.purple,
-                                onPressed: () {
-                                  controller.goToCreateNew();
-                                },
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  _buildActionButton(
+                                    icon: Icons.edit_rounded,
+                                    label: 'Sửa',
+                                    color: AppTheme.warningOrange,
+                                    onPressed: () =>
+                                        controller.editHopDong(),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildActionButton(
+                                    icon: Icons.save_rounded,
+                                    label: 'Lưu',
+                                    color: AppTheme.primaryBlue,
+                                    onPressed:
+                                        controller.isEditHopDong.value
+                                            ? () => controller.saveHopDong()
+                                            : () {},
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 100,
-                              child: _buildActionButton(
-                                icon: Icons.print,
-                                label: 'In MH',
-                                color: Colors.orange,
-                                onPressed: () {
-                                  controller.goToPrintPage();
-                                },
+                              _buildActionButton(
+                                icon: Icons.rocket_launch_rounded,
+                                label: 'Khởi tạo',
+                                color: AppTheme.accentCyan,
+                                onPressed: () =>
+                                    controller.khoiTaoPortal(),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 130,
-                              child: _buildActionButton(
-                                icon: Icons.create,
-                                label: 'Quét Thư',
-                                color: Colors.blue,
-                                onPressed: () {
-                                  controller.goToQuetThu();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 130,
-                              child: _buildActionButton(
-                                icon: Icons.qr_code_scanner,
-                                label: 'Quét MH',
-                                color: Colors.teal,
-                                onPressed: () {
-                                  controller.goToQuetMH();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 130,
-                              child: _buildActionButton(
-                                icon: Icons.photo_library,
-                                label: 'Import Img',
-                                color: Colors.deepPurple,
-                                onPressed: () {
-                                  controller.goToImportImages();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 130,
-                              child: _buildActionButton(
-                                icon: Icons.camera_alt,
-                                label: 'Chụp Ảnh',
-                                color: Colors.purpleAccent,
-                                onPressed: () {
-                                  controller.goToCaptureImage();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(
-                    height: 60,
-                  )
+
+                  const SizedBox(height: 12),
+
+                  // ── Quick Navigation Grid ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildNavChip(
+                          icon: Icons.info_outline_rounded,
+                          label: 'Chi Tiết',
+                          color: const Color(0xFF6366F1),
+                          onPressed: () => controller.goToDetail(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.create_new_folder_rounded,
+                          label: 'BM',
+                          color: AppTheme.dangerRed,
+                          onPressed: () => controller.goToKhoiTaoMoi(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.add_circle_outline_rounded,
+                          label: 'Tạo Mới',
+                          color: const Color(0xFF9B5DE5),
+                          onPressed: () => controller.goToCreateNew(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.print_rounded,
+                          label: 'In MH',
+                          color: AppTheme.warningOrange,
+                          onPressed: () => controller.goToPrintPage(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.mark_email_read_rounded,
+                          label: 'Quét Thư',
+                          color: AppTheme.primaryBlue,
+                          onPressed: () => controller.goToQuetThu(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.qr_code_scanner_rounded,
+                          label: 'Quét MH',
+                          color: AppTheme.accentCyan,
+                          onPressed: () => controller.goToQuetMH(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.photo_library_rounded,
+                          label: 'Import Img',
+                          color: const Color(0xFF7C3AED),
+                          onPressed: () => controller.goToImportImages(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.camera_alt_rounded,
+                          label: 'Chụp Ảnh',
+                          color: const Color(0xFFD946EF),
+                          onPressed: () => controller.goToCaptureImage(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
