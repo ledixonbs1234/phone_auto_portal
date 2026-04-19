@@ -125,6 +125,150 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
+  // ── Contract Dialog ───────────────────────────────
+  void _showContractDialog(BuildContext context) {
+    Get.dialog(
+      Obx(() => AlertDialog(
+            backgroundColor: AppTheme.surfaceCard,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            titlePadding:
+                const EdgeInsets.only(left: 20, right: 12, top: 12),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentCyan.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.description_rounded,
+                      color: AppTheme.accentCyan, size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text("Thông tin hợp đồng",
+                      style:
+                          TextStyle(color: AppTheme.textPrimary, fontSize: 17)),
+                ),
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: const Icon(Icons.close_rounded,
+                      color: AppTheme.textSecondary, size: 22),
+                  splashRadius: 18,
+                ),
+              ],
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    enabled: false,
+                    controller: controller.maKHController,
+                    style: const TextStyle(
+                        color: AppTheme.dangerRed, fontSize: 16),
+                    decoration: AppTheme.inputDecoration(label: 'Mã KH'),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    enabled: controller.isEditHopDong.value,
+                    controller: controller.addressController,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    decoration: AppTheme.inputDecoration(label: 'Địa chỉ'),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      const Text('Có hợp đồng:',
+                          style: TextStyle(color: AppTheme.textSecondary)),
+                      SizedBox(
+                        width: 40,
+                        height: 32,
+                        child: Checkbox(
+                          value: controller.isHaveHopDong.value,
+                          activeColor: AppTheme.successGreen,
+                          checkColor: Colors.white,
+                          side:
+                              const BorderSide(color: AppTheme.textSecondary),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4)),
+                          onChanged: controller.isEditHopDong.value
+                              ? (e) => controller.isHaveHopDong.value = e!
+                              : null,
+                        ),
+                      ),
+                      const Text('STT HĐ:',
+                          style: TextStyle(color: AppTheme.textSecondary)),
+                      SizedBox(
+                        width: 50,
+                        child: TextField(
+                          enabled: controller.isEditHopDong.value,
+                          keyboardType: TextInputType.number,
+                          controller: controller.numberHopDongController,
+                          style:
+                              const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 8),
+                            enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: AppTheme.dividerColor)),
+                            focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: AppTheme.primaryBlue)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actionsPadding:
+                const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+            actions: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                children: [
+                  _buildActionButton(
+                    icon: Icons.edit_rounded,
+                    label: 'Sửa',
+                    color: AppTheme.warningOrange,
+                    onPressed: () => controller.editHopDong(),
+                  ),
+                  _buildActionButton(
+                    icon: Icons.save_rounded,
+                    label: 'Lưu',
+                    color: AppTheme.primaryBlue,
+                    onPressed: controller.isEditHopDong.value
+                        ? () => controller.saveHopDong()
+                        : () {},
+                  ),
+                  _buildActionButton(
+                    icon: Icons.rocket_launch_rounded,
+                    label: 'Khởi tạo',
+                    color: AppTheme.accentCyan,
+                    onPressed: () {
+                      Get.back();
+                      controller.khoiTaoPortal();
+                    },
+                  ),
+                ],
+              ),
+            ],
+          )),
+    );
+  }
+
   // ── Quick Nav Button ───────────────────────────────
   Widget _buildNavChip({
     required IconData icon,
@@ -478,101 +622,75 @@ class HomeView extends GetView<HomeController> {
                     child: AppTheme.statusBanner('${controller.stateText}'),
                   ),
 
-                  // ── Contract Card ──
+                  // ── Contract Summary (tap to open dialog) ──
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: AppTheme.cardContainer(
-                      child: Column(
-                        children: [
-                          TextField(
-                            enabled: false,
-                            controller: controller.maKHController,
-                            style: const TextStyle(
-                                color: AppTheme.dangerRed, fontSize: 16),
-                            decoration:
-                                AppTheme.inputDecoration(label: 'Mã KH'),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showContractDialog(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: controller.isHaveHopDong.value
+                                  ? AppTheme.accentCyan
+                                      .withValues(alpha: 0.3)
+                                  : AppTheme.dividerColor,
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            enabled: controller.isEditHopDong.value,
-                            controller: controller.addressController,
-                            style:
-                                const TextStyle(color: AppTheme.textPrimary),
-                            decoration:
-                                AppTheme.inputDecoration(label: 'Địa chỉ'),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
+                          child: Row(
                             children: [
-                              const Text('Có hợp đồng:',
-                                  style: TextStyle(
-                                      color: AppTheme.textSecondary)),
-                              Checkbox(
-                                value: controller.isHaveHopDong.value,
-                                activeColor: AppTheme.successGreen,
-                                checkColor: Colors.white,
-                                side: const BorderSide(
-                                    color: AppTheme.textSecondary),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4)),
-                                onChanged: controller.isEditHopDong.value
-                                    ? (e) =>
-                                        controller.isHaveHopDong.value = e!
-                                    : null,
-                              ),
-                              const SizedBox(width: 16),
-                              const Text('STT HĐ:',
-                                  style: TextStyle(
-                                      color: AppTheme.textSecondary)),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                width: 50,
-                                child: TextField(
-                                  enabled: controller.isEditHopDong.value,
-                                  keyboardType: TextInputType.number,
-                                  controller:
-                                      controller.numberHopDongController,
-                                  style: const TextStyle(
-                                      color: AppTheme.textPrimary),
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 8),
-                                    enabledBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                            color: AppTheme.dividerColor)),
-                                    focusedBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                            color: AppTheme.primaryBlue)),
-                                  ),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentCyan
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.description_rounded,
+                                  color: AppTheme.accentCyan,
+                                  size: 20,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  _buildActionButton(
-                                    icon: Icons.edit_rounded,
-                                    label: 'Sửa',
-                                    color: AppTheme.warningOrange,
-                                    onPressed: () =>
-                                        controller.editHopDong(),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _buildActionButton(
-                                    icon: Icons.save_rounded,
-                                    label: 'Lưu',
-                                    color: AppTheme.primaryBlue,
-                                    onPressed:
-                                        controller.isEditHopDong.value
-                                            ? () => controller.saveHopDong()
-                                            : () {},
-                                  ),
-                                ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      controller.maKHController.text
+                                              .isNotEmpty
+                                          ? controller.maKHController.text
+                                          : 'Chưa chọn KH',
+                                      style: const TextStyle(
+                                        color: AppTheme.dangerRed,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      controller.isHaveHopDong.value
+                                          ? 'HĐ: ${controller.numberHopDongController.text.isNotEmpty ? controller.numberHopDongController.text : "—"}'
+                                          : 'Không có hợp đồng',
+                                      style: TextStyle(
+                                        color: controller
+                                                .isHaveHopDong.value
+                                            ? AppTheme.successGreen
+                                            : AppTheme.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               _buildActionButton(
                                 icon: Icons.rocket_launch_rounded,
@@ -581,9 +699,15 @@ class HomeView extends GetView<HomeController> {
                                 onPressed: () =>
                                     controller.khoiTaoPortal(),
                               ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppTheme.textSecondary,
+                                size: 22,
+                              ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

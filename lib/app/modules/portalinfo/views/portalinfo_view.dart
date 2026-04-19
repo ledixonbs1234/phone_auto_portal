@@ -2,13 +2,14 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
+import 'package:phone_auto_portal/app/theme/app_theme.dart';
 import '../controllers/portalinfo_controller.dart';
-import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart'; // Import StateMaHieu
+import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 
 class PortalinfoView extends GetView<PortalinfoController> {
   const PortalinfoView({super.key});
 
-  // Hàm tạo button chung theo style của CreateNewView
+  // ── Action Button (dark style) ─────────────────────
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -16,23 +17,39 @@ class PortalinfoView extends GetView<PortalinfoController> {
     required VoidCallback? onPressed,
     VoidCallback? onLongPress,
   }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, color: color),
-      label: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 18),
+              if (label.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white, // Nền button màu trắng
-        side: BorderSide(color: color.withValues(alpha: 0.5)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      ),
-      onPressed: onPressed,
-      onLongPress: onLongPress,
     );
   }
 
@@ -45,86 +62,105 @@ class PortalinfoView extends GetView<PortalinfoController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const HostSelectionWidget(),
-        centerTitle: true,
+      backgroundColor: AppTheme.primaryDark,
+      appBar: AppTheme.buildAppBar(
+        title: '',
+        titleWidget: const HostSelectionWidget(),
       ),
-      body: Center(
-        child: Column(children: [
-          // Host Selection Widget at the top
-          // Row chứa các button Refresh và Chọn Ngày
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    icon: Icons.check_circle,
-                    label: "Check",
-                    color: Colors.orange,
-                    onPressed: () {
-                      controller.checkPortal();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Swapped: REFRESH moved to the right
-                _buildActionButton(
-                  icon: Icons.refresh,
-                  label: "",
-                  color: Colors.blue,
-                  onPressed: () {
-                    controller.refreshPortal(null);
-                  },
-                ),
-                const SizedBox(width: 8),
+      body: Column(children: [
+        AppTheme.gradientSeparator(),
 
-                Obx(() => IconButton(
-                      icon: Icon(
-                        controller.isScanSectionVisible.value
-                            ? Icons.search_off
-                            : Icons.search,
-                      ),
-                      tooltip: controller.isScanSectionVisible.value
-                          ? 'Ẩn tìm kiếm'
-                          : 'Hiện tìm kiếm',
-                      onPressed: () {
-                        // Nếu đang ẩn (sẽ bật lên) thì reset bộ lọc về ngày hôm nay
+        // ── Top Action Row: Check, Refresh, Search Toggle ──
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.check_circle,
+                  label: "Check",
+                  color: AppTheme.warningOrange,
+                  onPressed: () => controller.checkPortal(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildActionButton(
+                icon: Icons.refresh,
+                label: "",
+                color: AppTheme.primaryBlue,
+                onPressed: () => controller.refreshPortal(null),
+              ),
+              const SizedBox(width: 8),
+              Obx(() => Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
                         if (!controller.isScanSectionVisible.value) {
-                          // Reset ngày về hôm nay
                           controller.fromDate.value = DateTime.now();
                           controller.toDate.value = DateTime.now();
-                          // Xóa bộ lọc tên người nhận
                           controller.recipientNameController.clear();
                           controller.recipientNameFilter.value = "";
-                          // Xóa mã barcode
                           controller.barcodeInputController.clear();
                         }
                         controller.toggleScanSection();
                       },
-                    ))
-              ],
-            ),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: controller.isScanSectionVisible.value
+                              ? AppTheme.primaryBlue.withValues(alpha: 0.15)
+                              : AppTheme.surfaceCard,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: controller.isScanSectionVisible.value
+                                ? AppTheme.primaryBlue.withValues(alpha: 0.3)
+                                : AppTheme.dividerColor,
+                          ),
+                        ),
+                        child: Icon(
+                          controller.isScanSectionVisible.value
+                              ? Icons.search_off
+                              : Icons.search,
+                          color: controller.isScanSectionVisible.value
+                              ? AppTheme.primaryBlue
+                              : AppTheme.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  )),
+            ],
           ),
-          // Collapsible search & filter section
-          Obx(() => AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                height: controller.isScanSectionVisible.value ? null : 0,
-                constraints: controller.isScanSectionVisible.value
-                    ? BoxConstraints(
-                        minHeight: 0,
-                        maxHeight: MediaQuery.of(context).size.height * 0.6,
-                      )
-                    : const BoxConstraints(maxHeight: 0),
-                clipBehavior: Clip.hardEdge,
-                decoration: const BoxDecoration(),
-                child: controller.isScanSectionVisible.value
-                    ? ListView(
+        ),
+
+        // ── Collapsible Search & Filter Section ──
+        Obx(() => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              height: controller.isScanSectionVisible.value ? null : 0,
+              constraints: controller.isScanSectionVisible.value
+                  ? BoxConstraints(
+                      minHeight: 0,
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                    )
+                  : const BoxConstraints(maxHeight: 0),
+              clipBehavior: Clip.hardEdge,
+              decoration: const BoxDecoration(),
+              child: controller.isScanSectionVisible.value
+                  ? Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppTheme.dividerColor.withValues(alpha: 0.5)),
+                      ),
+                      child: ListView(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(8.0),
+                        padding: EdgeInsets.zero,
                         children: [
                           // Row 1: Barcode scanning
                           Row(
@@ -132,26 +168,22 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               Expanded(
                                 flex: 2,
                                 child: TextField(
-                                  controller: controller.barcodeInputController,
-                                  style: const TextStyle(fontSize: 14),
-                                  decoration: InputDecoration(
-                                    labelText: 'Mã sản phẩm',
-                                    hintText: 'Nhập hoặc quét mã',
-                                    labelStyle: const TextStyle(fontSize: 12),
-                                    hintStyle: const TextStyle(fontSize: 12),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 8),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(6.0),
-                                    ),
-                                    prefixIcon:
-                                        const Icon(Icons.qr_code, size: 18),
-                                    suffixIcon: IconButton(
-                                      icon: const Icon(Icons.clear, size: 16),
-                                      onPressed: () {
-                                        controller.barcodeInputController
-                                            .clear();
-                                      },
+                                  controller:
+                                      controller.barcodeInputController,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary),
+                                  decoration: AppTheme.inputDecoration(
+                                    label: 'Mã sản phẩm',
+                                    hint: 'Nhập hoặc quét mã',
+                                    prefixIcon: Icons.qr_code,
+                                    suffix: IconButton(
+                                      icon: const Icon(Icons.clear,
+                                          size: 16,
+                                          color: AppTheme.textSecondary),
+                                      onPressed: () => controller
+                                          .barcodeInputController
+                                          .clear(),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(
                                           minWidth: 24, minHeight: 24),
@@ -164,85 +196,70 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 8),
                               Expanded(
                                 flex: 1,
-                                child: Obx(() => ElevatedButton.icon(
-                                      icon: Icon(
-                                        controller.isScanning.value
-                                            ? Icons.hourglass_empty
-                                            : Icons.qr_code_scanner,
-                                        color: Colors.purple,
-                                        size: 16,
-                                      ),
-                                      label: Text(
-                                        controller.isScanning.value
-                                            ? "Quét..."
-                                            : "Quét",
-                                        style: const TextStyle(
-                                          color: Colors.purple,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        side: BorderSide(
-                                            color: Colors.purple
-                                                .withValues(alpha: 0.5)),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(6.0)),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 4, horizontal: 8),
-                                      ),
-                                      onPressed: () {
-                                        controller.scanBarcode();
-                                      },
+                                child: Obx(() => _buildActionButton(
+                                      icon: controller.isScanning.value
+                                          ? Icons.hourglass_empty
+                                          : Icons.qr_code_scanner,
+                                      label: controller.isScanning.value
+                                          ? "Quét..."
+                                          : "Quét",
+                                      color: const Color(0xFF9B5DE5),
+                                      onPressed: () =>
+                                          controller.scanBarcode(),
                                     )),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          // Row 2: Từ ngày đến ngày
+                          const SizedBox(height: 10),
+
+                          // Row 2: Date range
                           Row(children: [
                             Expanded(
                               child: Obx(
                                 () => InkWell(
                                   onTap: () async {
-                                    DateTime? pickedDate = await showDatePicker(
+                                    DateTime? pickedDate =
+                                        await showDatePicker(
                                       context: context,
-                                      initialDate: controller.fromDate.value,
+                                      initialDate:
+                                          controller.fromDate.value,
                                       firstDate: DateTime(2000),
                                       lastDate: DateTime.now(),
                                     );
                                     if (pickedDate != null) {
-                                      controller.fromDate.value = pickedDate;
+                                      controller.fromDate.value =
+                                          pickedDate;
                                     }
                                   },
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Container(
                                     decoration: BoxDecoration(
+                                      color: AppTheme.surfaceDark,
                                       border: Border.all(
-                                          color: Colors.grey.shade400),
-                                      borderRadius: BorderRadius.circular(6),
+                                          color: AppTheme.dividerColor),
+                                      borderRadius:
+                                          BorderRadius.circular(10),
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 8),
+                                        horizontal: 10, vertical: 10),
                                     child: Row(
                                       children: [
-                                        const Icon(
-                                          Icons.calendar_today,
-                                          size: 18,
-                                          color: Colors.blue,
-                                        ),
-                                        const SizedBox(width: 8),
+                                        const Icon(Icons.calendar_today,
+                                            size: 16,
+                                            color: AppTheme.primaryBlue),
+                                        const SizedBox(width: 6),
                                         Expanded(
                                           child: Text(
                                             "Từ: ${controller.fromDate.value.day}/${controller.fromDate.value.month}/${controller.fromDate.value.year}",
                                             style: const TextStyle(
-                                              fontSize: 12,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                                fontSize: 12,
+                                                color:
+                                                    AppTheme.textPrimary),
+                                            overflow:
+                                                TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
@@ -251,192 +268,218 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(width: 8),
                             Expanded(
-                              child: SizedBox(
-                                height: 40,
-                                child: Obx(
-                                  () => InkWell(
-                                    onTap: () async {
-                                      DateTime? pickedDate =
-                                          await showDatePicker(
-                                        context: context,
-                                        initialDate: controller.toDate.value,
-                                        firstDate: DateTime(2025),
-                                        lastDate: DateTime.now(),
-                                      );
-                                      if (pickedDate != null) {
-                                        controller.toDate.value = pickedDate;
-                                      }
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: Colors.grey.shade400),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.calendar_today,
-                                            size: 18,
-                                            color: Colors.green,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              "Đến: ${controller.toDate.value.day}/${controller.toDate.value.month}/${controller.toDate.value.year}",
-                                              style: const TextStyle(
+                              child: Obx(
+                                () => InkWell(
+                                  onTap: () async {
+                                    DateTime? pickedDate =
+                                        await showDatePicker(
+                                      context: context,
+                                      initialDate:
+                                          controller.toDate.value,
+                                      firstDate: DateTime(2025),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (pickedDate != null) {
+                                      controller.toDate.value =
+                                          pickedDate;
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.surfaceDark,
+                                      border: Border.all(
+                                          color: AppTheme.dividerColor),
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 10),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today,
+                                            size: 16,
+                                            color:
+                                                AppTheme.successGreen),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            "Đến: ${controller.toDate.value.day}/${controller.toDate.value.month}/${controller.toDate.value.year}",
+                                            style: const TextStyle(
                                                 fontSize: 12,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
+                                                color:
+                                                    AppTheme.textPrimary),
+                                            overflow:
+                                                TextOverflow.ellipsis,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-
-                            const SizedBox(width: 8),
-                            // Row 3: Tên người nhận
                           ]),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 50,
-                            child: TextField(
-                              controller: controller.recipientNameController,
-                              onChanged: (value) {
-                                controller.recipientNameFilter.value = value;
-                              },
-                              style: const TextStyle(fontSize: 14),
-                              decoration: InputDecoration(
-                                labelText: 'Tên người nhận',
-                                hintText: 'Nhập tên người nhận',
-                                labelStyle: const TextStyle(fontSize: 12),
-                                hintStyle: const TextStyle(fontSize: 12),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 8),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6.0),
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.person,
-                                  size: 18,
-                                  color: Colors.orange,
-                                ),
-                                suffixIcon: Obx(
-                                  () => controller
-                                          .recipientNameFilter.value.isNotEmpty
-                                      ? IconButton(
-                                          icon:
-                                              const Icon(Icons.clear, size: 16),
-                                          onPressed: () {
-                                            controller.recipientNameController
-                                                .clear();
-                                            controller
-                                                .recipientNameFilter.value = "";
-                                          },
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(
-                                              minWidth: 24, minHeight: 24),
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
+                          const SizedBox(height: 10),
+
+                          // Row 3: Recipient name
+                          TextField(
+                            controller:
+                                controller.recipientNameController,
+                            onChanged: (value) {
+                              controller.recipientNameFilter.value =
+                                  value;
+                            },
+                            style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textPrimary),
+                            decoration: AppTheme.inputDecoration(
+                              label: 'Tên người nhận',
+                              hint: 'Nhập tên người nhận',
+                              prefixIcon: Icons.person,
+                              suffix: Obx(
+                                () => controller.recipientNameFilter
+                                        .value.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear,
+                                            size: 16,
+                                            color:
+                                                AppTheme.textSecondary),
+                                        onPressed: () {
+                                          controller
+                                              .recipientNameController
+                                              .clear();
+                                          controller.recipientNameFilter
+                                              .value = "";
+                                        },
+                                        padding: EdgeInsets.zero,
+                                        constraints:
+                                            const BoxConstraints(
+                                                minWidth: 24,
+                                                minHeight: 24),
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
                             ),
                           ),
+                          const SizedBox(height: 10),
+
                           // Row 4: Search Button
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton.icon(
-                              icon: const Icon(Icons.search, size: 18),
-                              label: const Text(
-                                'Tìm kiếm',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  controller.refreshPortal(
+                                    null,
+                                    fromDate:
+                                        controller.fromDate.value,
+                                    toDate: controller.toDate.value,
+                                    recipientName: controller
+                                        .recipientNameFilter.value,
+                                  );
+                                  Get.snackbar(
+                                    'Tìm kiếm',
+                                    'Đang tìm kiếm với bộ lọc đã chọn...',
+                                    snackPosition:
+                                        SnackPosition.BOTTOM,
+                                    backgroundColor:
+                                        AppTheme.primaryBlue,
+                                    colorText: Colors.white,
+                                    duration: const Duration(
+                                        seconds: 2),
+                                  );
+                                },
+                                borderRadius:
+                                    BorderRadius.circular(12),
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(
+                                          vertical: 12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppTheme.primaryBlue,
+                                        AppTheme.primaryBlue
+                                            .withValues(alpha: 0.8),
+                                      ],
+                                    ),
+                                    borderRadius:
+                                        BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryBlue
+                                            .withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset:
+                                            const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.search,
+                                          color: Colors.white,
+                                          size: 18),
+                                      SizedBox(width: 6),
+                                      Text('Tìm kiếm',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight:
+                                                FontWeight.w600,
+                                            fontSize: 14,
+                                          )),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                side: BorderSide(
-                                  color: Colors.blue.shade700,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6.0),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                  horizontal: 16,
-                                ),
-                              ),
-                              onPressed: () {
-                                // Trigger search/filter with all parameters
-                                controller.refreshPortal(
-                                  null,
-                                  fromDate: controller.fromDate.value,
-                                  toDate: controller.toDate.value,
-                                  recipientName:
-                                      controller.recipientNameFilter.value,
-                                );
-                                Get.snackbar(
-                                  'Tìm kiếm',
-                                  'Đang tìm kiếm với bộ lọc đã chọn...',
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  backgroundColor: Colors.blue,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 2),
-                                );
-                              },
                             ),
                           ),
                         ],
-                      )
-                    : const SizedBox.shrink(),
-              )),
-          // Row hiển thị trạng thái
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            width: double.infinity,
-            child: Row(
-              children: [
-                const Text('SL : '),
-                Obx(
-                  () => Text(
-                    '${controller.countPortalSelected.value}',
-                    style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange),
-                  ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            )),
+
+        // ── Status Row: SL & State ──
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            children: [
+              AppTheme.statChip(
+                'SL',
+                '',
+                AppTheme.warningOrange,
+              ),
+              const SizedBox(width: 4),
+              Obx(
+                () => Text(
+                  '${controller.countPortalSelected.value}',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.warningOrange),
                 ),
-                const SizedBox(width: 16),
-                const Text('TT : '),
-                Expanded(
-                  child: Obx(
-                    () => Text(
-                      '${controller.stateText}',
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Obx(
+                  () => AppTheme.statusBanner('${controller.stateText}'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Row hiển thị số lượng
-          // DataTable hiển thị danh sách portal
-          Expanded(
+        ),
+
+        // ── DataTable ──
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: GetBuilder<PortalinfoController>(
               builder: (dx) => DataTable2(
                 showCheckboxColumn: true,
@@ -450,9 +493,32 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 },
                 columnSpacing: 5,
                 horizontalMargin: 10,
+                checkboxHorizontalMargin: 4,
+                headingRowColor:
+                    WidgetStateProperty.all(AppTheme.surfaceDark),
+                headingTextStyle: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                dataRowColor:
+                    WidgetStateProperty.resolveWith<Color?>(
+                        (states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppTheme.primaryBlue.withValues(alpha: 0.2);
+                  }
+                  return null;
+                }),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color:
+                          AppTheme.dividerColor.withValues(alpha: 0.5)),
+                ),
                 columns: [
                   const DataColumn2(
-                    label: Text('Thứ Tự'),
+                    label: Text('TT'),
                     fixedWidth: 30,
                     size: ColumnSize.L,
                   ),
@@ -493,19 +559,18 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               if (dx.portals[index].selected != value) {
                                 dx.portals[index].selected = value!;
                               }
-                              // Cập nhật số lượng portal được chọn
                               dx.countPortalSelected.value = dx.portals
                                   .where((element) => element.selected)
                                   .length;
                               dx.update();
                             },
-                            color: WidgetStateProperty.resolveWith<Color?>(
-                                (Set<WidgetState> states) {
-                              if (states.contains(WidgetState.selected)) {
-                                return Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.6);
+                            color:
+                                WidgetStateProperty.resolveWith<Color?>(
+                                    (Set<WidgetState> states) {
+                              if (states
+                                  .contains(WidgetState.selected)) {
+                                return AppTheme.primaryBlue
+                                    .withValues(alpha: 0.2);
                               }
                               return null;
                             }),
@@ -513,262 +578,261 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               DataCell(Text(
                                 index.toString(),
                                 style: const TextStyle(
-                                    fontSize: 15,
-                                    color: Color.fromARGB(255, 102, 102, 96),
+                                    fontSize: 13,
+                                    color: AppTheme.textSecondary,
                                     fontWeight: FontWeight.bold),
                               )),
                               DataCell(Text(
                                 dx.portals[index].name!,
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: !dx.portals[index].isXuLyDiNgoai
-                                        ? const Color(0xff008DDA)
-                                        : Colors.orange,
+                                    color: !dx.portals[index]
+                                            .isXuLyDiNgoai
+                                        ? AppTheme.accentCyan
+                                        : AppTheme.warningOrange,
                                     fontStyle: FontStyle.italic),
                               )),
                               DataCell(Text(
                                 dx.portals[index].soLuong == null
                                     ? ""
-                                    : dx.portals[index].soLuong.toString(),
+                                    : dx.portals[index].soLuong
+                                        .toString(),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.red),
+                                    color: AppTheme.dangerRed),
                               )),
                               DataCell(
                                 dx.portals[index].trangThai == null
                                     ? const Text("")
-                                    : dx.portals[index].trangThai == "2"
+                                    : dx.portals[index].trangThai ==
+                                            "2"
                                         ? const Text(
                                             "Đang xử lý",
                                             style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.green),
+                                                color: AppTheme
+                                                    .successGreen),
                                           )
-                                        : dx.portals[index].trangThai == "3"
+                                        : dx.portals[index]
+                                                    .trangThai ==
+                                                "3"
                                             ? const Text("Chấp Nhận",
                                                 style: TextStyle(
                                                     fontSize: 12,
-                                                    color: Color(0xff5356FF)))
+                                                    color: AppTheme
+                                                        .primaryBlue))
                                             : const Text(""),
                               ),
                             ])),
               ),
             ),
           ),
-          // Card chứa row với các tuỳ chọn và button xử lý portal
-          Obx(
-            () => Card(
-              child: Column(children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Dropdown chọn may chủ
-                    DropdownButton<String>(
-                      value: controller.selectedMayChu.value,
-                      onChanged: (value) {
-                        controller.selectedMayChu.value = value!;
-                      },
-                      items: controller.maychus.map((e) {
-                        return DropdownMenuItem<String>(
-                          value: e,
-                          child: Text(e),
-                        );
-                      }).toList(),
+        ),
+
+        // ── Options Card ──
+        Obx(
+          () => Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: AppTheme.dividerColor.withValues(alpha: 0.5)),
+            ),
+            child: Column(children: [
+              // Dropdown + checkboxes
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceDark,
+                        borderRadius: BorderRadius.circular(10),
+                        border:
+                            Border.all(color: AppTheme.dividerColor),
+                      ),
+                      child: DropdownButton<String>(
+                        value: controller.selectedMayChu.value,
+                        isExpanded: true,
+                        dropdownColor: AppTheme.surfaceCard,
+                        underline: const SizedBox.shrink(),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textPrimary),
+                        icon: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppTheme.textSecondary),
+                        onChanged: (value) {
+                          controller.selectedMayChu.value = value!;
+                        },
+                        items: controller.maychus.map((e) {
+                          return DropdownMenuItem<String>(
+                            value: e,
+                            child: Text(e),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                    // Checkbox sắp xếp
-                    Checkbox(
-                      value: controller.isSortDiNgoai.value,
-                      activeColor: Colors
-                          .deepPurple, // Ví dụ: sử dụng màu sâu cho checkbox
-                      checkColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4.0),
-                      ),
-                      onChanged: (e) {
-                        controller.isSortDiNgoai.value = e!;
-                      },
-                    ),
-                    const Text("Sắp xếp"),
-                    // Checkbox In
-                    Checkbox(
-                      value: controller.isPrinted.value,
-                      activeColor: Colors.orange,
-                      checkColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4.0),
-                      ),
-                      onChanged: (e) {
-                        controller.isPrinted.value = e!;
-                      },
-                    ),
-                    const Text("In"),
-                  ],
-                ),
-                // Row chứa các button xử lý dữ liệu portal
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.download,
-                          label: 'Lấy DL',
-                          color: Colors.blue,
-                          onPressed: () {
-                            controller.layDuLieu();
-                          },
-                          onLongPress: () {
-                            controller.layDuLieuLo();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.save,
-                          label: 'Xác Nhận',
-                          color: Colors.red,
-                          onPressed: () {
-                            _showConfirmProcessDialog(context);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.send,
-                          label: 'Đi Ngoài',
-                          color: Colors.green,
-                          onPressed: () {
-                            controller.sendDiNgoai();
-                          },
-                          onLongPress: () {
-                            controller.sendDiNgoaiAndRunBD();
-                          },
-                        ),
-                      ),
-                    ],
                   ),
+                  const SizedBox(width: 8),
+                  AppTheme.toggleOption(
+                    'Sắp xếp',
+                    controller.isSortDiNgoai.value,
+                    () => controller.isSortDiNgoai.value =
+                        !controller.isSortDiNgoai.value,
+                  ),
+                  const SizedBox(width: 8),
+                  AppTheme.toggleOption(
+                    'In',
+                    controller.isPrinted.value,
+                    () => controller.isPrinted.value =
+                        !controller.isPrinted.value,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.download,
+                      label: 'Lấy DL',
+                      color: AppTheme.primaryBlue,
+                      onPressed: () => controller.layDuLieu(),
+                      onLongPress: () => controller.layDuLieuLo(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.save,
+                      label: 'Xác Nhận',
+                      color: AppTheme.dangerRed,
+                      onPressed: () =>
+                          _showConfirmProcessDialog(context),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.send,
+                      label: 'Đi Ngoài',
+                      color: AppTheme.successGreen,
+                      onPressed: () => controller.sendDiNgoai(),
+                      onLongPress: () =>
+                          controller.sendDiNgoaiAndRunBD(),
+                    ),
+                  ),
+                ],
+              ),
+            ]),
+          ),
+        ),
+
+        // ── Bottom Action Bar ──
+        AppTheme.bottomBar(
+          child: SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildActionButton(
+                  icon: Icons.analytics,
+                  label: 'Thống kê',
+                  color: const Color(0xFF9B5DE5),
+                  onPressed: () => controller.sendThongKe(),
                 ),
-              ]),
+                const SizedBox(width: 8),
+                _buildActionButton(
+                  icon: Icons.print_outlined,
+                  label: 'In Ra Vô',
+                  color: AppTheme.dangerRed,
+                  onPressed: () => controller.printPageSelected(),
+                ),
+                const SizedBox(width: 8),
+                _buildActionButton(
+                  icon: Icons.qr_code_scanner,
+                  label: 'Di Ngoài RT',
+                  color: AppTheme.accentCyan,
+                  onPressed: () => controller.goToDiNgoaiRT(),
+                ),
+                const SizedBox(width: 8),
+                _buildActionButton(
+                  icon: Icons.qr_code_scanner,
+                  label: 'Check Hướng',
+                  color: const Color(0xFF9B5DE5),
+                  onPressed: () => controller.goToDirectionScanning(),
+                ),
+              ],
             ),
           ),
-          // Row chứa các button cuối: Sửa, In Sắp Xếp, In
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: SizedBox(
-                width: 400,
-                height: 40,
-                child: ListView(scrollDirection: Axis.horizontal, children: [
-                  Row(
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.analytics,
-                        label: 'Thống kê',
-                        color: Colors.purple,
-                        onPressed: () {
-                          controller.sendThongKe();
-                        },
-                      ),
-                      // const SizedBox(width: 8),
-                      // _buildActionButton(
-                      //   icon: Icons.print,
-                      //   label: 'In Sort',
-                      //   color: Colors.teal,
-                      //   onPressed: () {
-                      //     controller.printPageSelectedAndSort();
-                      //   },
-                      // ),
-                      const SizedBox(width: 8),
-                      _buildActionButton(
-                        icon: Icons.print_outlined,
-                        label: 'In Ra Vô',
-                        color: Colors.red,
-                        onPressed: () {
-                          controller.printPageSelected();
-                        },
-                      ),
-                      const SizedBox(width: 8),
-
-                      _buildActionButton(
-                        icon: Icons.qr_code_scanner,
-                        label: 'Di Ngoài RT',
-                        color: Colors.lightBlueAccent,
-                        onPressed: () {
-                          controller.goToDiNgoaiRT();
-                        },
-                      ),
-                      // Check Direction Button
-                      const SizedBox(width: 8),
-                      // Check Direction Button
-                      _buildActionButton(
-                        icon: Icons.qr_code_scanner,
-                        label: 'Check Hướng',
-                        color: Colors.purple,
-                        onPressed: () {
-                          controller.goToDirectionScanning();
-                        },
-                      ),
-                    ],
-                  ),
-                ])),
-          ),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 
+  // ── Detail Dialog ──────────────────────────────────
   void showImprovedDialog(BuildContext context, int index) {
-    final String? currentPortalStatus = controller.portals[index].trangThai;
+    final String? currentPortalStatus =
+        controller.portals[index].trangThai;
     final bool showDeleteButton = currentPortalStatus == "2";
 
-    // Reset trạng thái highlight khi mở dialog mới
     controller.similarIdCodes.clear();
 
     Get.dialog(
       barrierDismissible: true,
       Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: PopScope(
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, result) {
             controller.cancelBulkQRScanInDialog();
           },
           child: GetBuilder<PortalinfoController>(
             builder: (dx) => ConstrainedBox(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height *
-                    0.9, // Tăng chiều cao một chút
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
                 maxWidth: 400,
               ),
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(12.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header
                     Row(
                       children: [
-                        const Text(
-                          'Người Nhập: ',
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                        Text(
-                          dx.portals[index].nguoiNhap ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
+                        const Icon(Icons.person_outline_rounded,
+                            color: AppTheme.accentCyan, size: 18),
+                        const SizedBox(width: 6),
+                        const Text('Người Nhập: ',
+                            style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13)),
+                        Expanded(
+                          child: Text(
+                            dx.portals[index].nguoiNhap ?? 'N/A',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryBlue,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8.0),
-                    // --- HEADER: Title & Counters ---
+                    const SizedBox(height: 10),
+
+                    // Title & Actions
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -776,125 +840,136 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         Flexible(
                           child: Text(
                             "Danh sách (${dx.currentMaHieusInPortal.length})",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple,
-                                  fontSize: 18,
-                                ),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                              fontSize: 17,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (showDeleteButton || currentPortalStatus == "3")
+                        if (showDeleteButton ||
+                            currentPortalStatus == "3")
                           Row(
                             children: [
-                              // Nút tìm tên trùng - Hiện cho cả status 2 và 3
-                              IconButton(
-                                icon: const Icon(Icons.person_search,
-                                    color: Colors.orange),
+                              _buildDialogIconButton(
+                                icon: Icons.person_search,
+                                color: AppTheme.warningOrange,
                                 tooltip: 'Tìm tên giống nhau > 90%',
-                                onPressed: () => controller.findSimilarNames(),
-                              ),
-                              // Nút quét QR - Hiện cho cả status 2 và 3 (nếu muốn) hoặc chỉ 2
-                              if (showDeleteButton)
-                                IconButton(
-                                  icon: const Icon(Icons.qr_code_scanner,
-                                      color: Colors.deepPurple),
-                                  tooltip: 'Quét hàng loạt',
-                                  onPressed: () =>
-                                      controller.startBulkQRScanInDialog(),
-                                ),
-                              // Nút thống kê - Hiện cho 1 portal đang xem
-                              IconButton(
-                                icon: const Icon(Icons.analytics,
-                                    color: Colors.purple),
-                                tooltip: 'Thống kê portal này',
                                 onPressed: () =>
-                                    controller.showStatisticsForCurrentPortal(),
+                                    controller.findSimilarNames(),
+                              ),
+                              if (showDeleteButton)
+                                _buildDialogIconButton(
+                                  icon: Icons.qr_code_scanner,
+                                  color: const Color(0xFF9B5DE5),
+                                  tooltip: 'Quét hàng loạt',
+                                  onPressed: () => controller
+                                      .startBulkQRScanInDialog(),
+                                ),
+                              _buildDialogIconButton(
+                                icon: Icons.analytics,
+                                color: const Color(0xFF9B5DE5),
+                                tooltip: 'Thống kê portal này',
+                                onPressed: () => controller
+                                    .showStatisticsForCurrentPortal(),
                               ),
                             ],
                           ),
                       ],
                     ),
 
-                    const SizedBox(height: 8.0),
+                    const SizedBox(height: 8),
 
-                    // --- TOOLBAR: View Mode & Sorting ---
+                    // Toolbar row
                     Row(
                       children: [
-                        // Toggle Đơn giản / Chi tiết
-                        const Text("Chi tiết:", style: TextStyle(fontSize: 12)),
+                        const Text("Chi tiết:",
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary)),
                         Obx(() => Switch(
                               value: controller.isDetailedView.value,
-                              activeColor: Colors.blue,
+                              activeThumbColor: AppTheme.primaryBlue,
+                              inactiveThumbColor: AppTheme.textSecondary,
+                              inactiveTrackColor: AppTheme.surfaceDark,
                               onChanged: (val) =>
                                   controller.toggleViewMode(val),
                             )),
-
-                        const Spacer(), // Đẩy Sort sang phải
-
-                        // Sort Buttons (Giữ nguyên logic cũ nhưng làm gọn)
+                        const Spacer(),
                         _buildSortButton(
-                            "KL", "Trọng lượng", Colors.deepPurple),
+                            "KL", "Trọng lượng", const Color(0xFF9B5DE5)),
                         const SizedBox(width: 4),
-                        _buildSortButton("\$", "COD", Colors.green),
+                        _buildSortButton(
+                            "\$", "COD", AppTheme.successGreen),
                       ],
                     ),
 
-                    // --- SELECTED COUNTER ---
+                    // Selected counter
                     Obx(() {
-                      if (dx.selectedDialogItemCount.value == 0)
+                      if (dx.selectedDialogItemCount.value == 0) {
                         return const SizedBox.shrink();
+                      }
                       return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        margin:
+                            const EdgeInsets.symmetric(vertical: 4),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                            horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.shade50,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.deepPurple.shade200),
+                          color: const Color(0xFF9B5DE5)
+                              .withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: const Color(0xFF9B5DE5)
+                                  .withValues(alpha: 0.25)),
                         ),
                         child: Text(
                           'Đã chọn: ${dx.selectedDialogItemCount.value} bưu gửi',
-                          style: TextStyle(
-                              color: Colors.deepPurple.shade900,
+                          style: const TextStyle(
+                              color: Color(0xFF9B5DE5),
                               fontSize: 12,
                               fontWeight: FontWeight.bold),
                         ),
                       );
                     }),
 
-                    const Divider(thickness: 1.0),
+                    Divider(
+                        color:
+                            AppTheme.dividerColor.withValues(alpha: 0.5)),
 
-                    // --- LIST VIEW ---
+                    // List
                     Expanded(
                       child: !dx.isShowEdit.value
-                          ? const Center(child: CircularProgressIndicator())
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                  color: AppTheme.primaryBlue))
                           : dx.currentMaHieusInPortal.isEmpty
-                              ? const Center(
-                                  child: Text("Không có dữ liệu mã hiệu."))
+                              ? AppTheme.emptyState(
+                                  title: 'Không có dữ liệu mã hiệu')
                               : ListView.separated(
                                   shrinkWrap: true,
-                                  itemCount: dx.currentMaHieusInPortal.length,
+                                  itemCount: dx
+                                      .currentMaHieusInPortal.length,
                                   separatorBuilder: (_, __) =>
-                                      const Divider(height: 1),
+                                      Divider(
+                                          height: 1,
+                                          color: AppTheme.dividerColor
+                                              .withValues(alpha: 0.3)),
                                   itemBuilder: (context, i) {
-                                    final item = dx.currentMaHieusInPortal[i];
-
-                                    // Kiểm tra xem item có nằm trong danh sách trùng tên không
-                                    final isSimilar = controller.similarIdCodes
+                                    final item = dx
+                                        .currentMaHieusInPortal[i];
+                                    final isSimilar = controller
+                                        .similarIdCodes
                                         .contains(item.IDCODE);
 
-                                    // Xác định màu nền: Ưu tiên Selected -> Similar -> Default
                                     Color? tileColor;
                                     if (item.selected) {
-                                      tileColor =
-                                          Colors.blue.withValues(alpha: 0.2);
+                                      tileColor = AppTheme.primaryBlue
+                                          .withValues(alpha: 0.15);
                                     } else if (isSimilar) {
-                                      tileColor = Colors.amber.withValues(
-                                          alpha: 0.3); // Highlight màu cam nhạt
+                                      tileColor = AppTheme
+                                          .warningOrange
+                                          .withValues(alpha: 0.15);
                                     }
 
                                     return Obx(() => ListTile(
@@ -906,121 +981,154 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                                       item)
                                               : null,
                                           contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  horizontal: 4, vertical: 0),
-
-                                          // Code (Mã hiệu)
+                                              const EdgeInsets
+                                                  .symmetric(
+                                                  horizontal: 4,
+                                                  vertical: 0),
                                           title: Row(
                                             children: [
                                               if (isSimilar)
                                                 const Padding(
                                                   padding:
-                                                      EdgeInsets.only(right: 4),
+                                                      EdgeInsets.only(
+                                                          right: 4),
                                                   child: Icon(
                                                       Icons
                                                           .warning_amber_rounded,
                                                       size: 16,
-                                                      color: Colors.orange),
+                                                      color: AppTheme
+                                                          .warningOrange),
                                                 ),
                                               Text(
                                                 item.code ?? 'N/A',
                                                 style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14),
+                                                    fontWeight:
+                                                        FontWeight
+                                                            .bold,
+                                                    fontSize: 14,
+                                                    color: AppTheme
+                                                        .textPrimary),
                                               ),
                                             ],
                                           ),
-
-                                          // Hiển thị nội dung dựa trên Toggle
                                           subtitle: controller
-                                                  .isDetailedView.value
+                                                  .isDetailedView
+                                                  .value
                                               ? Column(
                                                   crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
+                                                      CrossAxisAlignment
+                                                          .start,
                                                   children: [
-                                                    const SizedBox(height: 2),
+                                                    const SizedBox(
+                                                        height: 2),
                                                     Text(
                                                       item.Name ??
                                                           "Không có tên",
                                                       style: const TextStyle(
-                                                          color: Colors.black87,
+                                                          color: AppTheme
+                                                              .textPrimary,
                                                           fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 13),
+                                                              FontWeight
+                                                                  .w500,
+                                                          fontSize:
+                                                              13),
                                                     ),
                                                     Text(
                                                       _getLastWords(
-                                                          item.Address, 50),
-                                                      style: TextStyle(
-                                                          color: Colors
-                                                              .grey.shade700,
-                                                          fontSize: 12),
+                                                          item.Address,
+                                                          50),
+                                                      style: const TextStyle(
+                                                          color: AppTheme
+                                                              .textSecondary,
+                                                          fontSize:
+                                                              12),
                                                       maxLines: 2,
                                                       overflow:
-                                                          TextOverflow.ellipsis,
-                                                      textAlign: TextAlign.left,
-                                                      textDirection:
-                                                          TextDirection.ltr,
+                                                          TextOverflow
+                                                              .ellipsis,
                                                     ),
-                                                    Text(item.Date ?? '',
+                                                    Text(
+                                                        item.Date ??
+                                                            '',
                                                         style: const TextStyle(
-                                                            fontSize: 11,
-                                                            fontStyle: FontStyle
-                                                                .italic,
-                                                            color:
-                                                                Colors.grey)),
+                                                            fontSize:
+                                                                11,
+                                                            fontStyle:
+                                                                FontStyle
+                                                                    .italic,
+                                                            color: AppTheme
+                                                                .textSecondary)),
                                                   ],
                                                 )
-                                              : Text(item.Date ?? 'N/A',
+                                              : Text(
+                                                  item.Date ?? 'N/A',
                                                   style: const TextStyle(
-                                                      fontSize: 12)),
-
-                                          // Cột bên phải: KL, Tiền, Actions
+                                                      fontSize: 12,
+                                                      color: AppTheme
+                                                          .textSecondary)),
                                           trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisSize:
+                                                MainAxisSize.min,
                                             children: [
                                               Column(
                                                 mainAxisAlignment:
-                                                    MainAxisAlignment.center,
+                                                    MainAxisAlignment
+                                                        .center,
                                                 crossAxisAlignment:
-                                                    CrossAxisAlignment.end,
+                                                    CrossAxisAlignment
+                                                        .end,
                                                 children: [
                                                   Text(
-                                                    item.Weight ?? '0',
+                                                    item.Weight ??
+                                                        '0',
                                                     style: const TextStyle(
                                                         fontSize: 13,
                                                         fontWeight:
-                                                            FontWeight.w500),
+                                                            FontWeight
+                                                                .w500,
+                                                        color: AppTheme
+                                                            .textPrimary),
                                                   ),
                                                   Text(
-                                                    item.Money ?? '0',
-                                                    style: TextStyle(
+                                                    item.Money ??
+                                                        '0',
+                                                    style: const TextStyle(
                                                       fontSize: 12,
-                                                      color:
-                                                          Colors.green.shade700,
+                                                      color: AppTheme
+                                                          .successGreen,
                                                       fontWeight:
-                                                          FontWeight.bold,
+                                                          FontWeight
+                                                              .bold,
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                               if (showDeleteButton) ...[
-                                                const SizedBox(width: 8),
+                                                const SizedBox(
+                                                    width: 8),
                                                 _buildIconDialogButton(
                                                   icon: Icons.scale,
-                                                  color: Colors.blueAccent,
-                                                  tooltip: 'Sửa KL',
+                                                  color: AppTheme
+                                                      .primaryBlue,
+                                                  tooltip:
+                                                      'Sửa KL',
                                                   onPressed: () =>
                                                       _showChangeWeightDialog(
-                                                          context, item, index),
+                                                          context,
+                                                          item,
+                                                          index),
                                                 ),
                                                 _buildIconDialogButton(
-                                                  icon: Icons.delete,
-                                                  color: Colors.redAccent,
+                                                  icon:
+                                                      Icons.delete,
+                                                  color: AppTheme
+                                                      .dangerRed,
                                                   tooltip: 'Xóa',
                                                   onPressed: () =>
                                                       _showConfirmDeleteDialog(
-                                                          context, item, index),
+                                                          context,
+                                                          item,
+                                                          index),
                                                 ),
                                               ]
                                             ],
@@ -1030,20 +1138,49 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                 ),
                     ),
 
-                    // Footer: Delete All Button
-                    if (showDeleteButton && dx.isAnyItemSelectedInDialog)
+                    // Delete all selected
+                    if (showDeleteButton &&
+                        dx.isAnyItemSelectedInDialog)
                       Padding(
                         padding: const EdgeInsets.only(top: 12.0),
                         child: SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.delete_sweep, size: 18),
-                            label: const Text('Xóa các mục đã chọn'),
-                            onPressed: () =>
-                                _showConfirmDeleteAllDialog(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red[700],
-                              foregroundColor: Colors.white,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () =>
+                                  _showConfirmDeleteAllDialog(context),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppTheme.dangerRed,
+                                      AppTheme.dangerRed
+                                          .withValues(alpha: 0.8),
+                                    ],
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.delete_sweep,
+                                        color: Colors.white,
+                                        size: 18),
+                                    SizedBox(width: 6),
+                                    Text('Xóa các mục đã chọn',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        )),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -1058,17 +1195,52 @@ class PortalinfoView extends GetView<PortalinfoController> {
     );
   }
 
-  // Helper widget cho nút sort để code gọn hơn
-  Widget _buildSortButton(String label, String sortType, Color color) {
+  Widget _buildDialogIconButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortButton(
+      String label, String sortType, Color color) {
     return Obx(() => InkWell(
           onTap: () => controller.sortDialogList(sortType),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: controller.dialogSortOption.value == sortType
                   ? color
-                  : Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(4),
+                  : AppTheme.surfaceDark,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color:
+                    controller.dialogSortOption.value == sortType
+                        ? color
+                        : AppTheme.dividerColor,
+              ),
             ),
             child: Row(
               children: [
@@ -1076,9 +1248,10 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: controller.dialogSortOption.value == sortType
+                        color: controller.dialogSortOption.value ==
+                                sortType
                             ? Colors.white
-                            : Colors.black54)),
+                            : AppTheme.textSecondary)),
                 if (controller.dialogSortOption.value == sortType)
                   Icon(
                     controller.dialogSortAscending.value
@@ -1111,56 +1284,69 @@ class PortalinfoView extends GetView<PortalinfoController> {
     );
   }
 
-  // Dialog xác nhận xóa một item
+  // ── Confirm Dialogs (dark themed) ──────────────────
+
   void _showConfirmDeleteDialog(
       BuildContext context, StateMaHieu item, int portalIndex) {
     Get.dialog(
       AlertDialog(
-        title: const Text("Xác nhận xóa"),
-        content: Text("Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?"),
+        backgroundColor: AppTheme.surfaceCard,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text("Xác nhận xóa",
+            style: TextStyle(color: AppTheme.textPrimary)),
+        content: Text(
+            "Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?",
+            style: const TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy"),
+            child: const Text("Hủy",
+                style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
-              Get.back(); // Đóng dialog xác nhận
+              Get.back();
               controller.deleteBG(item);
             },
-            child: const Text("Xóa", style: TextStyle(color: Colors.red)),
+            child: const Text("Xóa",
+                style: TextStyle(color: AppTheme.dangerRed)),
           ),
         ],
       ),
     );
   }
 
-  // Dialog xác nhận xóa tất cả item đã chọn
   void _showConfirmDeleteAllDialog(BuildContext context) {
     Get.dialog(
       AlertDialog(
-        title: const Text("Xác nhận xóa"),
-        content:
-            const Text("Bạn có chắc chắn muốn xóa các bưu gửi đã chọn không?"),
+        backgroundColor: AppTheme.surfaceCard,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text("Xác nhận xóa",
+            style: TextStyle(color: AppTheme.textPrimary)),
+        content: const Text(
+            "Bạn có chắc chắn muốn xóa các bưu gửi đã chọn không?",
+            style: TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy"),
+            child: const Text("Hủy",
+                style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
-              Get.back(); // Đóng dialog xác nhận
+              Get.back();
               controller.deleteSelectedBGs();
             },
-            child:
-                const Text("Xóa đã chọn", style: TextStyle(color: Colors.red)),
+            child: const Text("Xóa đã chọn",
+                style: TextStyle(color: AppTheme.dangerRed)),
           ),
         ],
       ),
     );
   }
 
-  // Hàm hiển thị dialog thay đổi trọng lượng
   void _showChangeWeightDialog(
       BuildContext context, StateMaHieu item, int index) {
     final TextEditingController weightController =
@@ -1168,22 +1354,36 @@ class PortalinfoView extends GetView<PortalinfoController> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text("Thay đổi trọng lượng"),
+        backgroundColor: AppTheme.surfaceCard,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text("Thay đổi trọng lượng",
+            style: TextStyle(color: AppTheme.textPrimary)),
         content: TextField(
           controller: weightController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: "Trọng lượng mới"),
+          style: const TextStyle(color: AppTheme.textPrimary),
+          decoration: AppTheme.inputDecoration(
+              label: "Trọng lượng mới"),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy"),
+            child: const Text("Hủy",
+                style: TextStyle(color: AppTheme.textSecondary)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Get.back();
-              controller.updateWeight(item, weightController.text);
+              controller.updateWeight(
+                  item, weightController.text);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
             child: const Text("Lưu"),
           ),
         ],
@@ -1191,49 +1391,51 @@ class PortalinfoView extends GetView<PortalinfoController> {
     );
   }
 
-  // Dialog xác nhận xử lý portal
   void _showConfirmProcessDialog(BuildContext context) {
-    // First check if any portals are selected
     final selectedPortals = controller.getSelectedsPortal();
 
     if (selectedPortals.isEmpty) {
-      // Show warning if no portals are selected
       Get.snackbar(
         'Cảnh báo',
         'Vui lòng chọn ít nhất một khách hàng để xác nhận xử lý',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
+        backgroundColor: AppTheme.warningOrange,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
       );
       return;
     }
 
-    // Prepare the list of selected portal names
-    final selectedNames =
-        selectedPortals.map((portal) => portal.name ?? 'N/A').toList();
+    final selectedNames = selectedPortals
+        .map((portal) => portal.name ?? 'N/A')
+        .toList();
     final count = selectedPortals.length;
 
-    // Create the content message
     String contentMessage = count == 1
         ? "Bạn có muốn xác nhận xử lý khách hàng này không?\n\n"
         : "Bạn có muốn xác nhận xử lý $count khách hàng này không?\n\n";
 
-    contentMessage += count == 1 ? "Khách hàng:\n" : "Danh sách khách hàng:\n";
+    contentMessage +=
+        count == 1 ? "Khách hàng:\n" : "Danh sách khách hàng:\n";
 
-    // Limit display to first 10 items to prevent dialog overflow
-    final displayCount = selectedNames.length > 10 ? 10 : selectedNames.length;
+    final displayCount =
+        selectedNames.length > 10 ? 10 : selectedNames.length;
     for (int i = 0; i < displayCount; i++) {
       contentMessage += "${i + 1}. ${selectedNames[i]}\n";
     }
 
     if (selectedNames.length > 10) {
-      contentMessage += "... và ${selectedNames.length - 10} khách hàng khác";
+      contentMessage +=
+          "... và ${selectedNames.length - 10} khách hàng khác";
     }
 
     Get.dialog(
       AlertDialog(
-        title: const Text("Xác nhận xử lý"),
+        backgroundColor: AppTheme.surfaceCard,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text("Xác nhận xử lý",
+            style: TextStyle(color: AppTheme.textPrimary)),
         content: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.6,
@@ -1242,23 +1444,29 @@ class PortalinfoView extends GetView<PortalinfoController> {
           child: SingleChildScrollView(
             child: Text(
               contentMessage.trim(),
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(
+                  fontSize: 14, color: AppTheme.textSecondary),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy"),
+            child: const Text("Hủy",
+                style: TextStyle(color: AppTheme.textSecondary)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
-              Get.back(); // Đóng dialog xác nhận
+              Get.back();
               controller.xacNhansPortal();
             },
-            child: const Text("Xác nhận",
-                style:
-                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dangerRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text("Xác nhận"),
           ),
         ],
       ),
