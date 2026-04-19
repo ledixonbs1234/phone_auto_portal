@@ -308,6 +308,9 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                               onPressed: controller.isLoading.value
                                   ? null
                                   : controller.refreshData,
+                              onLongPress: controller.isLoading.value
+                                  ? null
+                                  : controller.lamMoi,
                               icon: const Icon(Icons.refresh, size: 18),
                               label: const Text('Refresh'),
                               style: ElevatedButton.styleFrom(
@@ -323,6 +326,7 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: ElevatedButton.icon(
                           onPressed: controller.deleteSelected,
+                          onLongPress: controller.deleteAll,
                           icon: const Icon(Icons.delete, size: 18),
                           label: const Text('Xóa'),
                           style: ElevatedButton.styleFrom(

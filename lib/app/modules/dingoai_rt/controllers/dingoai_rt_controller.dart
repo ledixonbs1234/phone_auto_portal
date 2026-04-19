@@ -288,6 +288,20 @@ class DiNgoaiRtController extends GetxController {
     }
   }
 
+  /// Gửi lệnh làm mới toàn bộ
+  /// 📍 Gửi command "lammoi" tới DiNgoaiVM
+  Future<void> lamMoi() async {
+    try {
+      await _sendCommand('lammoi', {
+        'timestamp': DateTime.now().toString(),
+      });
+      stateText.value = 'Đã gửi yêu cầu làm mới tới DiNgoaiVM';
+    } catch (e) {
+      debugPrint('🔴 Error sending lammoi command: $e');
+      stateText.value = 'Lỗi gửi lệnh làm mới: $e';
+    }
+  }
+
   /// Xóa các item đã chọn
   /// 📍 Gửi command "xoanhieubg" tới DiNgoaiVM
   /// 📍 DiNgoaiVM sẽ xóa items và publish dữ liệu cập nhật
@@ -315,6 +329,20 @@ class DiNgoaiRtController extends GetxController {
     } catch (e) {
       debugPrint('🔴 Error deleting items: $e');
       stateText.value = 'Lỗi xóa bưu gửi: $e';
+    }
+  }
+
+  /// Xóa tất cả bưu gửi
+  /// 📍 Gửi command "xoahet" tới DiNgoaiVM
+  Future<void> deleteAll() async {
+    try {
+      await _sendCommand('xoahet', {
+        'timestamp': DateTime.now().toString(),
+      });
+      stateText.value = 'Đã gửi yêu cầu xóa tất cả tới DiNgoaiVM';
+    } catch (e) {
+      debugPrint('🔴 Error deleting all items: $e');
+      stateText.value = 'Lỗi xóa tất cả bưu gửi: $e';
     }
   }
 
