@@ -6,237 +6,593 @@ import '../../../routes/app_pages.dart';
 class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
   const DiNgoaiRtView({super.key});
 
+  // ── Color Palette ──────────────────────────────────
+  static const _primaryDark = Color(0xFF1A1D29);
+  static const _primaryBlue = Color(0xFF4A7DFF);
+  static const _accentCyan = Color(0xFF00D4AA);
+  static const _successGreen = Color(0xFF22C55E);
+  static const _dangerRed = Color(0xFFEF4444);
+  static const _warningOrange = Color(0xFFF59E0B);
+  static const _surfaceCard = Color(0xFF232736);
+  static const _surfaceDark = Color(0xFF1E2130);
+  static const _textPrimary = Color(0xFFF1F3F9);
+  static const _textSecondary = Color(0xFF8B92A8);
+  static const _dividerColor = Color(0xFF2D3148);
+
+  // ── Item Builder ───────────────────────────────────
   Widget _buildDiNgoaiItem(BuildContext context, int index) {
     return Obx(() {
       final item = controller.diNgoaiItems[index];
       final isSelected = item.selected;
 
-      // Determine colors based on state
-      Color cardColor;
-      Color avatarColor;
-      Widget? trailingIcon;
+      // State-based styling
+      Color accentColor;
+      Color bgColor;
+      IconData stateIcon;
+      bool showStateIcon = true;
 
       switch (item.state) {
         case 1: // Thành công
-          cardColor = isSelected
-              ? Colors.green.shade100
-              : Colors.green.shade50;
-          avatarColor = Colors.green;
-          trailingIcon = const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-            size: 22,
-          );
+          accentColor = _successGreen;
+          bgColor = isSelected
+              ? _successGreen.withValues(alpha: 0.15)
+              : _surfaceCard;
+          stateIcon = Icons.check_circle_rounded;
           break;
         case 2: // Thất bại
-          cardColor = isSelected
-              ? Colors.red.shade100
-              : Colors.red.shade50;
-          avatarColor = Colors.red;
-          trailingIcon = const Icon(
-            Icons.cancel,
-            color: Colors.red,
-            size: 22,
-          );
+          accentColor = _dangerRed;
+          bgColor = isSelected
+              ? _dangerRed.withValues(alpha: 0.15)
+              : _surfaceCard;
+          stateIcon = Icons.cancel_rounded;
           break;
         default: // Chưa xử lý
-          cardColor =
-              isSelected ? Colors.blue.shade50 : Colors.white;
-          avatarColor =
-              isSelected ? Colors.blue : Colors.grey.shade300;
-          trailingIcon = null;
+          accentColor = isSelected ? _primaryBlue : _textSecondary;
+          bgColor = isSelected
+              ? _primaryBlue.withValues(alpha: 0.10)
+              : _surfaceCard;
+          stateIcon = Icons.radio_button_unchecked;
+          showStateIcon = false;
       }
 
-      return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        color: cardColor,
-        child: ListTile(
-          onTap: () => controller.toggleSelect(index),
-          leading: CircleAvatar(
-            backgroundColor: avatarColor,
-            child: Text(
-              '${index + 1}',
-              style: TextStyle(
-                color: item.state == 0 && !isSelected
-                    ? Colors.black
-                    : Colors.white,
-                fontSize: 12,
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? accentColor.withValues(alpha: 0.5)
+                : _dividerColor.withValues(alpha: 0.5),
+            width: isSelected ? 1.5 : 0.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : [],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => controller.toggleSelect(index),
+            splashColor: accentColor.withValues(alpha: 0.1),
+            highlightColor: accentColor.withValues(alpha: 0.05),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  // Index Badge
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      gradient: isSelected || item.state != 0
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                accentColor,
+                                accentColor.withValues(alpha: 0.7),
+                              ],
+                            )
+                          : null,
+                      color: isSelected || item.state != 0
+                          ? null
+                          : _dividerColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color: isSelected || item.state != 0
+                              ? Colors.white
+                              : _textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.code,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                            color: item.state == 2
+                                ? _dangerRed.withValues(alpha: 0.8)
+                                : _textPrimary,
+                            decoration: item.state == 1
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                            decorationColor: _successGreen.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        if (item.buuCucNhanTemp != null &&
+                            item.buuCucNhanTemp!.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            item.buuCucNhanTemp!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: _textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // State indicator
+                  if (showStateIcon)
+                    Icon(stateIcon, color: accentColor, size: 22)
+                  else if (isSelected)
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: _primaryBlue,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-          title: Text(
-            item.code,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              decoration: item.state == 1
-                  ? TextDecoration.lineThrough
-                  : TextDecoration.none,
-              color: item.state == 2 ? Colors.red.shade700 : null,
-            ),
-          ),
-          subtitle: Text(
-            item.buuCucNhanTemp ?? '',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: trailingIcon,
         ),
       );
     });
   }
 
+  // ── Connection Status Badge ────────────────────────
+  Widget _buildConnectionBadge() {
+    return Obx(() {
+      Color badgeColor;
+      String label;
+      IconData icon;
+
+      switch (controller.pingStatus.value) {
+        case 'online':
+          badgeColor = _successGreen;
+          label = '${controller.pingResponseTime.value}ms';
+          icon = Icons.wifi_rounded;
+          break;
+        case 'offline':
+          badgeColor = _dangerRed;
+          label = 'Offline';
+          icon = Icons.wifi_off_rounded;
+          break;
+        case 'pinging':
+          badgeColor = _warningOrange;
+          label = 'Ping...';
+          icon = Icons.sync_rounded;
+          break;
+        default:
+          badgeColor = _textSecondary;
+          label = '---';
+          icon = Icons.wifi_rounded;
+      }
+
+      return GestureDetector(
+        onTap: controller.isPinging.value ? null : controller.pingPC,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: badgeColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: badgeColor.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              controller.isPinging.value
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        valueColor: AlwaysStoppedAnimation(badgeColor),
+                      ),
+                    )
+                  : Icon(icon, color: badgeColor, size: 14),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: badgeColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  // ── Stats Chips ────────────────────────────────────
+  Widget _buildStatChip(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color.withValues(alpha: 0.8),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Bottom Action Button ───────────────────────────
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            onLongPress: onLongPress,
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                gradient: onPressed != null
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          color,
+                          color.withValues(alpha: 0.8),
+                        ],
+                      )
+                    : null,
+                color: onPressed == null
+                    ? color.withValues(alpha: 0.3)
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: onPressed != null
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        )
+                      ]
+                    : [],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: Colors.white, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Toggle Option ──────────────────────────────────
+  Widget _buildToggleOption(String label, RxBool value) {
+    return Obx(() => GestureDetector(
+          onTap: () => value.value = !value.value,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: value.value
+                  ? _primaryBlue.withValues(alpha: 0.15)
+                  : _surfaceCard,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: value.value
+                    ? _primaryBlue.withValues(alpha: 0.4)
+                    : _dividerColor,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: value.value ? _primaryBlue : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: value.value ? _primaryBlue : _textSecondary,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: value.value
+                      ? const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 14)
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: value.value ? _primaryBlue : _textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
+  }
+
+  // ── Empty State ────────────────────────────────────
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: _primaryBlue.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(
+              Icons.inventory_2_outlined,
+              color: _primaryBlue.withValues(alpha: 0.4),
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Chưa có bưu gửi',
+            style: TextStyle(
+              color: _textSecondary,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Quét QR hoặc chờ dữ liệu từ PC',
+            style: TextStyle(
+              color: _textSecondary.withValues(alpha: 0.6),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Main Build ─────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _primaryDark,
       appBar: AppBar(
-        title: const Text('Đi Ngoài RT'),
+        backgroundColor: _surfaceDark,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: _textPrimary, size: 20),
           onPressed: controller.goBack,
         ),
-        actions: [
-          // Nút Ping kiểm tra kết nối PC
-          Obx(() {
-            Color pingColor;
-            IconData pingIcon;
-            String tooltip;
-
-            switch (controller.pingStatus.value) {
-              case 'online':
-                pingColor = Colors.green;
-                pingIcon = Icons.cell_tower;
-                tooltip =
-                    'PC Online - ${controller.pingResponseTime.value}ms';
-                break;
-              case 'offline':
-                pingColor = Colors.red;
-                pingIcon = Icons.signal_wifi_off;
-                tooltip = 'PC Offline';
-                break;
-              case 'pinging':
-                pingColor = Colors.orange;
-                pingIcon = Icons.sync;
-                tooltip = 'Đang ping...';
-                break;
-              default:
-                pingColor = Colors.grey.shade400;
-                pingIcon = Icons.cell_tower;
-                tooltip = 'Kiểm tra kết nối PC';
-            }
-
-            return IconButton(
-              icon: controller.isPinging.value
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation(Colors.orange),
-                      ),
-                    )
-                  : Icon(pingIcon, color: pingColor),
-              tooltip: tooltip,
-              onPressed: controller.isPinging.value
-                  ? null
-                  : controller.pingPC,
-            );
-          }),
-          // Nút QR Scanner
-          Obx(() => IconButton(
-                icon: Icon(
-                  controller.isScanning.value
-                      ? Icons.qr_code_scanner
-                      : Icons.qr_code_scanner,
-                ),
-                tooltip: 'Quét QR Code',
-                onPressed:
-                    controller.isScanning.value ? null : controller.showScanner,
-              )),
-          // Nút Danh Sách BĐ & Tự Động
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            tooltip: 'Mở Danh Sách BĐ & Tự Động',
-            onPressed: () => Get.toNamed(Routes.DANHSACHBD),
+        title: const Text(
+          'Đi Ngoài RT',
+          style: TextStyle(
+            color: _textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
           ),
+        ),
+        actions: [
+          // Connection badge
+          _buildConnectionBadge(),
+          const SizedBox(width: 6),
+
+          // QR Scanner
+          Obx(() => _buildAppBarAction(
+                icon: Icons.qr_code_scanner_rounded,
+                onPressed: controller.isScanning.value
+                    ? null
+                    : controller.showScanner,
+                color: _accentCyan,
+              )),
+
+          // Danh Sách BĐ
+          _buildAppBarAction(
+            icon: Icons.list_alt_rounded,
+            onPressed: () => Get.toNamed(Routes.DANHSACHBD),
+            color: _primaryBlue,
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          // ── Header: Trạng thái & Thống kê ──
-          Obx(() => Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Colors.grey.shade100,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Trạng thái
-                    if (controller.stateText.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Container(
+          // ── Separator line ──
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _primaryBlue.withValues(alpha: 0.0),
+                  _primaryBlue.withValues(alpha: 0.3),
+                  _primaryBlue.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Status & Stats Header ──
+          Obx(() => AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  color: _surfaceDark,
+                  child: Column(
+                    children: [
+                      // State text banner
+                      if (controller.stateText.isNotEmpty)
+                        Container(
                           width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                            horizontal: 14,
+                            vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
+                            gradient: LinearGradient(
+                              colors: [
+                                _primaryBlue.withValues(alpha: 0.12),
+                                _accentCyan.withValues(alpha: 0.06),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _primaryBlue.withValues(alpha: 0.15),
+                            ),
                           ),
                           child: Text(
                             controller.stateText.value.isEmpty
-                                ? 'Quét QR hoặc chọn item để xử lý'
+                                ? 'Sẵn sàng xử lý'
                                 : controller.stateText.value,
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: const TextStyle(
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: Colors.blue.shade900,
+                              color: _textPrimary,
                             ),
                             textAlign: TextAlign.center,
                           ),
                         ),
-                      ),
-                    // Thống kê
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Đi ngoài: ${controller.diNgoaiItems.length}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'Đã chọn: ${controller.selectedCount.value}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+
+                      // Stats row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildStatChip(
+                            'bưu gửi',
+                            '${controller.diNgoaiItems.length}',
+                            _primaryBlue,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 10),
+                          _buildStatChip(
+                            'đã chọn',
+                            '${controller.selectedCount.value}',
+                            _accentCyan,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               )),
 
-          // ── ListView ──
+          // ── List ──
           Expanded(
             child: Obx(() {
               if (controller.diNgoaiItems.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'Không có dữ liệu',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                );
+                return _buildEmptyState();
               }
               return ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                physics: const BouncingScrollPhysics(),
                 itemCount: controller.diNgoaiItems.length,
                 itemBuilder: (context, index) =>
                     _buildDiNgoaiItem(context, index),
@@ -246,117 +602,90 @@ class DiNgoaiRtView extends GetView<DiNgoaiRtController> {
 
           // ── Bottom Action Bar ──
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, -2),
+              color: _surfaceDark,
+              border: Border(
+                top: BorderSide(
+                  color: _dividerColor.withValues(alpha: 0.5),
+                  width: 1,
                 ),
-              ],
+              ),
             ),
-            child: Column(
-              children: [
-                // Row 1: Checkboxes
-                Row(
-                  children: [
-                    // Checkbox Auto
-                    Expanded(
-                      child: Obx(() => CheckboxListTile(
-                            title: const Text(
-                              'Auto',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            value: controller.isAuto.value,
-                            onChanged: (val) =>
-                                controller.isAuto.value = val ?? false,
-                            dense: true,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
-                          )),
-                    ),
-                    // Checkbox In (Print)
-                    Expanded(
-                      child: Obx(() => CheckboxListTile(
-                            title: const Text(
-                              'In',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            value: controller.isPrint.value,
-                            onChanged: (val) =>
-                                controller.isPrint.value = val ?? false,
-                            dense: true,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
-                          )),
-                    ),
-                  ],
-                ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  // Toggle options
+                  Row(
+                    children: [
+                      _buildToggleOption('Auto', controller.isAuto),
+                      const SizedBox(width: 10),
+                      _buildToggleOption('In', controller.isPrint),
+                    ],
+                  ),
 
-                const SizedBox(height: 4),
+                  const SizedBox(height: 10),
 
-                // Row 2: Buttons
-                Row(
-                  children: [
-                    // Button Refresh
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Obx(() => ElevatedButton.icon(
-                              onPressed: controller.isLoading.value
-                                  ? null
-                                  : controller.refreshData,
-                              onLongPress: controller.isLoading.value
-                                  ? null
-                                  : controller.lamMoi,
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text('Refresh'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                                foregroundColor: Colors.white,
-                              ),
-                            )),
-                      ),
-                    ),
-                    // Button Xóa
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: ElevatedButton.icon(
-                          onPressed: controller.deleteSelected,
-                          onLongPress: controller.deleteAll,
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: const Text('Xóa'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
+                  // Action buttons
+                  Obx(() => Row(
+                        children: [
+                          _buildActionButton(
+                            icon: Icons.refresh_rounded,
+                            label: 'Refresh',
+                            color: _warningOrange,
+                            onPressed: controller.isLoading.value
+                                ? null
+                                : controller.refreshData,
+                            onLongPress: controller.isLoading.value
+                                ? null
+                                : controller.lamMoi,
                           ),
-                        ),
-                      ),
-                    ),
-                    // Button Auto
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: ElevatedButton.icon(
-                          onPressed: controller.runAuto,
-                          icon: const Icon(Icons.play_arrow, size: 18),
-                          label: const Text('Auto'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
+                          _buildActionButton(
+                            icon: Icons.delete_outline_rounded,
+                            label: 'Xóa',
+                            color: _dangerRed,
+                            onPressed: controller.deleteSelected,
+                            onLongPress: controller.deleteAll,
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                          _buildActionButton(
+                            icon: Icons.play_arrow_rounded,
+                            label: 'Auto',
+                            color: _primaryBlue,
+                            onPressed: controller.runAuto,
+                          ),
+                        ],
+                      )),
+                ],
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── AppBar Action Helper ───────────────────────────
+  Widget _buildAppBarAction({
+    required IconData icon,
+    required VoidCallback? onPressed,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: IconButton(
+        icon: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 19),
+        ),
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
       ),
     );
   }
