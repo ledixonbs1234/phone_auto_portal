@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:get/get.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -327,6 +329,41 @@ class KhoiTaoMoiController extends GetxController {
     }
   }
 
+  Future<void> captureImage() async {
+    try {
+      final pickedImage =
+          await ImagePicker().pickImage(source: ImageSource.camera);
+      if (pickedImage != null) {
+        final inputImage = InputImage.fromFilePath(pickedImage.path);
+        final textRecognizer = TextRecognizer();
+        final recognizedText =
+            await textRecognizer.processImage(inputImage);
+        await textRecognizer.close();
+
+        for (final text in recognizedText.blocks) {
+          for (final line in text.lines) {
+            String a = line.text.replaceAll(' ', '').toUpperCase();
+            if (a.contains('VN')) {
+              String maHieu = _fillMaHieu(a);
+              if (maHieu.isNotEmpty && isValidMaHieu(maHieu)) {
+                await _handleValidBarcode(maHieu);
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      Get.snackbar("Thông báo", "Lỗi khi chụp ảnh: $e",
+          snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  String _fillMaHieu(String text) {
+    final pattern = RegExp(r'[cCreEpP][a-zA-Z]\d{9}[vV][nN]');
+    final match = pattern.firstMatch(text);
+    return match?.group(0) ?? '';
+  }
+
   void deleteSelected() {
     if (iBuuGui.value != -1) {
       buuGuis.removeAt(iBuuGui.value);
@@ -350,26 +387,31 @@ class KhoiTaoMoiController extends GetxController {
     if (iBuuGui.value == -1 || buuGuis.isEmpty) return;
     stateText.value = "Đang gửi thông tin";
 
-    FirebaseManager().sendListBDToPortal(buuGuis.toList());
+    try {
+      FirebaseManager().sendListBDToPortal(buuGuis.toList());
 
-    Map<String, dynamic> messageData = {
-      'maBG': buuGuis[iBuuGui.value].maBuuGui,
-      'hdrId': hdrId ?? "",
-      'isFirst': "true",
-      'account': account,
-      'password': password,
-      'isDeletePhone': "true",
-    };
+      Map<String, dynamic> messageData = {
+        'maBG': buuGuis[iBuuGui.value].maBuuGui,
+        'hdrId': hdrId ?? "",
+        'isFirst': "true",
+        'account': account,
+        'password': password,
+        'isDeletePhone': "true",
+      };
 
-    FirebaseManager().addMessage(MessageReceiveModel(
-      "sendautokhoitao",
-      jsonEncode(messageData),
-    ));
+      FirebaseManager().addMessage(MessageReceiveModel(
+        "sendautokhoitao",
+        jsonEncode(messageData),
+      ));
 
-    for (int i = buuGuis.length - 1; i >= iBuuGui.value; i--) {
-      buuGuis[i].trangThaiRequest = null;
+      for (int i = buuGuis.length - 1; i >= iBuuGui.value; i--) {
+        buuGuis[i].trangThaiRequest = null;
+      }
+      update();
+    } catch (e) {
+      stateText.value = "Lỗi gửi dữ liệu: $e";
+      'Error in sendToPC: $e'.printInfo();
     }
-    update();
   }
 
   void printAll() {
@@ -392,8 +434,38 @@ class KhoiTaoMoiController extends GetxController {
         break;
       case "message":
       case "showdetailmessage":
+      case "info":
+      case "warning":
         stateText.value = message.DoiTuong;
         break;
+      case "error":
+        stateText.value = "❌ ${message.DoiTuong}";
+        Get.snackbar(
+          "Lỗi từ Extension",
+          message.DoiTuong,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFD32F2F),
+          colorText: const Color(0xFFFFFFFF),
+          duration: const Duration(seconds: 5),
+        );
+        break;
+      // case "messageContinue":
+      //   stateText.value = message.DoiTuong;
+      //   Get.defaultDialog(
+      //     title: "Thông báo lỗi",
+      //     content: Text("${message.DoiTuong}\nBạn có muốn tiếp tục?"),
+      //     onConfirm: () {
+      //       FirebaseManager().addMessage(
+      //         MessageReceiveModel("continueAuto", message.DoiTuong),
+      //       );
+      //       stateText.value = "Đang tiếp tục...";
+      //       Get.back();
+      //     },
+      //     onCancel: () {
+      //       stateText.value = "Đã dừng tự động";
+      //     },
+      //   );
+      //   break;
       case "printDone":
         stateText.value = "In xong";
         break;

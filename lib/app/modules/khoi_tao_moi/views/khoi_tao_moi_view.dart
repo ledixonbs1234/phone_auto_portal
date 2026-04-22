@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
+import 'package:phone_auto_portal/app/theme/app_theme.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 
 import '../controllers/khoi_tao_moi_controller.dart';
@@ -17,33 +18,41 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.primaryDark,
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const HostSelectionWidget(),
+      appBar: AppTheme.buildAppBar(
+        title: '',
+        titleWidget: const HostSelectionWidget(),
         centerTitle: true,
       ),
       body: SafeArea(
         child: Column(
           children: [
-            Obx(
-              () => Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Khởi tạo mới',
-                    style: TextStyle(
-                        color: Colors.teal,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 10),
-                  if (controller.isLoading.value)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Obx(
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Khởi tạo mới',
+                      style: TextStyle(
+                          color: AppTheme.accentCyan,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
                     ),
-                ],
+                    const SizedBox(width: 10),
+                    if (controller.isLoading.value)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             Padding(
@@ -51,31 +60,48 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Obx(() => Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                  Obx(() {
+                    bool isError = controller.stateText.value
+                        .toLowerCase()
+                        .contains('lỗi');
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isError
+                            ? AppTheme.dangerRed.withValues(alpha: 0.1)
+                            : AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isError
+                              ? AppTheme.dangerRed.withValues(alpha: 0.3)
+                              : AppTheme.primaryBlue.withValues(alpha: 0.3),
                         ),
-                        child: Text(
-                          controller.stateText.value.isEmpty
-                              ? 'Sẵn sàng'
-                              : controller.stateText.value,
-                          style: TextStyle(
-                            color: controller.stateText.value.contains('lỗi')
-                                ? Colors.red
-                                : Colors.blue.shade700,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
+                      ),
+                      child: Text(
+                        controller.stateText.value.isEmpty
+                            ? 'Sẵn sàng'
+                            : controller.stateText.value,
+                        style: TextStyle(
+                          color: isError
+                              ? AppTheme.dangerRed
+                              : AppTheme.primaryBlue,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
-                      )),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Obx(() => Checkbox(
                             value: controller.isLockedCustomer.value,
+                            activeColor: AppTheme.primaryBlue,
+                            checkColor: AppTheme.textPrimary,
+                            side:
+                                const BorderSide(color: AppTheme.textSecondary),
                             onChanged: (value) {
                               if (value == true &&
                                   controller.lockedMaKH.value.isNotEmpty) {
@@ -97,9 +123,16 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: controller.isLockedCustomer.value
-                                      ? Colors.blue.withValues(alpha: 0.2)
-                                      : Colors.grey.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(4),
+                                      ? AppTheme.primaryBlue
+                                          .withValues(alpha: 0.2)
+                                      : AppTheme.surfaceCard,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: controller.isLockedCustomer.value
+                                        ? AppTheme.primaryBlue
+                                            .withValues(alpha: 0.5)
+                                        : AppTheme.dividerColor,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -110,8 +143,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                           : Icons.lock_open,
                                       size: 14,
                                       color: controller.isLockedCustomer.value
-                                          ? Colors.blue
-                                          : Colors.grey,
+                                          ? AppTheme.primaryBlue
+                                          : AppTheme.textSecondary,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -120,8 +153,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
                                         color: controller.isLockedCustomer.value
-                                            ? Colors.blue
-                                            : Colors.grey,
+                                            ? AppTheme.primaryBlue
+                                            : AppTheme.textSecondary,
                                       ),
                                     ),
                                     if (hasLocked) ...[
@@ -149,7 +182,7 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                 'Chưa chọn KH',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
+                                  color: AppTheme.textSecondary,
                                 ),
                               ),
                           ],
@@ -160,7 +193,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Text('Gợi ý: '),
+                      const Text('Gợi ý: ',
+                          style: TextStyle(color: AppTheme.textPrimary)),
                       Expanded(
                         child: Autocomplete<SuggestionItem>(
                           optionsBuilder: (textEditingValue) {
@@ -196,15 +230,13 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                             return TextField(
                               controller: textEditingController,
                               focusNode: focusNode,
-                              decoration: InputDecoration(
-                                hintText: 'Nhập hoặc chọn mã bưu gửi',
-                                border: const OutlineInputBorder(),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                isDense: true,
-                                suffixIcon: IconButton(
+                              style:
+                                  const TextStyle(color: AppTheme.textPrimary),
+                              decoration: AppTheme.inputDecoration(
+                                label: 'Nhập hoặc chọn mã bưu gửi',
+                                suffix: IconButton(
                                   icon: const Icon(Icons.add_circle,
-                                      color: Colors.blue),
+                                      color: AppTheme.primaryBlue),
                                   onPressed: () {
                                     final code = textEditingController.text
                                         .trim()
@@ -216,6 +248,10 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                     }
                                   },
                                 ),
+                              ).copyWith(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                                isDense: true,
                               ),
                               textCapitalization: TextCapitalization.characters,
                               onSubmitted: (value) {
@@ -238,6 +274,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                               alignment: Alignment.topLeft,
                               child: Material(
                                 elevation: 4,
+                                color: AppTheme.surfaceCard,
+                                borderRadius: BorderRadius.circular(8),
                                 child: ConstrainedBox(
                                   constraints: const BoxConstraints(
                                       maxHeight: 250, maxWidth: 350),
@@ -258,12 +296,12 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: isSelectedCustomer
-                                                ? Colors.blue
+                                                ? AppTheme.primaryBlue
                                                     .withValues(alpha: 0.1)
-                                                : null,
-                                            border: Border(
+                                                : Colors.transparent,
+                                            border: const Border(
                                               bottom: BorderSide(
-                                                  color: Colors.grey.shade300),
+                                                  color: AppTheme.dividerColor),
                                             ),
                                           ),
                                           child: Column(
@@ -278,7 +316,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
-                                                        color: Colors.blue,
+                                                        color: AppTheme
+                                                            .textPrimary,
                                                         decoration:
                                                             isSelectedCustomer
                                                                 ? TextDecoration
@@ -317,7 +356,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                                     const SizedBox(width: 4),
                                                     const Icon(Icons.lock,
                                                         size: 14,
-                                                        color: Colors.blue),
+                                                        color: AppTheme
+                                                            .primaryBlue),
                                                   ],
                                                 ],
                                               ),
@@ -326,7 +366,8 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                                 '${item.tenKH} (${item.maKH})',
                                                 style: const TextStyle(
                                                     fontSize: 12,
-                                                    color: Colors.grey),
+                                                    color:
+                                                        AppTheme.textSecondary),
                                               ),
                                             ],
                                           ),
@@ -345,90 +386,122 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            _buildActionButton(
-              icon: Icons.barcode_reader,
-              label: 'Quét QR',
-              color: Colors.orange,
-              onPressed: () => controller.addKhachHangAsQR(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, bottom: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: AppTheme.actionButton(
+                      icon: Icons.barcode_reader,
+                      label: 'Quét QR',
+                      color: AppTheme.warningOrange,
+                      onPressed: () => controller.addKhachHangAsQR(),
+                    ),
+                  ),
+                ),
+                Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: AppTheme.actionButton(
+                        icon: Icons.camera_alt,
+                        label: 'Chụp ảnh',
+                        color: AppTheme.successGreen,
+                        onPressed: () => controller.captureImage(),
+                      ),
+                    )),
+              ],
             ),
             Expanded(
               child: GetBuilder<KhoiTaoMoiController>(
-                builder: (dx) => DataTable2(
-                  showCheckboxColumn: false,
-                  sortAscending: false,
-                  sortColumnIndex: 1,
-                  columnSpacing: 3,
-                  horizontalMargin: 8,
-                  minWidth: 300,
-                  dataRowHeight: 35,
-                  headingRowHeight: 35,
-                  columns: const [
-                    DataColumn2(
-                      label: Text('STT', style: TextStyle(fontSize: 12)),
-                      fixedWidth: 35,
-                      size: ColumnSize.S,
+                builder: (dx) => Theme(
+                  data: Theme.of(context).copyWith(
+                    dividerColor: AppTheme.dividerColor,
+                    dataTableTheme: DataTableThemeData(
+                      headingTextStyle: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      dataTextStyle:
+                          const TextStyle(color: AppTheme.textPrimary),
+                      headingRowColor:
+                          WidgetStateProperty.all(AppTheme.surfaceCard),
                     ),
-                    DataColumn2(
-                      label: Text(''),
-                      tooltip: 'Trạng thái',
-                      fixedWidth: 25,
-                    ),
-                    DataColumn2(
-                        label: Text('Code', style: TextStyle(fontSize: 12)),
-                        fixedWidth: 110,
-                        numeric: false),
-                    DataColumn2(
-                        label: Text('KL', style: TextStyle(fontSize: 12)),
+                  ),
+                  child: DataTable2(
+                    showCheckboxColumn: false,
+                    sortAscending: false,
+                    sortColumnIndex: 1,
+                    columnSpacing: 3,
+                    horizontalMargin: 8,
+                    minWidth: 300,
+                    dataRowHeight: 35,
+                    headingRowHeight: 35,
+                    columns: const [
+                      DataColumn2(
+                        label: Text('STT', style: TextStyle(fontSize: 12)),
                         fixedWidth: 35,
-                        numeric: true),
-                    DataColumn2(
-                        label: Text('COD', style: TextStyle(fontSize: 12)),
-                        fixedWidth: 45,
-                        numeric: true),
-                    DataColumn2(
-                        label: Text('State', style: TextStyle(fontSize: 12)),
-                        fixedWidth: 45),
-                  ],
-                  rows: _rowsBuild(dx, context),
+                        size: ColumnSize.S,
+                      ),
+                      DataColumn2(
+                        label: Text(''),
+                        tooltip: 'Trạng thái',
+                        fixedWidth: 25,
+                      ),
+                      DataColumn2(
+                          label: Text('Code', style: TextStyle(fontSize: 12)),
+                          fixedWidth: 110,
+                          numeric: false),
+                      DataColumn2(
+                          label: Text('KL', style: TextStyle(fontSize: 12)),
+                          fixedWidth: 35,
+                          numeric: true),
+                      DataColumn2(
+                          label: Text('COD', style: TextStyle(fontSize: 12)),
+                          fixedWidth: 45,
+                          numeric: true),
+                      DataColumn2(
+                          label: Text('State', style: TextStyle(fontSize: 12)),
+                          fixedWidth: 45),
+                    ],
+                    rows: _rowsBuild(dx, context),
+                  ),
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: SizedBox(
-                width: 400,
+                width: double.infinity,
                 height: 40,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
                     Row(
                       children: [
-                        _buildActionButton(
+                        AppTheme.actionButton(
                           icon: Icons.delete_outline,
                           label: 'Xóa',
-                          color: Colors.red,
+                          color: AppTheme.dangerRed,
                           onPressed: () => controller.deleteSelected(),
                           onLongPress: () => controller.deleteAll(),
                         ),
                         const SizedBox(width: 10),
-                        _buildActionButton(
+                        AppTheme.actionButton(
                           icon: Icons.send_outlined,
                           label: 'Send',
-                          color: Colors.blue,
+                          color: AppTheme.primaryBlue,
                           onPressed: () => controller.sendToPC(),
                         ),
                         const SizedBox(width: 10),
-                        _buildActionButton(
+                        AppTheme.actionButton(
                           icon: Icons.print_outlined,
                           label: 'In BD1 New',
-                          color: Colors.orange,
+                          color: AppTheme.warningOrange,
                           onPressed: () {
-                            // if (controller.selectedState.value != "CC") {
-                            //   controller.printAllAndDelete();
-                            // } else {
                             controller.printAll();
-                            // }
                           },
                         ),
                       ],
@@ -446,39 +519,16 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
       case 'đã chấp nhận':
-        return Colors.red;
+        return AppTheme.dangerRed;
       case 'đã phân hướng':
-        return Colors.blue;
+        return AppTheme.primaryBlue;
       case 'đang đi thu gom':
-        return Colors.yellow;
+        return AppTheme.warningOrange;
       case 'nhận hàng thành công':
-        return Colors.orange;
+        return AppTheme.successGreen;
       default:
-        return Colors.grey;
+        return AppTheme.textSecondary;
     }
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-    VoidCallback? onLongPress,
-  }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, color: color),
-      label: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        side: BorderSide(color: color.withValues(alpha: 0.5)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-      ),
-      onPressed: onPressed,
-      onLongPress: onLongPress,
-    );
   }
 
   List<DataRow> _rowsBuild(KhoiTaoMoiController dx, BuildContext context) {
@@ -493,10 +543,7 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                 color: WidgetStateProperty.resolveWith<Color?>(
                     (Set<WidgetState> states) {
                   if (states.contains(WidgetState.selected)) {
-                    return Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.6);
+                    return AppTheme.primaryBlue.withValues(alpha: 0.2);
                   }
                   return null;
                 }),
@@ -505,7 +552,7 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                     dx.buuGuis[index].index.toString(),
                     style: const TextStyle(
                         fontSize: 12,
-                        color: Color.fromARGB(255, 102, 102, 96),
+                        color: AppTheme.textSecondary,
                         fontWeight: FontWeight.bold),
                   )),
                   DataCell(
@@ -529,25 +576,29 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                     style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        fontStyle: FontStyle.italic),
+                        fontStyle: FontStyle.italic,
+                        color: AppTheme.textPrimary),
                   )),
                   DataCell(Text(
                     dx.buuGuis[index].khoiLuong == null
                         ? ""
                         : dx.buuGuis[index].khoiLuong!.toString(),
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(
+                        fontSize: 11, color: AppTheme.textPrimary),
                   )),
                   DataCell(Text(
                     dx.buuGuis[index].money == null
                         ? ""
                         : dx.buuGuis[index].money!.toString(),
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(
+                        fontSize: 11, color: AppTheme.textPrimary),
                   )),
                   DataCell(Text(
                     dx.buuGuis[index].trangThaiRequest == null
                         ? ""
                         : dx.buuGuis[index].trangThaiRequest!.toString(),
-                    style: const TextStyle(color: Colors.teal, fontSize: 11),
+                    style: const TextStyle(
+                        color: AppTheme.accentCyan, fontSize: 11),
                   )),
                 ]));
   }
