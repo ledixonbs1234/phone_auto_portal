@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:get_storage/get_storage.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +29,8 @@ class KhoiTaoMoiController extends GetxController {
   final isLockedCustomer = false.obs;
   final lockedMaKH = "".obs;
   final lockedTenKH = "".obs;
+  final isAutoSend = false.obs;
+  final _storage = GetStorage();
   final allSuggestMHs = <SuggestionItem>[].obs;
   final suggestMHs = <SuggestionItem>[].obs;
   late TextEditingController textHintController;
@@ -44,6 +47,12 @@ class KhoiTaoMoiController extends GetxController {
     focusHint = FocusNode();
 
     loadFromFirebase();
+    isAutoSend.value = _storage.read('isAutoSend_khoitao') ?? false;
+  }
+
+  void toggleAutoSend(bool value) {
+    isAutoSend.value = value;
+    _storage.write('isAutoSend_khoitao', value);
   }
 
   @override
@@ -297,6 +306,12 @@ class KhoiTaoMoiController extends GetxController {
     buuGuis.sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
     _saveToFirebase();
+
+    if (isAutoSend.value) {
+      FirebaseManager()
+          .sendListScannedToPortal(buuGuis.toList(), lenh: "khoitao_autosend");
+    }
+
     update();
 
     HapticFeedback.lightImpact();

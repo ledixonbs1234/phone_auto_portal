@@ -112,42 +112,42 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                               }
                             },
                           )),
-                      Obx(() {
-                        final hasLocked =
-                            controller.lockedMaKH.value.isNotEmpty;
-                        return Row(
-                          children: [
-                            if (hasLocked)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
+                      Expanded(
+                        child: Obx(() {
+                          final hasLocked =
+                              controller.lockedMaKH.value.isNotEmpty;
+                          if (hasLocked) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: controller.isLockedCustomer.value
+                                    ? AppTheme.primaryBlue
+                                        .withValues(alpha: 0.2)
+                                    : AppTheme.surfaceCard,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
                                   color: controller.isLockedCustomer.value
                                       ? AppTheme.primaryBlue
-                                          .withValues(alpha: 0.2)
-                                      : AppTheme.surfaceCard,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
+                                          .withValues(alpha: 0.5)
+                                      : AppTheme.dividerColor,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    controller.isLockedCustomer.value
+                                        ? Icons.lock
+                                        : Icons.lock_open,
+                                    size: 14,
                                     color: controller.isLockedCustomer.value
                                         ? AppTheme.primaryBlue
-                                            .withValues(alpha: 0.5)
-                                        : AppTheme.dividerColor,
+                                        : AppTheme.textSecondary,
                                   ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      controller.isLockedCustomer.value
-                                          ? Icons.lock
-                                          : Icons.lock_open,
-                                      size: 14,
-                                      color: controller.isLockedCustomer.value
-                                          ? AppTheme.primaryBlue
-                                          : AppTheme.textSecondary,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
                                       '${controller.lockedTenKH.value} (${controller.lockedMaKH.value})',
                                       style: TextStyle(
                                         fontSize: 12,
@@ -156,38 +156,62 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                             ? AppTheme.primaryBlue
                                             : AppTheme.textSecondary,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    if (hasLocked) ...[
-                                      const SizedBox(width: 4),
-                                      GestureDetector(
-                                        onTap: () {
-                                          controller.lockedMaKH.value = "";
-                                          controller.lockedTenKH.value = "";
-                                          controller.isLockedCustomer.value =
-                                              false;
-                                          controller.refreshSuggestions();
-                                        },
-                                        child: const Icon(
-                                          Icons.close,
-                                          size: 14,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              )
-                            else
+                                  ),
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: () {
+                                      controller.lockedMaKH.value = "";
+                                      controller.lockedTenKH.value = "";
+                                      controller.isLockedCustomer.value = false;
+                                      controller.refreshSuggestions();
+                                    },
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            return const Text(
+                              'Chưa chọn KH',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            );
+                          }
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      Obx(() => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               const Text(
-                                'Chưa chọn KH',
+                                'Auto',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
                                   color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                          ],
-                        );
-                      }),
+                              Checkbox(
+                                value: controller.isAutoSend.value,
+                                activeColor: AppTheme.accentCyan,
+                                checkColor: AppTheme.primaryDark,
+                                side: const BorderSide(
+                                    color: AppTheme.textSecondary),
+                                visualDensity: VisualDensity.compact,
+                                onChanged: (value) => controller
+                                    .toggleAutoSend(value ?? false),
+                              ),
+                            ],
+                          )),
                     ],
                   ),
                   const SizedBox(height: 8),

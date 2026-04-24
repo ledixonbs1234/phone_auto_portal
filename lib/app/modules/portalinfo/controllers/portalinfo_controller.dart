@@ -31,6 +31,7 @@ class PortalinfoController extends GetxController {
 
   final maychus = <String>["maychu", "mayphu", "mayphusan", "maytest"].obs;
   final isDetailedView = false.obs; // false: Đơn giản, true: Chi tiết
+  final showDirection = false.obs; // false: Không hiển thị hướng, true: Hiển thị hướng RA/VÔ/Quảng Nam/Quảng Ngãi
   final similarIdCodes =
       <String>{}.obs; // Set chứa IDCODE của các mục trùng tên
   final selectedMayChu = "mayphu".obs;
@@ -51,6 +52,12 @@ class PortalinfoController extends GetxController {
   // 2. Hàm chuyển đổi chế độ xem
   void toggleViewMode(bool value) {
     isDetailedView.value = value;
+    update(); // Cập nhật UI dialog
+  }
+
+  // 2b. Hàm chuyển đổi hiển thị hướng
+  void toggleDirectionView(bool value) {
+    showDirection.value = value;
     update(); // Cập nhật UI dialog
   }
 

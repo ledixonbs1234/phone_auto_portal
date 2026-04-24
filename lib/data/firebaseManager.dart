@@ -513,8 +513,8 @@ class FirebaseManager with WidgetsBindingObserver {
     database.child('PORTAL/BuuGuis').set(jsonEncode(buuGuis));
   }
 
-  void sendListScannedToPortal(List<BuuGuis> buuGuis) {
-    var message = MessageReceiveModel("", jsonEncode(buuGuis));
+  void sendListScannedToPortal(List<BuuGuis> buuGuis, {String lenh = ""}) {
+    var message = MessageReceiveModel(lenh, jsonEncode(buuGuis));
     rootPath
         .child('scannedItems')
         .set(message.toJson())
