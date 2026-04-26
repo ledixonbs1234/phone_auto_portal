@@ -39,7 +39,7 @@ class PrintPageView extends GetView<PrintPageController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Nhập mã hiệu',
             style: TextStyle(
               fontSize: 14,
@@ -48,13 +48,13 @@ class PrintPageView extends GetView<PrintPageController> {
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: controller.maHieuController,
-                  style: const TextStyle(color: AppTheme.textPrimary),
+                  style: TextStyle(color: AppTheme.textPrimary),
                   decoration: AppTheme.inputDecoration(
                     label: '',
                     hint: 'VD: CA123456789VN',
@@ -128,7 +128,7 @@ class PrintPageView extends GetView<PrintPageController> {
               children: [
                 Obx(() => Row(
                       children: [
-                        const Text(
+                        Text(
                           'Danh sách ',
                           style: TextStyle(
                             fontSize: 14,
@@ -216,7 +216,7 @@ class PrintPageView extends GetView<PrintPageController> {
                             child: Center(
                               child: Text(
                                 '${index + 1}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppTheme.primaryBlue,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
@@ -224,11 +224,11 @@ class PrintPageView extends GetView<PrintPageController> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               maHieu,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.textPrimary,
                                 fontFamily: 'monospace',
                                 fontSize: 14,

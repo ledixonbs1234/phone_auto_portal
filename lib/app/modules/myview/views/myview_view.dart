@@ -26,7 +26,7 @@ class MyviewView extends GetView<MyviewController> {
               AppTheme.gradientSeparator(),
 
               // ── Host Selection ──
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: HostSelectionWidget(),
               ),
@@ -46,9 +46,9 @@ class MyviewView extends GetView<MyviewController> {
                     isExpanded: true,
                     dropdownColor: AppTheme.surfaceCard,
                     underline: const SizedBox.shrink(),
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 14, color: AppTheme.textPrimary),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded,
                         color: AppTheme.textSecondary),
                     value: controller.seKhachHangs.value,
                     items: controller.khachHangs
@@ -140,10 +140,10 @@ class MyviewView extends GetView<MyviewController> {
                         color:
                             AppTheme.warningOrange.withValues(alpha: 0.7),
                         size: 16),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       'Thời Gian Cập Nhật: ${controller.timeUpdate}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.warningOrange,
                         fontSize: 13,
                       ),
@@ -152,7 +152,7 @@ class MyviewView extends GetView<MyviewController> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // ── Search Section ──
               Padding(
@@ -162,12 +162,12 @@ class MyviewView extends GetView<MyviewController> {
                     Expanded(
                       child: TextField(
                         controller: controller.textController,
-                        style: const TextStyle(color: AppTheme.textPrimary),
+                        style: TextStyle(color: AppTheme.textPrimary),
                         decoration: AppTheme.inputDecoration(
                           label: 'Mã Khách Hàng',
                           hint: 'Ví dụ: KH00123',
                           suffix: IconButton(
-                            icon: const Icon(Icons.clear_rounded,
+                            icon: Icon(Icons.clear_rounded,
                                 color: AppTheme.textSecondary, size: 20),
                             onPressed: () =>
                                 controller.textController.clear(),

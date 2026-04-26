@@ -100,7 +100,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 horizontalMargin: 10,
                 checkboxHorizontalMargin: 4,
                 headingRowColor: WidgetStateProperty.all(AppTheme.surfaceDark),
-                headingTextStyle: const TextStyle(
+                headingTextStyle: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -265,14 +265,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   flex: 2,
                   child: TextField(
                     controller: controller.barcodeInputController,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 14, color: AppTheme.textPrimary),
                     decoration: AppTheme.inputDecoration(
                       label: 'Mã sản phẩm',
                       hint: 'Nhập hoặc quét mã',
                       prefixIcon: Icons.qr_code,
                       suffix: IconButton(
-                        icon: const Icon(Icons.clear,
+                        icon: Icon(Icons.clear,
                             size: 16, color: AppTheme.textSecondary),
                         onPressed: () =>
                             controller.barcodeInputController.clear(),
@@ -286,7 +286,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   flex: 1,
                   child: Obx(() => AppTheme.actionButton(
@@ -300,21 +300,21 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
 
             // Row 2: Date range
             Row(children: [
               Expanded(child: _buildDatePicker(context, isFrom: true)),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(child: _buildDatePicker(context, isFrom: false)),
             ]),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
 
             // Row 3: Recipient name
             TextField(
               controller: controller.recipientNameController,
               onChanged: (v) => controller.recipientNameFilter.value = v,
-              style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+              style: TextStyle(fontSize: 14, color: AppTheme.textPrimary),
               decoration: AppTheme.inputDecoration(
                 label: 'Tên người nhận',
                 hint: 'Nhập tên người nhận',
@@ -322,7 +322,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 suffix: Obx(
                   () => controller.recipientNameFilter.value.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear,
+                          icon: Icon(Icons.clear,
                               size: 16, color: AppTheme.textSecondary),
                           onPressed: () {
                             controller.recipientNameController.clear();
@@ -380,11 +380,11 @@ class PortalinfoView extends GetView<PortalinfoController> {
           child: Row(
             children: [
               Icon(Icons.calendar_today, size: 16, color: color),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Expanded(
                 child: Text(
                   "$label: ${date.day}/${date.month}/${date.year}",
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12, color: AppTheme.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -484,9 +484,9 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   isExpanded: true,
                   dropdownColor: AppTheme.surfaceCard,
                   underline: const SizedBox.shrink(),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13, color: AppTheme.textPrimary),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                  icon: Icon(Icons.keyboard_arrow_down_rounded,
                       color: AppTheme.textSecondary),
                   onChanged: (value) {
                     controller.selectedMayChu.value = value!;
@@ -578,7 +578,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
           }),
           cells: [
             DataCell(Text('$index',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.bold))),
@@ -647,16 +647,16 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     // Header
                     Row(
                       children: [
-                        const Icon(Icons.person_outline_rounded,
+                        Icon(Icons.person_outline_rounded,
                             color: AppTheme.accentCyan, size: 18),
-                        const SizedBox(width: 6),
-                        const Text('Người Nhập: ',
+                        SizedBox(width: 6),
+                        Text('Người Nhập: ',
                             style: TextStyle(
                                 color: AppTheme.textSecondary, fontSize: 13)),
                         Expanded(
                           child: Text(
                             dx.portals[index].nguoiNhap ?? 'N/A',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.primaryBlue,
@@ -666,7 +666,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
 
                     // Title & Actions
                     Row(
@@ -676,7 +676,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         Flexible(
                           child: Text(
                             "Danh sách (${dx.currentMaHieusInPortal.length})",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: AppTheme.textPrimary,
                               fontSize: 17,
@@ -712,7 +712,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
 
                     // Toolbar: detail toggle + sort
                     Row(
@@ -722,7 +722,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                const Text("Chi tiết:",
+                                Text("Chi tiết:",
                                     style: TextStyle(
                                         fontSize: 12,
                                         color: AppTheme.textSecondary)),
@@ -739,8 +739,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                             controller.toggleViewMode(val),
                                       )),
                                 ),
-                                const SizedBox(width: 4),
-                                const Text("Hướng:",
+                                SizedBox(width: 4),
+                                Text("Hướng:",
                                     style: TextStyle(
                                         fontSize: 12,
                                         color: AppTheme.textSecondary)),
@@ -801,7 +801,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     // List
                     Expanded(
                       child: !dx.isShowEdit.value
-                          ? const Center(
+                          ? Center(
                               child: CircularProgressIndicator(
                                   color: AppTheme.primaryBlue))
                           : dx.currentMaHieusInPortal.isEmpty
@@ -921,7 +921,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
               Expanded(
                 child: Text(
                   item.code ?? 'N/A',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                       color: AppTheme.textPrimary),
@@ -934,26 +934,26 @@ class PortalinfoView extends GetView<PortalinfoController> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(item.Name ?? "Không có tên",
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppTheme.textPrimary,
                             fontWeight: FontWeight.w500,
                             fontSize: 13)),
                     Text(_getLastWords(item.Address, 50),
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppTheme.textSecondary, fontSize: 12),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis),
                     Text(item.Date ?? '',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 11,
                             fontStyle: FontStyle.italic,
                             color: AppTheme.textSecondary)),
                   ],
                 )
               : Text(item.Date ?? 'N/A',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12, color: AppTheme.textSecondary)),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -963,7 +963,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(item.Weight ?? '0',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppTheme.textPrimary)),
@@ -1131,14 +1131,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Xác nhận xóa",
+        title: Text("Xác nhận xóa",
             style: TextStyle(color: AppTheme.textPrimary)),
         content: Text("Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?",
-            style: const TextStyle(color: AppTheme.textSecondary)),
+            style: TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy",
+            child: Text("Hủy",
                 style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
@@ -1159,15 +1159,15 @@ class PortalinfoView extends GetView<PortalinfoController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Xác nhận xóa",
+        title: Text("Xác nhận xóa",
             style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Text(
+        content: Text(
             "Bạn có chắc chắn muốn xóa các bưu gửi đã chọn không?",
             style: TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy",
+            child: Text("Hủy",
                 style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
@@ -1191,18 +1191,18 @@ class PortalinfoView extends GetView<PortalinfoController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Thay đổi trọng lượng",
+        title: Text("Thay đổi trọng lượng",
             style: TextStyle(color: AppTheme.textPrimary)),
         content: TextField(
           controller: weightCtrl,
           keyboardType: TextInputType.number,
-          style: const TextStyle(color: AppTheme.textPrimary),
+          style: TextStyle(color: AppTheme.textPrimary),
           decoration: AppTheme.inputDecoration(label: "Trọng lượng mới"),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy",
+            child: Text("Hủy",
                 style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(
@@ -1261,7 +1261,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Xác nhận xử lý",
+        title: Text("Xác nhận xử lý",
             style: TextStyle(color: AppTheme.textPrimary)),
         content: ConstrainedBox(
           constraints: BoxConstraints(
@@ -1272,14 +1272,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
             child: Text(
               contentMessage.trim(),
               style:
-                  const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                  TextStyle(fontSize: 14, color: AppTheme.textSecondary),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text("Hủy",
+            child: Text("Hủy",
                 style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(

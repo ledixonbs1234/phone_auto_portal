@@ -28,8 +28,8 @@ class CaptureImageView extends GetView<CaptureImageController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const CircularProgressIndicator(color: AppTheme.accentCyan),
-                const SizedBox(height: 16),
+                CircularProgressIndicator(color: AppTheme.accentCyan),
+                SizedBox(height: 16),
                 Text(
                   'Đang xử lý ảnh...',
                   style: TextStyle(
@@ -93,12 +93,12 @@ class CaptureImageView extends GetView<CaptureImageController> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.photo_camera_rounded,
+                    Icon(Icons.photo_camera_rounded,
                         color: AppTheme.accentCyan, size: 16),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       'Đã chụp: ${controller.capturedCount.value}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -119,7 +119,7 @@ class CaptureImageView extends GetView<CaptureImageController> {
                   height: 72,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [Colors.white, Color(0xFFE0E0E0)],
@@ -136,7 +136,7 @@ class CaptureImageView extends GetView<CaptureImageController> {
                       width: 3,
                     ),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded,
+                  child: Icon(Icons.camera_alt_rounded,
                       color: AppTheme.primaryDark, size: 32),
                 ),
               ),

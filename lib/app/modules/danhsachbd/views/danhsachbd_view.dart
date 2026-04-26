@@ -69,7 +69,7 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                     child: TextField(
                       controller: controller.textController,
                       focusNode: controller.focusNode,
-                      style: const TextStyle(color: AppTheme.textPrimary),
+                      style: TextStyle(color: AppTheme.textPrimary),
                       decoration: AppTheme.inputDecoration(
                         label: 'Quét/Nhập mã hiệu',
                         prefixIcon: Icons.qr_code_scanner_rounded,
@@ -102,7 +102,7 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                             ),
                           ],
                         ),
-                        child: const Text(
+                        child: Text(
                           'Gửi',
                           style: TextStyle(
                             color: Colors.white,
@@ -125,14 +125,14 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                 children: [
                   Obx(() => Row(
                         children: [
-                          const Text('Đang chọn: ',
+                          Text('Đang chọn: ',
                               style:
                                   TextStyle(color: AppTheme.textSecondary)),
                           Text(
                             controller.selectedBD.value.isEmpty
                                 ? "Chưa chọn"
                                 : controller.selectedBD.value,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                               color: AppTheme.accentCyan,
@@ -153,7 +153,7 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                             horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           gradient: controller.selectedBD.value.isNotEmpty
-                              ? const LinearGradient(
+                              ? LinearGradient(
                                   colors: [
                                     AppTheme.successGreen,
                                     Color(0xFF16A34A)
@@ -165,7 +165,7 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                               : null,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.add_box_rounded,
@@ -205,12 +205,12 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                   minWidth: 400,
                   headingRowHeight: 40,
                   dataRowHeight: 50,
-                  headingTextStyle: const TextStyle(
+                  headingTextStyle: TextStyle(
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
-                  dataTextStyle: const TextStyle(
+                  dataTextStyle: TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 14,
                   ),
@@ -247,11 +247,11 @@ class DanhSachBDView extends GetView<DanhSachBDController> {
                       },
                       cells: [
                         DataCell(Text(loc.tenBD,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: AppTheme.textPrimary))),
                         DataCell(Text(
                           loc.count.toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppTheme.accentCyan,
                           ),

@@ -74,12 +74,12 @@ class QuetmhView extends GetView<QuetmhController> {
                       child: Obx(() => Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.qr_code_scanner_rounded,
+                              Icon(Icons.qr_code_scanner_rounded,
                                   color: AppTheme.accentCyan, size: 18),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 'Đã quét: ${controller.totalScanned.value} mã',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppTheme.textPrimary,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -188,12 +188,12 @@ class QuetmhView extends GetView<QuetmhController> {
                                         color: Colors.white,
                                         size: 18,
                                       ),
-                                      const SizedBox(width: 6),
+                                      SizedBox(width: 6),
                                       Text(
                                         controller.isScanning.value
                                             ? 'Tạm dừng'
                                             : 'Tiếp tục',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
@@ -205,7 +205,7 @@ class QuetmhView extends GetView<QuetmhController> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: Material(
                           color: Colors.transparent,
@@ -224,7 +224,7 @@ class QuetmhView extends GetView<QuetmhController> {
                                       .withValues(alpha: 0.3),
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.refresh_rounded,

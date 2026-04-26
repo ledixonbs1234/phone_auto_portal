@@ -51,7 +51,7 @@ class QuetThuView extends GetView<QuetThuController> {
               onPressed: controller.switchCamera,
               color: AppTheme.primaryBlue,
             ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: Obx(() {
@@ -60,9 +60,9 @@ class QuetThuView extends GetView<QuetThuController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const CircularProgressIndicator(
+                CircularProgressIndicator(
                     color: AppTheme.primaryBlue),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   'Đang khởi tạo camera...',
                   style: TextStyle(
@@ -103,7 +103,7 @@ class QuetThuView extends GetView<QuetThuController> {
                 color: AppTheme.primaryBlue.withValues(alpha: 0.2),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Đưa camera về phía thư/bưu phẩm để quét thông tin.\nSau khi chụp, ảnh sẽ được xử lý tự động.',
               style: TextStyle(
                 color: AppTheme.textPrimary,

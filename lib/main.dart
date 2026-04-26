@@ -20,6 +20,8 @@ import 'package:url_strategy/url_strategy.dart';
 
 import 'app/modules/home/controllers/home_controller.dart';
 import 'app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart';
+import 'app/theme/app_theme.dart';
+import 'app/theme/theme_controller.dart';
 
 // --- HÀM CHO SERVICE NỀN ---
 String lastTimeStamp = "";
@@ -74,6 +76,9 @@ Future<void> main() async {
   FirebaseManager().setUp();
   // FirebaseDatabase.instance.setLoggingEnabled(true);
 
+  // Theme controller must be registered first
+  final themeController = Get.put(ThemeController());
+
   Get.put(HomeController());
   Get.put(PortalinfoController());
   Get.put(CreatenewController());
@@ -92,6 +97,10 @@ Future<void> main() async {
     GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: "Application",
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode:
+          themeController.isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
     ),

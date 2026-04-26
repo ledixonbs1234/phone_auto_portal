@@ -18,7 +18,7 @@ class CreatenewView extends GetView<CreatenewController> {
     borderRadius: BorderRadius.circular(8),
     unselectedColor: AppTheme.surfaceCard,
     unselectedTextStyle:
-        const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        TextStyle(color: AppTheme.textSecondary, fontSize: 12),
     selectedColor: AppTheme.primaryBlue,
     selectedTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
   );
@@ -31,11 +31,11 @@ class CreatenewView extends GetView<CreatenewController> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppTheme.dividerColor),
+        borderSide: BorderSide(color: AppTheme.dividerColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppTheme.dividerColor),
+        borderSide: BorderSide(color: AppTheme.dividerColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -160,7 +160,7 @@ class CreatenewView extends GetView<CreatenewController> {
                     // Row 1: Gợi ý + KL/NOT toggles
                     Row(
                       children: [
-                        const Text('Gợi ý',
+                        Text('Gợi ý',
                             style: TextStyle(
                                 color: AppTheme.textSecondary, fontSize: 12)),
                         const SizedBox(width: 6),
@@ -180,7 +180,7 @@ class CreatenewView extends GetView<CreatenewController> {
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly
                                 ],
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: AppTheme.textPrimary, fontSize: 14),
                                 decoration: _compactInput(),
                               );
@@ -233,21 +233,21 @@ class CreatenewView extends GetView<CreatenewController> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
 
                     // Row 2: MH + KL inputs
                     Row(
                       children: [
-                        const Text('MH',
+                        Text('MH',
                             style: TextStyle(
                                 color: AppTheme.textSecondary, fontSize: 12)),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Expanded(
                           flex: 3,
                           child: SizedBox(
                             height: 36,
                             child: TextField(
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 15,
                                   color: AppTheme.primaryBlue,
                                   fontWeight: FontWeight.bold),
@@ -260,8 +260,8 @@ class CreatenewView extends GetView<CreatenewController> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        const Text('KL',
+                        SizedBox(width: 8),
+                        Text('KL',
                             style: TextStyle(
                                 color: AppTheme.textSecondary, fontSize: 12)),
                         const SizedBox(width: 6),
@@ -323,7 +323,7 @@ class CreatenewView extends GetView<CreatenewController> {
                     child: Obx(
                       () => Text(
                         'Info: ${controller.stateText}',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: AppTheme.primaryBlue),
@@ -332,7 +332,7 @@ class CreatenewView extends GetView<CreatenewController> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   // Direction dropdown (compact)
                   Expanded(
                     flex: 3,
@@ -350,9 +350,9 @@ class CreatenewView extends GetView<CreatenewController> {
                           isExpanded: true,
                           dropdownColor: AppTheme.surfaceCard,
                           underline: const SizedBox.shrink(),
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12, color: AppTheme.textPrimary),
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                          icon: Icon(Icons.keyboard_arrow_down_rounded,
                               color: AppTheme.textSecondary, size: 18),
                           onChanged: (value) {
                             controller.selectedState.value = value!;
@@ -366,7 +366,7 @@ class CreatenewView extends GetView<CreatenewController> {
                                 "DN", 'ĐN', controller.daNangCount),
                             _directionItem(
                                 "CL", 'CL', controller.conLaiCount),
-                            const DropdownMenuItem(
+                            DropdownMenuItem(
                               value: "CC",
                               child: Text('Chưa Chọn',
                                   style: TextStyle(
@@ -408,21 +408,21 @@ class CreatenewView extends GetView<CreatenewController> {
                             }
                           },
                         )),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Obx(() => AppTheme.toggleOption(
                           'Xóa SĐT',
                           controller.isDeletePhone.value,
                           () => controller.isDeletePhone.value =
                               !controller.isDeletePhone.value,
                         )),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     AppTheme.actionButton(
                       icon: Icons.send_and_archive_rounded,
                       label: 'Send End',
                       color: const Color(0xFF6366F1),
                       onPressed: () => controller.sendEndAndPrint(),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     AppTheme.actionButton(
                       icon: Icons.download_rounded,
                       label: 'Lấy Lan',
@@ -430,7 +430,7 @@ class CreatenewView extends GetView<CreatenewController> {
                       onPressed: () =>
                           controller.getDiNgoaisTempFromFirebase(),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     AppTheme.actionButton(
                       icon: Icons.visibility,
                       label: 'H.Hết',
@@ -458,7 +458,7 @@ class CreatenewView extends GetView<CreatenewController> {
                     headingRowHeight: 32,
                     headingRowColor:
                         WidgetStateProperty.all(AppTheme.surfaceDark),
-                    headingTextStyle: const TextStyle(
+                    headingTextStyle: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -530,7 +530,7 @@ class CreatenewView extends GetView<CreatenewController> {
                         }
                       },
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     AppTheme.actionButton(
                       icon: Icons.print_outlined,
                       label: 'In AR',
@@ -585,13 +585,13 @@ class CreatenewView extends GetView<CreatenewController> {
             value: value,
             activeColor: color,
             checkColor: Colors.white,
-            side: const BorderSide(color: AppTheme.textSecondary),
+            side: BorderSide(color: AppTheme.textSecondary),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             onChanged: onChanged,
           ),
         ),
-        const SizedBox(width: 3),
+        SizedBox(width: 3),
         Text(label,
             style: TextStyle(
                 color: value ? color : AppTheme.textSecondary, fontSize: 11)),
@@ -647,7 +647,7 @@ class CreatenewView extends GetView<CreatenewController> {
           }),
           cells: [
             DataCell(Text('${bg.index}',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.bold))),
@@ -665,15 +665,15 @@ class CreatenewView extends GetView<CreatenewController> {
               ),
             )),
             DataCell(Text(bg.maBuuGui!,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
                     color: AppTheme.textPrimary))),
             DataCell(Text(bg.khoiLuong?.toString() ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11, color: AppTheme.textPrimary))),
             DataCell(Text(bg.money?.toString() ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11, color: AppTheme.textPrimary))),
             DataCell(Text(bg.trangThaiRequest?.toString() ?? '',
                 style: const TextStyle(

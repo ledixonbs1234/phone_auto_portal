@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:phone_auto_portal/app/theme/theme_controller.dart';
 
-/// Shared dark theme palette & reusable widgets for the entire app.
+/// Shared theme palette & reusable widgets for the entire app.
+///
+/// Supports **dark** and **light** modes via [ThemeController].
 ///
 /// Usage:
 /// ```dart
@@ -11,18 +15,64 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._(); // Prevent instantiation
 
+  // ── Helper ─────────────────────────────────────────
+  static bool get _isDark {
+    try {
+      return Get.find<ThemeController>().isDarkMode.value;
+    } catch (_) {
+      return true; // fallback to dark before controller is registered
+    }
+  }
+
   // ── Color Palette ──────────────────────────────────
-  static const primaryDark = Color(0xFF1A1D29);
+  // Accent colors stay the same in both themes
   static const primaryBlue = Color(0xFF4A7DFF);
   static const accentCyan = Color(0xFF00D4AA);
   static const successGreen = Color(0xFF22C55E);
   static const dangerRed = Color(0xFFEF4444);
   static const warningOrange = Color(0xFFF59E0B);
-  static const surfaceCard = Color(0xFF232736);
-  static const surfaceDark = Color(0xFF1E2130);
-  static const textPrimary = Color(0xFFF1F3F9);
-  static const textSecondary = Color(0xFF8B92A8);
-  static const dividerColor = Color(0xFF2D3148);
+
+  // Theme-dependent colors
+  static Color get primaryDark =>
+      _isDark ? const Color(0xFF1A1D29) : const Color(0xFFF5F6FA);
+
+  static Color get surfaceCard =>
+      _isDark ? const Color(0xFF232736) : Colors.white;
+
+  static Color get surfaceDark =>
+      _isDark ? const Color(0xFF1E2130) : const Color(0xFFEEEFF5);
+
+  static Color get textPrimary =>
+      _isDark ? const Color(0xFFF1F3F9) : const Color(0xFF1A1D29);
+
+  static Color get textSecondary =>
+      _isDark ? const Color(0xFF8B92A8) : const Color(0xFF6B7280);
+
+  static Color get dividerColor =>
+      _isDark ? const Color(0xFF2D3148) : const Color(0xFFE0E2EB);
+
+  // ── Flutter ThemeData builders ─────────────────────
+  static ThemeData get darkTheme => ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF1A1D29),
+        colorScheme: const ColorScheme.dark(
+          primary: primaryBlue,
+          secondary: accentCyan,
+          surface: Color(0xFF232736),
+        ),
+        fontFamily: 'Roboto',
+      );
+
+  static ThemeData get lightTheme => ThemeData(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF5F6FA),
+        colorScheme: const ColorScheme.light(
+          primary: primaryBlue,
+          secondary: accentCyan,
+          surface: Colors.white,
+        ),
+        fontFamily: 'Roboto',
+      );
 
   // ── AppBar ─────────────────────────────────────────
   static AppBar buildAppBar({
@@ -38,7 +88,7 @@ class AppTheme {
       elevation: 0,
       leading: onBack != null
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              icon: Icon(Icons.arrow_back_ios_new_rounded,
                   color: textPrimary, size: 20),
               onPressed: onBack,
             )
@@ -46,7 +96,7 @@ class AppTheme {
       title: titleWidget ??
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -54,7 +104,7 @@ class AppTheme {
             ),
           ),
       centerTitle: centerTitle,
-      iconTheme: const IconThemeData(color: textPrimary),
+      iconTheme: IconThemeData(color: textPrimary),
       actions: actions,
     );
   }
@@ -330,7 +380,7 @@ class AppTheme {
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: textSecondary,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -376,7 +426,7 @@ class AppTheme {
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: textSecondary, fontSize: 14),
+      labelStyle: TextStyle(color: textSecondary, fontSize: 14),
       hintText: hint,
       hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.5)),
       prefixIcon:
@@ -386,11 +436,11 @@ class AppTheme {
       fillColor: surfaceCard,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: dividerColor),
+        borderSide: BorderSide(color: dividerColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: dividerColor),
+        borderSide: BorderSide(color: dividerColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -423,7 +473,7 @@ class AppTheme {
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
           color: textPrimary,
@@ -461,7 +511,7 @@ class AppTheme {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -486,9 +536,9 @@ class AppTheme {
       items: items,
       onChanged: onChanged,
       dropdownColor: surfaceCard,
-      style: const TextStyle(color: textPrimary, fontSize: 14),
+      style: TextStyle(color: textPrimary, fontSize: 14),
       decoration: inputDecoration(label: label ?? ''),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
           color: textSecondary),
     );
   }

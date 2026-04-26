@@ -27,23 +27,23 @@ class HomeView extends GetView<HomeController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Cài đặt tài khoản Portal",
+        title: Text("Cài đặt tài khoản Portal",
             style: TextStyle(color: AppTheme.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: usernameController,
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: AppTheme.textPrimary),
               decoration: AppTheme.inputDecoration(
                 label: "Tài khoản",
                 prefixIcon: Icons.person_outline_rounded,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: passwordController,
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: AppTheme.textPrimary),
               decoration: AppTheme.inputDecoration(
                 label: "Mật khẩu",
                 prefixIcon: Icons.lock_outline_rounded,
@@ -103,18 +103,18 @@ class HomeView extends GetView<HomeController> {
                     color: AppTheme.accentCyan.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.description_rounded,
+                  child: Icon(Icons.description_rounded,
                       color: AppTheme.accentCyan, size: 20),
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
+                SizedBox(width: 10),
+                Expanded(
                   child: Text("Thông tin hợp đồng",
                       style:
                           TextStyle(color: AppTheme.textPrimary, fontSize: 17)),
                 ),
                 IconButton(
                   onPressed: () => Get.back(),
-                  icon: const Icon(Icons.close_rounded,
+                  icon: Icon(Icons.close_rounded,
                       color: AppTheme.textSecondary, size: 22),
                   splashRadius: 18,
                 ),
@@ -129,24 +129,24 @@ class HomeView extends GetView<HomeController> {
                   TextField(
                     enabled: false,
                     controller: controller.maKHController,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppTheme.dangerRed, fontSize: 16),
                     decoration: AppTheme.inputDecoration(label: 'Mã KH'),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   TextField(
                     enabled: controller.isEditHopDong.value,
                     controller: controller.addressController,
-                    style: const TextStyle(color: AppTheme.textPrimary),
+                    style: TextStyle(color: AppTheme.textPrimary),
                     decoration: AppTheme.inputDecoration(label: 'Địa chỉ'),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: 4,
                     runSpacing: 4,
                     children: [
-                      const Text('Có hợp đồng:',
+                      Text('Có hợp đồng:',
                           style: TextStyle(color: AppTheme.textSecondary)),
                       SizedBox(
                         width: 40,
@@ -156,7 +156,7 @@ class HomeView extends GetView<HomeController> {
                           activeColor: AppTheme.successGreen,
                           checkColor: Colors.white,
                           side:
-                              const BorderSide(color: AppTheme.textSecondary),
+                              BorderSide(color: AppTheme.textSecondary),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4)),
                           onChanged: controller.isEditHopDong.value
@@ -164,7 +164,7 @@ class HomeView extends GetView<HomeController> {
                               : null,
                         ),
                       ),
-                      const Text('STT HĐ:',
+                      Text('STT HĐ:',
                           style: TextStyle(color: AppTheme.textSecondary)),
                       SizedBox(
                         width: 50,
@@ -173,10 +173,10 @@ class HomeView extends GetView<HomeController> {
                           keyboardType: TextInputType.number,
                           controller: controller.numberHopDongController,
                           style:
-                              const TextStyle(color: AppTheme.textPrimary),
-                          decoration: const InputDecoration(
+                              TextStyle(color: AppTheme.textPrimary),
+                          decoration: InputDecoration(
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 8),
                             enabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(
@@ -330,7 +330,7 @@ class HomeView extends GetView<HomeController> {
                                         : AppTheme.textSecondary,
                                     size: 20,
                                   ),
-                                  const SizedBox(width: 10),
+                                  SizedBox(width: 10),
                                   Text(
                                     hasUser
                                         ? "TK: ${user.username}"
@@ -412,7 +412,7 @@ class HomeView extends GetView<HomeController> {
                                     width: 250,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -423,20 +423,20 @@ class HomeView extends GetView<HomeController> {
                                             controller.loginPNS(),
                                         controller:
                                             controller.capcharController,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             color: AppTheme.textPrimary),
                                         decoration: AppTheme.inputDecoration(
                                             label: 'Captcha'),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     AppTheme.actionButton(
                                       icon: Icons.login_rounded,
                                       label: 'PNS',
                                       color: AppTheme.successGreen,
                                       onPressed: () => controller.loginPNS(),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     AppTheme.actionButton(
                                       icon: Icons.login_rounded,
                                       label: 'GD',
@@ -467,9 +467,9 @@ class HomeView extends GetView<HomeController> {
                         isExpanded: true,
                         dropdownColor: AppTheme.surfaceCard,
                         underline: const SizedBox.shrink(),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 14, color: AppTheme.textPrimary),
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                        icon: Icon(Icons.keyboard_arrow_down_rounded,
                             color: AppTheme.textSecondary),
                         value: controller.seKhachHangs.value,
                         items: controller.khachHangs
@@ -536,10 +536,10 @@ class HomeView extends GetView<HomeController> {
                         Icon(Icons.access_time_rounded,
                             color: AppTheme.warningOrange.withValues(alpha: 0.7),
                             size: 16),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(
                           "Time Update: ${controller.timeUpdate.value}",
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppTheme.warningOrange, fontSize: 13),
                         ),
                       ],
@@ -552,16 +552,16 @@ class HomeView extends GetView<HomeController> {
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     child: Row(
                       children: [
-                        const Text('Tìm kiếm MH:',
+                        Text('Tìm kiếm MH:',
                             style: TextStyle(
                                 color: AppTheme.textSecondary, fontSize: 13)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: TextField(
                             controller: controller.textMHController,
                             keyboardType: TextInputType.number,
                             style:
-                                const TextStyle(color: AppTheme.textPrimary),
+                                TextStyle(color: AppTheme.textPrimary),
                             decoration: AppTheme.inputDecoration(
                                 label: '', hint: 'Nhập mã hiệu'),
                             onChanged: (value) {
@@ -619,7 +619,7 @@ class HomeView extends GetView<HomeController> {
                                   size: 20,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment:
@@ -630,14 +630,14 @@ class HomeView extends GetView<HomeController> {
                                               .isNotEmpty
                                           ? controller.maKHController.text
                                           : 'Chưa chọn KH',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppTheme.dangerRed,
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 2),
+                                    SizedBox(height: 2),
                                     Text(
                                       controller.isHaveHopDong.value
                                           ? 'HĐ: ${controller.numberHopDongController.text.isNotEmpty ? controller.numberHopDongController.text : "—"}'
@@ -660,8 +660,8 @@ class HomeView extends GetView<HomeController> {
                                 onPressed: () =>
                                     controller.khoiTaoPortal(),
                               ),
-                              const SizedBox(width: 8),
-                              const Icon(
+                              SizedBox(width: 8),
+                              Icon(
                                 Icons.chevron_right_rounded,
                                 color: AppTheme.textSecondary,
                                 size: 22,

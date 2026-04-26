@@ -140,7 +140,7 @@ class DetailView extends GetView<DetailController> {
                     ),
                   )),
 
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
 
               // ── State Text ──
               Padding(
@@ -148,7 +148,7 @@ class DetailView extends GetView<DetailController> {
                 child: AppTheme.statusBanner('${controller.stateText}'),
               ),
 
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
 
               // ── Data Table ──
               Expanded(
@@ -170,12 +170,12 @@ class DetailView extends GetView<DetailController> {
                         columnSpacing: 5,
                         horizontalMargin: 10,
                         headingRowHeight: 36,
-                        headingTextStyle: const TextStyle(
+                        headingTextStyle: TextStyle(
                           color: AppTheme.textSecondary,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
-                        dataTextStyle: const TextStyle(
+                        dataTextStyle: TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 13,
                         ),
@@ -252,7 +252,7 @@ class DetailView extends GetView<DetailController> {
     return Row(
       children: [
         Text('$label: ',
-            style: const TextStyle(
+            style: TextStyle(
                 color: AppTheme.textSecondary, fontSize: 13)),
         Text(
           value,
@@ -301,11 +301,11 @@ class DetailView extends GetView<DetailController> {
                   ),
                 ),
                 child: value
-                    ? const Icon(Icons.check_rounded,
+                    ? Icon(Icons.check_rounded,
                         color: Colors.white, size: 12)
                     : null,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Flexible(
                 child: Text(
                   label,
@@ -338,17 +338,17 @@ class DetailView extends GetView<DetailController> {
           backgroundColor: AppTheme.surfaceCard,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
-          title: const Text('Change Weight',
+          title: Text('Change Weight',
               style: TextStyle(color: AppTheme.textPrimary)),
           content: TextField(
             controller: weightController,
             keyboardType: TextInputType.number,
-            style: const TextStyle(color: AppTheme.textPrimary),
+            style: TextStyle(color: AppTheme.textPrimary),
             decoration: AppTheme.inputDecoration(label: 'New Weight'),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel',
+              child: Text('Cancel',
                   style: TextStyle(color: AppTheme.textSecondary)),
               onPressed: () => Navigator.of(context).pop(),
             ),
@@ -405,7 +405,7 @@ class DetailView extends GetView<DetailController> {
     List<DataCell> cells = [
       DataCell(Text(
         dx.buuGuis[index].index.toString(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           color: AppTheme.textSecondary,
           fontWeight: FontWeight.w600,
@@ -426,13 +426,13 @@ class DetailView extends GetView<DetailController> {
         dx.buuGuis[index].khoiLuong == null
             ? ""
             : dx.buuGuis[index].khoiLuong!.toString(),
-        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+        style: TextStyle(color: AppTheme.textPrimary, fontSize: 13),
       )),
       DataCell(Text(
         dx.buuGuis[index].money == null
             ? ""
             : dx.buuGuis[index].money!.toString(),
-        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+        style: TextStyle(color: AppTheme.textPrimary, fontSize: 13),
       )),
       DataCell(Text(
         dx.buuGuis[index].trangThaiRequest == null
@@ -470,10 +470,10 @@ class DetailView extends GetView<DetailController> {
             );
           }
         },
-        icon: const Icon(Icons.more_vert_rounded,
+        icon: Icon(Icons.more_vert_rounded,
             size: 16, color: AppTheme.textSecondary),
         itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-          const PopupMenuItem<String>(
+          PopupMenuItem<String>(
             value: 'Copy mã hiệu',
             child: Row(
               children: [
@@ -489,13 +489,13 @@ class DetailView extends GetView<DetailController> {
           dx.buuGuis[index].isBlackList
               ? PopupMenuItem<String>(
                   value: 'Xóa khỏi Blacklist',
-                  child: const Text('Xóa khỏi Blacklist',
+                  child: Text('Xóa khỏi Blacklist',
                       style: TextStyle(color: AppTheme.textPrimary)),
                   onTap: () => {controller.removeMHFromBlackList(index)},
                 )
               : PopupMenuItem<String>(
                   value: 'Thêm vào Blacklist',
-                  child: const Text('Thêm vào Blacklist',
+                  child: Text('Thêm vào Blacklist',
                       style: TextStyle(color: AppTheme.textPrimary)),
                   onTap: () => {controller.addMHToBlackList(index)},
                 ),
