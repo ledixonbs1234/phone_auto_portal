@@ -101,6 +101,14 @@ class KhoiTaoMoiController extends GetxController {
     }
   }
 
+  void syncQuereToFirebase() {
+    if (isAutoSend.value) {
+      // FirebaseManager().sendListScannedToPortal sẽ ghi mảng buuGuis hiện tại
+      // lên node PORTAL/CHILD/{key}/scannedItems trên Firebase
+      FirebaseManager().sendListScannedToPortal(buuGuis);
+    }
+  }
+
   void refreshSuggestions() {
     if (isLockedCustomer.value && lockedMaKH.value.isNotEmpty) {
       suggestMHs.value =
@@ -351,8 +359,7 @@ class KhoiTaoMoiController extends GetxController {
       if (pickedImage != null) {
         final inputImage = InputImage.fromFilePath(pickedImage.path);
         final textRecognizer = TextRecognizer();
-        final recognizedText =
-            await textRecognizer.processImage(inputImage);
+        final recognizedText = await textRecognizer.processImage(inputImage);
         await textRecognizer.close();
 
         for (final text in recognizedText.blocks) {
@@ -395,6 +402,9 @@ class KhoiTaoMoiController extends GetxController {
     _saveToFirebase();
     hdrIdText.value = "";
     hdrId = null;
+    if (isAutoSend.value) {
+      FirebaseManager().sendListScannedToPortal([]);
+    }
     update();
   }
 

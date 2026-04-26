@@ -165,7 +165,7 @@ class CreatenewView extends GetView<CreatenewController> {
                                 color: AppTheme.textSecondary, fontSize: 12)),
                         const SizedBox(width: 6),
                         SizedBox(
-                          width: 120,
+                          width: 180,
                           height: 36,
                           child: Autocomplete<String>(
                             fieldViewBuilder: (context, textEditingController,

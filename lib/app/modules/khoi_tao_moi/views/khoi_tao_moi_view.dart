@@ -28,31 +28,212 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Obx(
-                () => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Khởi tạo mới',
-                      style: TextStyle(
-                          color: AppTheme.accentCyan,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 10),
-                    if (controller.isLoading.value)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppTheme.primaryBlue,
-                        ),
+            Obx(
+              () => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Khởi tạo mới',
+                    style: TextStyle(
+                        color: AppTheme.accentCyan,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 10),
+                  if (controller.isLoading.value)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.primaryBlue,
                       ),
-                  ],
-                ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  const Text('Gợi ý: ',
+                      style: TextStyle(color: AppTheme.textPrimary)),
+                  Expanded(
+                    child: Autocomplete<SuggestionItem>(
+                      optionsBuilder: (textEditingValue) {
+                        if (textEditingValue.text == '') {
+                          return const Iterable<SuggestionItem>.empty();
+                        }
+                        final searchText = textEditingValue.text.toUpperCase();
+                        var filtered = controller.suggestMHs.where((item) =>
+                            item.maBuuGui.toUpperCase().contains(searchText) &&
+                            !controller.isMaHieuExists(item.maBuuGui));
+
+                        if (filtered.length == 1 &&
+                            controller.isLockedCustomer.value) {
+                          final item = filtered.first;
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            controller.onSelectedSuggestion(item);
+                            autocompleteTextController.clear();
+                          });
+                          return const Iterable<SuggestionItem>.empty();
+                        }
+
+                        return filtered;
+                      },
+                      displayStringForOption: (SuggestionItem item) =>
+                          '${item.maBuuGui} - ${item.tenKH}',
+                      fieldViewBuilder: (context, textEditingController,
+                          focusNode, onFieldSubmitted) {
+                        autocompleteTextController = textEditingController;
+                        return TextField(
+                          controller: textEditingController,
+                          focusNode: focusNode,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: AppTheme.inputDecoration(
+                            label: 'Nhập hoặc chọn mã bưu gửi',
+                            suffix: IconButton(
+                              icon: const Icon(Icons.add_circle,
+                                  color: AppTheme.primaryBlue),
+                              onPressed: () {
+                                final code = textEditingController.text
+                                    .trim()
+                                    .toUpperCase();
+                                if (code.isNotEmpty) {
+                                  HapticFeedback.lightImpact();
+                                  controller.addMaHieuFromText(code);
+                                  textEditingController.clear();
+                                }
+                              },
+                            ),
+                          ).copyWith(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                            isDense: true,
+                          ),
+                          textCapitalization: TextCapitalization.characters,
+                          onSubmitted: (value) {
+                            final code = value.trim().toUpperCase();
+                            if (code.isNotEmpty) {
+                              HapticFeedback.lightImpact();
+                              controller.addMaHieuFromText(code);
+                              textEditingController.clear();
+                            }
+                          },
+                        );
+                      },
+                      onSelected: (SuggestionItem item) {
+                        controller.onSelectedSuggestion(item);
+                        autocompleteTextController.clear();
+                      },
+                      optionsViewBuilder: (context, onSelected,
+                          Iterable<SuggestionItem> options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            color: AppTheme.surfaceCard,
+                            borderRadius: BorderRadius.circular(8),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                  maxHeight: 250, maxWidth: 350),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final item = options.elementAt(index);
+                                  final isSelectedCustomer = controller
+                                          .isLockedCustomer.value &&
+                                      controller.lockedMaKH.value == item.maKH;
+                                  return InkWell(
+                                    onTap: () => onSelected(item),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isSelectedCustomer
+                                            ? AppTheme.primaryBlue
+                                                .withValues(alpha: 0.1)
+                                            : Colors.transparent,
+                                        border: const Border(
+                                          bottom: BorderSide(
+                                              color: AppTheme.dividerColor),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.maBuuGui,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppTheme.textPrimary,
+                                                    decoration:
+                                                        isSelectedCustomer
+                                                            ? TextDecoration
+                                                                .underline
+                                                            : null,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (item.khoiLuong != null &&
+                                                  item.khoiLuong! > 0)
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        Colors.orange.shade100,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4),
+                                                  ),
+                                                  child: Text(
+                                                    '${item.khoiLuong}g',
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      color: Colors.deepOrange,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              if (isSelectedCustomer) ...[
+                                                const SizedBox(width: 4),
+                                                const Icon(Icons.lock,
+                                                    size: 14,
+                                                    color:
+                                                        AppTheme.primaryBlue),
+                                              ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${item.tenKH} (${item.maKH})',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textSecondary),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -207,236 +388,20 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                 side: const BorderSide(
                                     color: AppTheme.textSecondary),
                                 visualDensity: VisualDensity.compact,
-                                onChanged: (value) => controller
-                                    .toggleAutoSend(value ?? false),
+                                onChanged: (value) =>
+                                    controller.toggleAutoSend(value ?? false),
                               ),
                             ],
                           )),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Text('Gợi ý: ',
-                          style: TextStyle(color: AppTheme.textPrimary)),
-                      Expanded(
-                        child: Autocomplete<SuggestionItem>(
-                          optionsBuilder: (textEditingValue) {
-                            if (textEditingValue.text == '') {
-                              return const Iterable<SuggestionItem>.empty();
-                            }
-                            final searchText =
-                                textEditingValue.text.toUpperCase();
-                            var filtered = controller.suggestMHs.where((item) =>
-                                item.maBuuGui
-                                    .toUpperCase()
-                                    .contains(searchText) &&
-                                !controller.isMaHieuExists(item.maBuuGui));
-
-                            if (filtered.length == 1 &&
-                                controller.isLockedCustomer.value) {
-                              final item = filtered.first;
-                              Future.delayed(const Duration(milliseconds: 100),
-                                  () {
-                                controller.onSelectedSuggestion(item);
-                                autocompleteTextController.clear();
-                              });
-                              return const Iterable<SuggestionItem>.empty();
-                            }
-
-                            return filtered;
-                          },
-                          displayStringForOption: (SuggestionItem item) =>
-                              '${item.maBuuGui} - ${item.tenKH}',
-                          fieldViewBuilder: (context, textEditingController,
-                              focusNode, onFieldSubmitted) {
-                            autocompleteTextController = textEditingController;
-                            return TextField(
-                              controller: textEditingController,
-                              focusNode: focusNode,
-                              style:
-                                  const TextStyle(color: AppTheme.textPrimary),
-                              decoration: AppTheme.inputDecoration(
-                                label: 'Nhập hoặc chọn mã bưu gửi',
-                                suffix: IconButton(
-                                  icon: const Icon(Icons.add_circle,
-                                      color: AppTheme.primaryBlue),
-                                  onPressed: () {
-                                    final code = textEditingController.text
-                                        .trim()
-                                        .toUpperCase();
-                                    if (code.isNotEmpty) {
-                                      HapticFeedback.lightImpact();
-                                      controller.addMaHieuFromText(code);
-                                      textEditingController.clear();
-                                    }
-                                  },
-                                ),
-                              ).copyWith(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
-                                isDense: true,
-                              ),
-                              textCapitalization: TextCapitalization.characters,
-                              onSubmitted: (value) {
-                                final code = value.trim().toUpperCase();
-                                if (code.isNotEmpty) {
-                                  HapticFeedback.lightImpact();
-                                  controller.addMaHieuFromText(code);
-                                  textEditingController.clear();
-                                }
-                              },
-                            );
-                          },
-                          onSelected: (SuggestionItem item) {
-                            controller.onSelectedSuggestion(item);
-                            autocompleteTextController.clear();
-                          },
-                          optionsViewBuilder: (context, onSelected,
-                              Iterable<SuggestionItem> options) {
-                            return Align(
-                              alignment: Alignment.topLeft,
-                              child: Material(
-                                elevation: 4,
-                                color: AppTheme.surfaceCard,
-                                borderRadius: BorderRadius.circular(8),
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                      maxHeight: 250, maxWidth: 350),
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.zero,
-                                    shrinkWrap: true,
-                                    itemCount: options.length,
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      final item = options.elementAt(index);
-                                      final isSelectedCustomer =
-                                          controller.isLockedCustomer.value &&
-                                              controller.lockedMaKH.value ==
-                                                  item.maKH;
-                                      return InkWell(
-                                        onTap: () => onSelected(item),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: isSelectedCustomer
-                                                ? AppTheme.primaryBlue
-                                                    .withValues(alpha: 0.1)
-                                                : Colors.transparent,
-                                            border: const Border(
-                                              bottom: BorderSide(
-                                                  color: AppTheme.dividerColor),
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      item.maBuuGui,
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: AppTheme
-                                                            .textPrimary,
-                                                        decoration:
-                                                            isSelectedCustomer
-                                                                ? TextDecoration
-                                                                    .underline
-                                                                : null,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (item.khoiLuong != null &&
-                                                      item.khoiLuong! > 0)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors
-                                                            .orange.shade100,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(4),
-                                                      ),
-                                                      child: Text(
-                                                        '${item.khoiLuong}g',
-                                                        style: const TextStyle(
-                                                          fontSize: 10,
-                                                          color:
-                                                              Colors.deepOrange,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  if (isSelectedCustomer) ...[
-                                                    const SizedBox(width: 4),
-                                                    const Icon(Icons.lock,
-                                                        size: 14,
-                                                        color: AppTheme
-                                                            .primaryBlue),
-                                                  ],
-                                                ],
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                '${item.tenKH} (${item.maKH})',
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppTheme.textSecondary),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
             const SizedBox(height: 8),
             Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, bottom: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: AppTheme.actionButton(
-                      icon: Icons.barcode_reader,
-                      label: 'Quét QR',
-                      color: AppTheme.warningOrange,
-                      onPressed: () => controller.addKhachHangAsQR(),
-                    ),
-                  ),
-                ),
-                Padding(
-                    padding: const EdgeInsets.only(left: 8, bottom: 8),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: AppTheme.actionButton(
-                        icon: Icons.camera_alt,
-                        label: 'Chụp ảnh',
-                        color: AppTheme.successGreen,
-                        onPressed: () => controller.captureImage(),
-                      ),
-                    )),
-              ],
+              children: [],
             ),
             Expanded(
               child: GetBuilder<KhoiTaoMoiController>(
@@ -496,7 +461,7 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
               child: SizedBox(
                 width: double.infinity,
                 height: 40,
@@ -505,6 +470,13 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                   children: [
                     Row(
                       children: [
+                        AppTheme.actionButton(
+                          icon: Icons.barcode_reader,
+                          label: 'Quét QR',
+                          color: AppTheme.warningOrange,
+                          onPressed: () => controller.addKhachHangAsQR(),
+                        ),
+                        const SizedBox(width: 10),
                         AppTheme.actionButton(
                           icon: Icons.delete_outline,
                           label: 'Xóa',
@@ -527,6 +499,13 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                           onPressed: () {
                             controller.printAll();
                           },
+                        ),
+                        const SizedBox(width: 10),
+                        AppTheme.actionButton(
+                          icon: Icons.camera_alt,
+                          label: 'Chụp ảnh',
+                          color: AppTheme.successGreen,
+                          onPressed: () => controller.captureImage(),
                         ),
                       ],
                     )

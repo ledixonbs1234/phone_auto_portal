@@ -56,9 +56,54 @@ class PortalinfoController extends GetxController {
   }
 
   // 2b. Hàm chuyển đổi hiển thị hướng
-  void toggleDirectionView(bool value) {
+  Future<void> toggleDirectionView(bool value) async {
     showDirection.value = value;
+    if (value) {
+      await _initProvinceDirectionMap();
+    }
     update(); // Cập nhật UI dialog
+  }
+
+  Map<String, String>? _provinceDirectionMap;
+
+  Future<void> _initProvinceDirectionMap() async {
+    if (_provinceDirectionMap != null) return;
+    await _loadProvinceData();
+    if (_provinceData == null) return;
+    
+    _provinceDirectionMap = {};
+
+    void addCodes(String key, String direction) {
+      if (_provinceData![key] != null) {
+        for (final province in _provinceData![key]) {
+          if (province['ma_tinh'] != null) {
+            for (final code in province['ma_tinh']) {
+              _provinceDirectionMap![code.toString()] = direction;
+            }
+          }
+        }
+      }
+    }
+
+    addCodes('vo', 'VÔ');
+    addCodes('ra', 'RA');
+    addCodes('quangnam', 'Quảng Nam');
+    addCodes('quangngai', 'Quảng Ngãi');
+  }
+
+  String? getPackageDirection(StateMaHieu item) {
+    if (!showDirection.value || _provinceDirectionMap == null) return null;
+    if (item.provinceCode == null || item.provinceCode!.isEmpty) return null;
+    
+    final provinceCode = item.provinceCode!.trim();
+    if (provinceCode == '55') {
+      if (_isBinhDinhSpecialLocation(item.Address)) {
+        return _extractBinhDinhLocation(item.Address);
+      } else {
+        return 'VÔ';
+      }
+    }
+    return _provinceDirectionMap![provinceCode];
   }
 
   // 3. Hàm chuẩn hóa chuỗi (bỏ dấu, lowercase) để so sánh chính xác hơn

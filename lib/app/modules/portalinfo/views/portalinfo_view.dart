@@ -71,9 +71,9 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   )),
               const SizedBox(width: 10),
               Expanded(
-                child: Obx(
-                    () => AppTheme.statusBanner('${controller.stateText}',
-                        maxLines: 1)),
+                child: Obx(() => AppTheme.statusBanner(
+                    '${controller.stateText}',
+                    maxLines: 1)),
               ),
             ],
           ),
@@ -85,6 +85,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: GetBuilder<PortalinfoController>(
               builder: (dx) => DataTable2(
+                isHorizontalScrollBarVisible: false,
+                dividerThickness: 0.3,
                 showCheckboxColumn: true,
                 sortAscending: controller.sortAscending.value,
                 sortColumnIndex: controller.sortColumnIndex.value,
@@ -97,15 +99,13 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 columnSpacing: 5,
                 horizontalMargin: 10,
                 checkboxHorizontalMargin: 4,
-                headingRowColor:
-                    WidgetStateProperty.all(AppTheme.surfaceDark),
+                headingRowColor: WidgetStateProperty.all(AppTheme.surfaceDark),
                 headingTextStyle: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
-                dataRowColor:
-                    WidgetStateProperty.resolveWith<Color?>((states) {
+                dataRowColor: WidgetStateProperty.resolveWith<Color?>((states) {
                   if (states.contains(WidgetState.selected)) {
                     return AppTheme.primaryBlue.withValues(alpha: 0.2);
                   }
@@ -165,6 +165,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   label: 'In Ra Vô',
                   color: AppTheme.dangerRed,
                   onPressed: () => controller.printPageSelected(),
+                  onLongPress: () => controller.printPageSelectedAndSort(),
                 ),
                 const SizedBox(width: 8),
                 AppTheme.actionButton(
@@ -313,8 +314,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
             TextField(
               controller: controller.recipientNameController,
               onChanged: (v) => controller.recipientNameFilter.value = v,
-              style:
-                  const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+              style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
               decoration: AppTheme.inputDecoration(
                 label: 'Tên người nhận',
                 hint: 'Nhập tên người nhận',
@@ -329,8 +329,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             controller.recipientNameFilter.value = "";
                           },
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                              minWidth: 24, minHeight: 24),
+                          constraints:
+                              const BoxConstraints(minWidth: 24, minHeight: 24),
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -349,8 +349,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
   // ── Date picker tile ──────────────────────────────────
   Widget _buildDatePicker(BuildContext context, {required bool isFrom}) {
     return Obx(() {
-      final date =
-          isFrom ? controller.fromDate.value : controller.toDate.value;
+      final date = isFrom ? controller.fromDate.value : controller.toDate.value;
       final color = isFrom ? AppTheme.primaryBlue : AppTheme.successGreen;
       final label = isFrom ? "Từ" : "Đến";
 
@@ -466,8 +465,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
       decoration: BoxDecoration(
         color: AppTheme.surfaceCard,
         borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: AppTheme.dividerColor.withValues(alpha: 0.5)),
+        border: Border.all(color: AppTheme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(children: [
         // Dropdown + toggles
@@ -552,8 +550,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
   }
 
   // ── Table rows builder ───────────────────────────────
-  List<DataRow> _buildTableRows(
-      PortalinfoController dx, BuildContext context) {
+  List<DataRow> _buildTableRows(PortalinfoController dx, BuildContext context) {
     return List<DataRow>.generate(
       dx.portals.length,
       (index) {
@@ -687,16 +684,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (showDeleteButton ||
-                            currentPortalStatus == "3")
+                        if (showDeleteButton || currentPortalStatus == "3")
                           Row(
                             children: [
                               _buildDialogIconButton(
                                 icon: Icons.person_search,
                                 color: AppTheme.warningOrange,
                                 tooltip: 'Tìm tên giống nhau > 90%',
-                                onPressed: () =>
-                                    controller.findSimilarNames(),
+                                onPressed: () => controller.findSimilarNames(),
                               ),
                               if (showDeleteButton)
                                 _buildDialogIconButton(
@@ -722,23 +717,54 @@ class PortalinfoView extends GetView<PortalinfoController> {
                     // Toolbar: detail toggle + sort
                     Row(
                       children: [
-                        const Text("Chi tiết:",
-                            style: TextStyle(
-                                fontSize: 12, color: AppTheme.textSecondary)),
-                        Obx(() => Switch(
-                              value: controller.isDetailedView.value,
-                              activeThumbColor: AppTheme.primaryBlue,
-                              inactiveThumbColor: AppTheme.textSecondary,
-                              inactiveTrackColor: AppTheme.surfaceDark,
-                              onChanged: (val) =>
-                                  controller.toggleViewMode(val),
-                            )),
-                        const Spacer(),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                const Text("Chi tiết:",
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.textSecondary)),
+                                Transform.scale(
+                                  scale: 0.8,
+                                  child: Obx(() => Switch(
+                                        value: controller.isDetailedView.value,
+                                        activeThumbColor: AppTheme.primaryBlue,
+                                        inactiveThumbColor:
+                                            AppTheme.textSecondary,
+                                        inactiveTrackColor:
+                                            AppTheme.surfaceDark,
+                                        onChanged: (val) =>
+                                            controller.toggleViewMode(val),
+                                      )),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text("Hướng:",
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.textSecondary)),
+                                Transform.scale(
+                                  scale: 0.8,
+                                  child: Obx(() => Switch(
+                                        value: controller.showDirection.value,
+                                        activeThumbColor: AppTheme.primaryBlue,
+                                        inactiveThumbColor:
+                                            AppTheme.textSecondary,
+                                        inactiveTrackColor:
+                                            AppTheme.surfaceDark,
+                                        onChanged: (val) =>
+                                            controller.toggleDirectionView(val),
+                                      )),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                         _buildSortButton(
                             "KL", "Trọng lượng", const Color(0xFF9B5DE5)),
                         const SizedBox(width: 4),
-                        _buildSortButton(
-                            "\$", "COD", AppTheme.successGreen),
+                        _buildSortButton("\$", "COD", AppTheme.successGreen),
                       ],
                     ),
 
@@ -752,8 +778,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF9B5DE5)
-                              .withValues(alpha: 0.12),
+                          color:
+                              const Color(0xFF9B5DE5).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                               color: const Color(0xFF9B5DE5)
@@ -783,17 +809,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                   title: 'Không có dữ liệu mã hiệu')
                               : ListView.separated(
                                   shrinkWrap: true,
-                                  itemCount:
-                                      dx.currentMaHieusInPortal.length,
+                                  itemCount: dx.currentMaHieusInPortal.length,
                                   separatorBuilder: (_, __) => Divider(
                                       height: 1,
                                       color: AppTheme.dividerColor
                                           .withValues(alpha: 0.3)),
                                   itemBuilder: (context, i) {
-                                    final item =
-                                        dx.currentMaHieusInPortal[i];
-                                    final isSimilar = controller
-                                        .similarIdCodes
+                                    final item = dx.currentMaHieusInPortal[i];
+                                    final isSimilar = controller.similarIdCodes
                                         .contains(item.IDCODE);
                                     return _buildDialogListTile(
                                       item: item,
@@ -850,12 +873,60 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   child: Icon(Icons.warning_amber_rounded,
                       size: 16, color: AppTheme.warningOrange),
                 ),
-              Text(
-                item.code ?? 'N/A',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: AppTheme.textPrimary),
+              Builder(
+                builder: (context) {
+                  final direction = controller.getPackageDirection(item);
+                  if (direction == null) return const SizedBox.shrink();
+
+                  Color directionBgColor = Colors.blue;
+                  Color directionColor = Colors.blue.shade700;
+                  String displayDirection = direction;
+
+                  if (direction == 'RA') {
+                    directionBgColor = Colors.red;
+                    directionColor = Colors.red.shade700;
+                  } else if (direction == 'VÔ') {
+                    directionBgColor = Colors.green;
+                    directionColor = Colors.green.shade700;
+                  } else if (direction == 'Quảng Nam') {
+                    directionBgColor = Colors.orange;
+                    directionColor = Colors.orange.shade700;
+                    displayDirection = 'Q.Nam';
+                  } else if (direction == 'Quảng Ngãi') {
+                    directionBgColor = Colors.purple;
+                    directionColor = Colors.purple.shade700;
+                    displayDirection = 'Q.Ngãi';
+                  }
+
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(
+                      color: directionBgColor.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: directionColor, width: 1),
+                    ),
+                    child: Text(
+                      displayDirection,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: directionColor,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Expanded(
+                child: Text(
+                  item.code ?? 'N/A',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -1062,8 +1133,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Xác nhận xóa",
             style: TextStyle(color: AppTheme.textPrimary)),
-        content: Text(
-            "Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?",
+        content: Text("Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?",
             style: const TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
@@ -1076,8 +1146,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
               Get.back();
               controller.deleteBG(item);
             },
-            child: const Text("Xóa",
-                style: TextStyle(color: AppTheme.dangerRed)),
+            child:
+                const Text("Xóa", style: TextStyle(color: AppTheme.dangerRed)),
           ),
         ],
       ),
@@ -1178,8 +1248,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
 
     contentMessage += count == 1 ? "Khách hàng:\n" : "Danh sách khách hàng:\n";
 
-    final displayCount =
-        selectedNames.length > 10 ? 10 : selectedNames.length;
+    final displayCount = selectedNames.length > 10 ? 10 : selectedNames.length;
     for (int i = 0; i < displayCount; i++) {
       contentMessage += "${i + 1}. ${selectedNames[i]}\n";
     }

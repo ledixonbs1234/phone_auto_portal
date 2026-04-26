@@ -131,6 +131,7 @@ class CreatenewController extends GetxController {
     //kiem tra currentMaHieu có phải là bưu gửi đang tồn tại trong buuguis không
     textMHController.text = buuGuiTemp.toUpperCase();
     textHintController.text = "";
+    HapticFeedback.lightImpact(); // Rung nhẹ để báo hiệu chọn gợi ý thành công
     if (isChangeKL.value) {
       focusKL.requestFocus();
 

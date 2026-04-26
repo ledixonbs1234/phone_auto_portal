@@ -515,6 +515,8 @@ class FirebaseManager with WidgetsBindingObserver {
 
   void sendListScannedToPortal(List<BuuGuis> buuGuis, {String lenh = ""}) {
     var message = MessageReceiveModel(lenh, jsonEncode(buuGuis));
+    message.username = Get.find<HomeController>().selectedUser.value?.username;
+    message.password = Get.find<HomeController>().selectedUser.value?.password;
     rootPath
         .child('scannedItems')
         .set(message.toJson())
