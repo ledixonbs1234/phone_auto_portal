@@ -30,21 +30,21 @@ class HostSelectionWidget extends StatelessWidget {
               GestureDetector(
                 onTap: () => controller.sendPing(),
                 child: Container(
-                      width: isNarrowScreen ? 32 : 36,
-                      height: isNarrowScreen ? 32 : 36,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.refresh_rounded,
-                        size: 18,
-                        color: AppTheme.primaryBlue,
-                      ),
+                  width: isNarrowScreen ? 32 : 36,
+                  height: isNarrowScreen ? 32 : 36,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.3),
                     ),
+                  ),
+                  child: Icon(
+                    Icons.refresh_rounded,
+                    size: 18,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
               ),
               SizedBox(width: isNarrowScreen ? 8 : 12),
 
@@ -56,8 +56,7 @@ class HostSelectionWidget extends StatelessWidget {
                         color: AppTheme.surfaceCard,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color:
-                              AppTheme.dividerColor.withValues(alpha: 0.6),
+                          color: AppTheme.dividerColor.withValues(alpha: 0.6),
                         ),
                       ),
                       child: DropdownButton<HostInfo>(
@@ -80,10 +79,9 @@ class HostSelectionWidget extends StatelessWidget {
                           color: AppTheme.textPrimary,
                           fontSize: 14,
                         ),
-                        items: controller.maychus.map((HostInfo e) {
-                          return DropdownMenuItem<HostInfo>(
-                            value: e,
-                            child: Row(
+                        selectedItemBuilder: (BuildContext context) {
+                          return controller.maychus.map<Widget>((HostInfo e) {
+                            return Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Flexible(
@@ -97,8 +95,7 @@ class HostSelectionWidget extends StatelessWidget {
                                   ),
                                 ),
                                 Obx(() => Padding(
-                                      padding:
-                                          const EdgeInsets.only(left: 6),
+                                      padding: const EdgeInsets.only(left: 6),
                                       child: Container(
                                         width: 8,
                                         height: 8,
@@ -110,10 +107,48 @@ class HostSelectionWidget extends StatelessWidget {
                                           boxShadow: [
                                             BoxShadow(
                                               color: (e.isOnline.value
-                                                          ? AppTheme
-                                                              .successGreen
-                                                          : AppTheme
-                                                              .dangerRed)
+                                                      ? AppTheme.successGreen
+                                                      : AppTheme.dangerRed)
+                                                  .withValues(alpha: 0.5),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )),
+                              ],
+                            );
+                          }).toList();
+                        },
+                        items: controller.maychus.map((HostInfo e) {
+                          return DropdownMenuItem<HostInfo>(
+                            value: e,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Đã xóa Flexible và TextOverflow ở đây
+                                Text(
+                                  e.hostName,
+                                  style: TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Obx(() => Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: e.isOnline.value
+                                              ? AppTheme.successGreen
+                                              : AppTheme.dangerRed,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: (e.isOnline.value
+                                                      ? AppTheme.successGreen
+                                                      : AppTheme.dangerRed)
                                                   .withValues(alpha: 0.5),
                                               blurRadius: 4,
                                             ),
@@ -132,45 +167,42 @@ class HostSelectionWidget extends StatelessWidget {
 
               // Days input
               Text(
-                    'cách',
-                    style: TextStyle(
-                      fontSize: isNarrowScreen ? 12 : 13,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
+                'cách',
+                style: TextStyle(
+                  fontSize: isNarrowScreen ? 12 : 13,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
               SizedBox(width: isNarrowScreen ? 4 : 6),
               SizedBox(
                 width: isNarrowScreen ? 35 : 45,
                 child: TextField(
-                      controller: controller.dayLastController,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 13,
-                      ),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppTheme.surfaceCard,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: AppTheme.dividerColor),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: AppTheme.dividerColor),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              const BorderSide(color: AppTheme.primaryBlue),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 4),
-                        isDense: true,
-                      ),
+                  controller: controller.dayLastController,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                  ),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: AppTheme.surfaceCard,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppTheme.dividerColor),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppTheme.dividerColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppTheme.primaryBlue),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    isDense: true,
+                  ),
+                ),
               ),
               SizedBox(width: isNarrowScreen ? 6 : 10),
 
@@ -190,8 +222,7 @@ class HostSelectionWidget extends StatelessWidget {
                         border: Border.all(
                           color: themeController.isDarkMode.value
                               ? AppTheme.primaryBlue.withValues(alpha: 0.3)
-                              : AppTheme.warningOrange
-                                  .withValues(alpha: 0.4),
+                              : AppTheme.warningOrange.withValues(alpha: 0.4),
                         ),
                       ),
                       child: AnimatedSwitcher(
