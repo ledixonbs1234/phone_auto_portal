@@ -18,6 +18,7 @@ class TaodonController extends GetxController {
   /// Check portal button state
   final isChecking = false.obs;
   final checkHdrId = ''.obs;
+  final selectedTenKH = ''.obs;
 
   bool get canGoToNhapHang =>
       checkHdrId.value.isNotEmpty && checkHdrId.value != '0';
@@ -44,7 +45,16 @@ class TaodonController extends GetxController {
 
   void goToNhapHang() {
     if (!canGoToNhapHang) return;
-    Get.toNamed('/nhaphang');
+    final customer = getSelectedCustomer();
+    final hdr = checkHdrId.value;
+    final ten = selectedTenKH.value;
+    final ma = selectedMaKH.value ?? '';
+    Get.toNamed('/nhaphang', arguments: {
+      'customer': customer,
+      'hdrId': hdr,
+      'maKH': ma,
+      'tenKH': ten,
+    });
   }
 
   void fetchCustomers() {
@@ -148,8 +158,12 @@ class TaodonController extends GetxController {
       try {
         final data = jsonDecode(message.DoiTuong);
         final hdrId = data['hdrId']?.toString();
+        final maKH = data['customerCode']?.toString();
+        final tenKH = data['customerName']?.toString();
         if (hdrId != null && hdrId != '0') {
           checkHdrId.value = hdrId;
+          selectedMaKH.value = maKH;
+          selectedTenKH.value = tenKH ?? '';
         }
       } catch (e) {
         if (message.DoiTuong != '0' && message.DoiTuong.isNotEmpty) {

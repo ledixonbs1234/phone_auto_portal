@@ -18,25 +18,24 @@ class NhapHangView extends GetView<NhapHangController> {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                    constraints: const BoxConstraints(maxWidth: 160),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentCyan.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      controller.customer.tenKH,
-                      style: const TextStyle(
-                        color: AppTheme.accentCyan,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                constraints: const BoxConstraints(maxWidth: 160),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentCyan.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  controller.customer.tenKH,
+                  style: const TextStyle(
+                    color: AppTheme.accentCyan,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
-
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
             ),
           ),
         ],
@@ -91,20 +90,58 @@ class NhapHangView extends GetView<NhapHangController> {
                     const SizedBox(height: 12),
 
                     // Địa chỉ
-                    _FormField(
+                    TextFormField(
                       controller: controller.diaChiCtrl,
-                      label: 'Địa chỉ',
-                      hint: 'Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành',
-                      prefixIcon: Icons.location_on_outlined,
                       keyboardType: TextInputType.streetAddress,
                       maxLines: 2,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (value) =>
+                          controller.lookupAddress(value),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Vui lòng nhập địa chỉ'
                           : null,
+                      style:
+                          TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+                      decoration: AppTheme.inputDecoration(
+                        label: 'Địa chỉ',
+                        hint:
+                            'Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành',
+                        prefixIcon: Icons.location_on_outlined,
+                        suffix: IconButton(
+                          icon: const Icon(Icons.search_rounded,
+                              color: AppTheme.accentCyan, size: 22),
+                          onPressed: () => controller
+                              .lookupAddress(controller.diaChiCtrl.text),
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 8),
+
+                    // Phường/Xã, Quận/Huyện, Tỉnh/TP
+                    Obx(() => Row(
+                          children: [
+                            Expanded(
+                              child: _ReadonlyField(
+                                  label: 'Phường/Xã',
+                                  value: controller.xa.value),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _ReadonlyField(
+                                  label: 'Quận/Huyện',
+                                  value: controller.huyen.value),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _ReadonlyField(
+                                  label: 'Tỉnh/TP',
+                                  value: controller.tinh.value),
+                            ),
+                          ],
+                        )),
                     const SizedBox(height: 20),
 
-                    _SectionLabel(
+                    const _SectionLabel(
                         icon: Icons.local_shipping_outlined,
                         label: 'THÔNG TIN GÓI HÀNG'),
                     const SizedBox(height: 8),
@@ -169,15 +206,28 @@ class NhapHangView extends GetView<NhapHangController> {
               ),
             ),
 
-            // ── Bottom action bar ───────────────────────
-            AppTheme.bottomBar(
-              child: Obx(() {
-                final isLoading = controller.isSubmitting.value;
-                return _SubmitButton(
-                  isLoading: isLoading,
-                  onPressed: isLoading ? null : controller.submitDon,
-                );
-              }),
+            // ── Nút Tạo Đơn ───────────────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceDark,
+                border: Border(
+                  top: BorderSide(
+                    color: AppTheme.dividerColor.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Obx(() {
+                  final isLoading = controller.isSubmitting.value;
+                  return _SubmitButton(
+                    isLoading: isLoading,
+                    onPressed: isLoading ? null : controller.submitDon,
+                  );
+                }),
+              ),
             ),
           ],
         ),
@@ -245,11 +295,12 @@ class _CustomerBanner extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Row(
                       children: [
-                        Icon(Icons.tag, size: 12, color: AppTheme.accentCyan),
+                        const Icon(Icons.tag,
+                            size: 12, color: AppTheme.accentCyan),
                         const SizedBox(width: 4),
                         Text(
                           'HDR: $hdr',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppTheme.accentCyan,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -303,7 +354,7 @@ class _SectionLabel extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppTheme.accentCyan,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -444,6 +495,53 @@ class _SubmitButton extends StatelessWidget {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Readonly small field for address components
+// ─────────────────────────────────────────────────────────
+class _ReadonlyField extends StatelessWidget {
+  final String label;
+  final String value;
+  const _ReadonlyField({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value.isEmpty ? '...' : value,
+            style: TextStyle(
+              color: value.isEmpty
+                  ? AppTheme.textSecondary.withValues(alpha: 0.4)
+                  : AppTheme.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ],
       ),
     );
   }

@@ -7,11 +7,32 @@ import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 import '../models/nhaphang_model.dart';
 
 class NhapHangController extends GetxController {
-  // ── Passed-in customer info ──────────────────────────
-  late Customer customer;
+  // ── Passed-in customer info (parsed lazily từ Get.arguments) ──
+  Customer _customer = Customer(maKH: '', tenKH: '');
+  bool _customerParsed = false;
+
+  Customer get customer {
+    _ensureParsed();
+    return _customer;
+  }
 
   // ── HDR ID from extension (sendhdr) ──────────────────
   final hdrIdText = ''.obs;
+
+  // ── Address lookup (getaddress) ──────────────────────
+  final tinh = ''.obs;
+  final huyen = ''.obs;
+  final xa = ''.obs;
+
+  void lookupAddress(String address) {
+    if (address.trim().isEmpty) return;
+    final db = FirebaseManager();
+    db.addMessage(MessageReceiveModel(
+      'getaddress',
+      address.trim(),
+      nameMay: db.keyData ?? 'maychu',
+    ));
+  }
 
   // ── Form state ───────────────────────────────────────
   final formKey = GlobalKey<FormState>();
@@ -30,16 +51,27 @@ class NhapHangController extends GetxController {
   // Loading / submit state
   final isSubmitting = false.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    // Customer is injected via Get.arguments from TaodonController
+  void _ensureParsed() {
+    if (_customerParsed) return;
+    _customerParsed = true;
+
     final args = Get.arguments;
     if (args is Customer) {
-      customer = args;
-    } else {
-      // Fallback: shouldn't happen
-      customer = Customer(maKH: '', tenKH: 'Khách hàng');
+      _customer = args;
+    } else if (args is Map) {
+      final cust = args['customer'];
+      if (cust is Customer) {
+        _customer = cust;
+      } else {
+        _customer = Customer(
+          maKH: args['maKH']?.toString() ?? '',
+          tenKH: args['tenKH']?.toString() ?? '',
+        );
+      }
+      final hdr = args['hdrId']?.toString() ?? '';
+      if (hdr.isNotEmpty) {
+        hdrIdText.value = hdr;
+      }
     }
   }
 
@@ -124,13 +156,23 @@ class NhapHangController extends GetxController {
   }
 
   void onListenNotification(MessageReceiveModel message) {
-    if (message.Lenh == 'sendhdr') {
-      try {
-        final data = jsonDecode(message.DoiTuong);
-        hdrIdText.value = data['hdrId']?.toString() ?? '';
-      } catch (e) {
-        debugPrint('NhapHangController sendhdr parse error: $e');
-      }
+    switch (message.Lenh) {
+      case 'sendhdr':
+        try {
+          final data = jsonDecode(message.DoiTuong);
+          hdrIdText.value = data['hdrId']?.toString() ?? '';
+        } catch (e) {
+          debugPrint('NhapHangController sendhdr parse error: $e');
+        }
+      case 'getaddressok':
+        try {
+          final data = jsonDecode(message.DoiTuong);
+          tinh.value = data['tinh']?.toString() ?? '';
+          huyen.value = data['huyen']?.toString() ?? '';
+          xa.value = data['xa']?.toString() ?? '';
+        } catch (e) {
+          debugPrint('NhapHangController getaddressok parse error: $e');
+        }
     }
   }
 }
