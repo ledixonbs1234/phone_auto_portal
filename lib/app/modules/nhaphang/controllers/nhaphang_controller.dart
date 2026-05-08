@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -5,16 +6,18 @@ import 'package:phone_auto_portal/app/modules/taodon/models/customer_model.dart'
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 import '../models/nhaphang_model.dart';
+import '../services/address_suggestion_service.dart';
 
 class NhapHangController extends GetxController {
-  // ── Passed-in customer info (parsed lazily từ Get.arguments) ──
-  Customer _customer = Customer(maKH: '', tenKH: '');
-  bool _customerParsed = false;
+  // ── Address suggestion service ───────────────────────
+  final AddressSuggestionService addressService = AddressSuggestionService();
+  final addressSuggestions = <AddressSuggestion>[].obs;
+  Timer? _searchDebounce;
 
-  Customer get customer {
-    _ensureParsed();
-    return _customer;
-  }
+  // ── Passed-in customer info ───────────────────────────
+  Customer _customer = Customer(maKH: '', tenKH: '');
+
+  Customer get customer => _customer;
 
   // ── HDR ID from extension (sendhdr) ──────────────────
   final hdrIdText = ''.obs;
@@ -34,6 +37,26 @@ class NhapHangController extends GetxController {
     ));
   }
 
+  void onAddressChanged(String value) {
+    _searchDebounce?.cancel();
+    if (value.trim().isEmpty) {
+      addressSuggestions.clear();
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      addressSuggestions.value = addressService.search(value);
+    });
+  }
+
+  void selectAddressSuggestion(AddressSuggestion suggestion) {
+    diaChiCtrl.text = suggestion.fullAddress;
+    diaChiCtrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: suggestion.fullAddress.length),
+    );
+    addressSuggestions.clear();
+    lookupAddress(suggestion.fullAddress);
+  }
+
   // ── Form state ───────────────────────────────────────
   final formKey = GlobalKey<FormState>();
 
@@ -45,38 +68,41 @@ class NhapHangController extends GetxController {
   final codCtrl = TextEditingController();
 
   // Dropdown state
-  final dichVuOptions = <String>['EMS', 'BCCP', 'PTT', 'KG', 'PK', 'TH'];
+  List<String> dichVuOptions = [];
   final selectedDichVu = Rxn<String>();
 
   // Loading / submit state
   final isSubmitting = false.obs;
 
-  void _ensureParsed() {
-    if (_customerParsed) return;
-    _customerParsed = true;
+  @override
+  void onInit() {
+    super.onInit();
+    addressService.load();
+  }
 
-    final args = Get.arguments;
-    if (args is Customer) {
-      _customer = args;
-    } else if (args is Map) {
-      final cust = args['customer'];
-      if (cust is Customer) {
-        _customer = cust;
-      } else {
-        _customer = Customer(
-          maKH: args['maKH']?.toString() ?? '',
-          tenKH: args['tenKH']?.toString() ?? '',
-        );
-      }
-      final hdr = args['hdrId']?.toString() ?? '';
-      if (hdr.isNotEmpty) {
-        hdrIdText.value = hdr;
-      }
+  void setUp(Customer cust, {String? hdrId, String? contractServiceCode}) {
+    _customer = cust;
+    hdrIdText.value = hdrId ?? '';
+    _parseContractServiceCode(contractServiceCode);
+    selectedDichVu.value = null;
+    _clearForm();
+  }
+
+  void _parseContractServiceCode(String? csc) {
+    if (csc != null && csc.isNotEmpty) {
+      dichVuOptions = csc
+          .split('|')
+          .map((e) => e.split(';').first.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else {
+      dichVuOptions = ['EMS', 'BCCP', 'PTT', 'KG', 'PK', 'TH'];
     }
   }
 
   @override
   void onClose() {
+    _searchDebounce?.cancel();
     tenNguoiNhanCtrl.dispose();
     soDienThoaiCtrl.dispose();
     diaChiCtrl.dispose();

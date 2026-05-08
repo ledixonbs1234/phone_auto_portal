@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 import 'package:phone_auto_portal/app/modules/taodon/models/customer_model.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
+import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
 
 class TaodonController extends GetxController {
   final isLoading = true.obs;
@@ -19,11 +20,12 @@ class TaodonController extends GetxController {
   final isChecking = false.obs;
   final checkHdrId = ''.obs;
   final selectedTenKH = ''.obs;
+  final contractServiceCode = ''.obs;
+
+  Completer<void>? _selectCompleter;
 
   bool get canGoToNhapHang =>
       checkHdrId.value.isNotEmpty && checkHdrId.value != '0';
-
-  Completer<void>? _acceptCompleter;
 
   @override
   void onInit() {
@@ -45,16 +47,14 @@ class TaodonController extends GetxController {
 
   void goToNhapHang() {
     if (!canGoToNhapHang) return;
-    final customer = getSelectedCustomer();
-    final hdr = checkHdrId.value;
-    final ten = selectedTenKH.value;
-    final ma = selectedMaKH.value ?? '';
-    Get.toNamed('/nhaphang', arguments: {
-      'customer': customer,
-      'hdrId': hdr,
-      'maKH': ma,
-      'tenKH': ten,
-    });
+    final cust = getSelectedCustomer();
+    final csc = contractServiceCode.value;
+    Get.find<NhapHangController>().setUp(
+      cust!,
+      hdrId: checkHdrId.value,
+      contractServiceCode: csc,
+    );
+    Get.toNamed('/nhaphang');
   }
 
   void fetchCustomers() {
@@ -98,7 +98,6 @@ class TaodonController extends GetxController {
     try {
       final db = FirebaseManager();
 
-      // Notify Chrome Extension
       db.addMessage(MessageReceiveModel(
         "taodon",
         jsonEncode({
@@ -113,18 +112,23 @@ class TaodonController extends GetxController {
 
       stateText.value = 'Đang chờ xác nhận...';
 
-      // Wait for accepttaodon message from extension
-      _acceptCompleter = Completer<void>();
-      await _acceptCompleter!.future.timeout(
+      _selectCompleter = Completer<void>();
+      await _selectCompleter!.future.timeout(
         const Duration(seconds: 30),
         onTimeout: () {
-          _acceptCompleter = null;
+          _selectCompleter = null;
           throw TimeoutException('Không nhận được phản hồi từ Extension');
         },
       );
 
-      // Navigate to NhapHang, pass the Customer as argument
-      await Get.toNamed('/nhaphang', arguments: customer);
+      final cust = getSelectedCustomer();
+      final csc = contractServiceCode.value;
+      Get.find<NhapHangController>().setUp(
+        cust!,
+        hdrId: checkHdrId.value,
+        contractServiceCode: csc,
+      );
+      await Get.toNamed('/nhaphang');
     } on TimeoutException catch (e) {
       Get.snackbar(
         'Hết thời gian',
@@ -145,14 +149,11 @@ class TaodonController extends GetxController {
     } finally {
       isButtonLoading.value = false;
       stateText.value = '';
-      _acceptCompleter = null;
+      _selectCompleter = null;
     }
   }
 
   Future<void> onListenNotification(MessageReceiveModel message) async {
-    if (message.Lenh == 'sendhdr' && _acceptCompleter != null) {
-      _acceptCompleter?.complete();
-    }
     if (message.Lenh == 'checktaodonok') {
       isChecking.value = false;
       try {
@@ -160,16 +161,20 @@ class TaodonController extends GetxController {
         final hdrId = data['hdrId']?.toString();
         final maKH = data['customerCode']?.toString();
         final tenKH = data['customerName']?.toString();
+        final csc = data['contractServiceCode']?.toString() ?? '';
+
         if (hdrId != null && hdrId != '0') {
           checkHdrId.value = hdrId;
           selectedMaKH.value = maKH;
           selectedTenKH.value = tenKH ?? '';
+          contractServiceCode.value = csc;
         }
       } catch (e) {
         if (message.DoiTuong != '0' && message.DoiTuong.isNotEmpty) {
           checkHdrId.value = message.DoiTuong;
         }
       }
+      _selectCompleter?.complete();
     }
   }
 

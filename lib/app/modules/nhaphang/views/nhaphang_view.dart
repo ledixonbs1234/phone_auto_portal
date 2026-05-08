@@ -95,8 +95,11 @@ class NhapHangView extends GetView<NhapHangController> {
                       keyboardType: TextInputType.streetAddress,
                       maxLines: 2,
                       textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (value) =>
-                          controller.lookupAddress(value),
+                      onFieldSubmitted: (value) {
+                        controller.addressSuggestions.clear();
+                        controller.lookupAddress(value);
+                      },
+                      onChanged: controller.onAddressChanged,
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Vui lòng nhập địa chỉ'
                           : null,
@@ -110,11 +113,90 @@ class NhapHangView extends GetView<NhapHangController> {
                         suffix: IconButton(
                           icon: const Icon(Icons.search_rounded,
                               color: AppTheme.accentCyan, size: 22),
-                          onPressed: () => controller
-                              .lookupAddress(controller.diaChiCtrl.text),
+                          onPressed: () {
+                            controller.addressSuggestions.clear();
+                            controller
+                                .lookupAddress(controller.diaChiCtrl.text);
+                          },
                         ),
                       ),
                     ),
+
+                    // ── Address suggestion list ─────────
+                    Obx(() {
+                      final suggestions = controller.addressSuggestions;
+                      if (suggestions.isEmpty) return const SizedBox.shrink();
+                      return Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceCard,
+                          borderRadius: BorderRadius.circular(10),
+                          border:
+                              Border.all(color: AppTheme.accentCyan.withValues(alpha: 0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          shrinkWrap: true,
+                          itemCount: suggestions.length,
+                          separatorBuilder: (_, __) => const Divider(
+                              height: 1, indent: 12, endIndent: 12),
+                          itemBuilder: (context, i) {
+                            final s = suggestions[i];
+                            return InkWell(
+                              onTap: () =>
+                                  controller.selectAddressSuggestion(s),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.location_city,
+                                        size: 16,
+                                        color: AppTheme.accentCyan
+                                            .withValues(alpha: 0.7)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            s.wardName,
+                                            style: TextStyle(
+                                              color: AppTheme.textPrimary,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${s.districtName}, ${s.provinceName}',
+                                            style: TextStyle(
+                                              color: AppTheme.textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 8),
 
                     // Phường/Xã, Quận/Huyện, Tỉnh/TP
@@ -201,32 +283,18 @@ class NhapHangView extends GetView<NhapHangController> {
                           : null,
                     ),
                     const SizedBox(height: 24),
+
+                    // ── Nút Tạo Đơn ─────────────────────
+                    Obx(() {
+                      final isLoading = controller.isSubmitting.value;
+                      return _SubmitButton(
+                        isLoading: isLoading,
+                        onPressed: isLoading ? null : controller.submitDon,
+                      );
+                    }),
+                    const SizedBox(height: 16),
                   ],
                 ),
-              ),
-            ),
-
-            // ── Nút Tạo Đơn ───────────────────────────────
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceDark,
-                border: Border(
-                  top: BorderSide(
-                    color: AppTheme.dividerColor.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: Obx(() {
-                  final isLoading = controller.isSubmitting.value;
-                  return _SubmitButton(
-                    isLoading: isLoading,
-                    onPressed: isLoading ? null : controller.submitDon,
-                  );
-                }),
               ),
             ),
           ],

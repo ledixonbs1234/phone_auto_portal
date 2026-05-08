@@ -52,6 +52,7 @@ dev_dependencies:
 flutter: 
   uses-material-design: true
   assets: 
+    - assets/tree_data.json
     - assets/beep.mp3
     - assets/tinhthanh.json
     - assets/hang_duoi_2kg.wav
