@@ -102,7 +102,17 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                 if (code.isNotEmpty) {
                                   HapticFeedback.lightImpact();
                                   controller.addMaHieuFromText(code);
-                                  textEditingController.clear();
+                                  if (!controller.isLockedCustomer.value && code.length >= 5) {
+                                    final prefix = code.substring(0, 5);
+                                    textEditingController.value = TextEditingValue(
+                                      text: prefix,
+                                      selection: TextSelection.collapsed(offset: prefix.length),
+                                    );
+                                    focusNode.requestFocus();
+                                  } else {
+                                    textEditingController.clear();
+                                    focusNode.requestFocus();
+                                  }
                                 }
                               },
                             ),
@@ -112,12 +122,46 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                             isDense: true,
                           ),
                           textCapitalization: TextCapitalization.characters,
+                          onChanged: (value) {
+                            final code = value.trim().toUpperCase();
+                            if (code.length == 11) {
+                              var filtered = controller.suggestMHs.where((item) =>
+                                  item.maBuuGui.toUpperCase().contains(code) &&
+                                  !controller.isMaHieuExists(item.maBuuGui));
+                              if (filtered.isEmpty) {
+                                final newCode = code + "VN";
+                                HapticFeedback.lightImpact();
+                                controller.addMaHieuFromText(newCode);
+                                if (!controller.isLockedCustomer.value && newCode.length >= 5) {
+                                  final prefix = newCode.substring(0, 5);
+                                  textEditingController.value = TextEditingValue(
+                                    text: prefix,
+                                    selection: TextSelection.collapsed(offset: prefix.length),
+                                  );
+                                  focusNode.requestFocus();
+                                } else {
+                                  textEditingController.clear();
+                                  focusNode.requestFocus();
+                                }
+                              }
+                            }
+                          },
                           onSubmitted: (value) {
                             final code = value.trim().toUpperCase();
                             if (code.isNotEmpty) {
                               HapticFeedback.lightImpact();
                               controller.addMaHieuFromText(code);
-                              textEditingController.clear();
+                              if (!controller.isLockedCustomer.value && code.length >= 5) {
+                                final prefix = code.substring(0, 5);
+                                textEditingController.value = TextEditingValue(
+                                  text: prefix,
+                                  selection: TextSelection.collapsed(offset: prefix.length),
+                                );
+                                focusNode.requestFocus();
+                              } else {
+                                textEditingController.clear();
+                                focusNode.requestFocus();
+                              }
                             }
                           },
                         );

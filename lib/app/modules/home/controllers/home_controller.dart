@@ -328,6 +328,10 @@ class HomeController extends GetxController {
     Get.toNamed("/print-page");
   }
 
+  void goToTaodon() {
+    Get.toNamed("/taodon");
+  }
+
   void editHopDong() {
     isEditHopDong.value = true;
   }

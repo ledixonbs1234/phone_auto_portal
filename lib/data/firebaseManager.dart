@@ -13,6 +13,8 @@ import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 import 'package:phone_auto_portal/app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart';
 import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
+import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controller.dart';
+import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -35,6 +37,7 @@ class FirebaseManager with WidgetsBindingObserver {
   late KhoiTaoMoiController? khoitaoMoi;
   late PortalinfoController? portalInfo;
   late EditPageController? editPage;
+  late TaodonController? taodon;
   // String? getKey() {
   //   var box = GetStorage();
   //   String? key = box.read('keymqtt');
@@ -172,6 +175,7 @@ class FirebaseManager with WidgetsBindingObserver {
             // callRef.remove();
             // }
           }
+          Get.printInfo(info: "lenh " + message.Lenh);
           //         GetStorage().write('getLastTimeStamp', lastTimeStamp);
           //         maHieu = Get.find<MaHieuController>();
           home = Get.find<HomeController>();
@@ -181,6 +185,7 @@ class FirebaseManager with WidgetsBindingObserver {
           portalInfo = Get.find<PortalinfoController>();
           editPage = Get.find<EditPageController>();
           myView = Get.find<MyviewController>();
+          taodon = Get.find<TaodonController>();
           //         autoBDController = Get.find<AutoBdController>();
           //         detailController = Get.find<DetailController>();
           myView?.onListenNotification(message);
@@ -190,6 +195,8 @@ class FirebaseManager with WidgetsBindingObserver {
           createNew?.onListenNotification(message);
           khoitaoMoi?.onListenNotification(message);
           editPage?.onListenNotification(message);
+          taodon?.onListenNotification(message);
+          Get.find<NhapHangController>().onListenNotification(message);
           //         maHieu?.onListenNotification(message);
           //         diNgoai?.onListenNotification(message);
           //         webController?.onListenNotification(message);

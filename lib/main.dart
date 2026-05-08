@@ -10,8 +10,10 @@ import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_co
 import 'package:phone_auto_portal/app/modules/detail/controllers/detail_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
+import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/printPage/controllers/print_page_controller.dart';
+import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controller.dart';
 import 'package:phone_auto_portal/app/routes/app_pages.dart';
 import 'package:phone_auto_portal/data/UpdateService.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
@@ -87,6 +89,8 @@ Future<void> main() async {
   Get.put(EditPageController());
   Get.put(MyviewController());
   Get.put(KhoiTaoMoiController());
+  Get.put(TaodonController());
+  Get.put(NhapHangController());
   // Get.put(DingoaiController());
   // Get.put(WebController());
   // Get.put(SavedMHController());

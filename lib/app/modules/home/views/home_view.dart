@@ -701,6 +701,12 @@ class HomeView extends GetView<HomeController> {
                           onPressed: () => controller.goToCreateNew(),
                         ),
                         _buildNavChip(
+                          icon: Icons.post_add_rounded,
+                          label: 'Tạo Đơn',
+                          color: const Color(0xFF00BBF9),
+                          onPressed: () => controller.goToTaodon(),
+                        ),
+                        _buildNavChip(
                           icon: Icons.print_rounded,
                           label: 'In MH',
                           color: AppTheme.warningOrange,

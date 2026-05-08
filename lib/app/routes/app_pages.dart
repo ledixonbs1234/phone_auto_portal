@@ -30,6 +30,10 @@ import '../modules/dingoai_rt/bindings/dingoai_rt_binding.dart';
 import '../modules/dingoai_rt/views/dingoai_rt_view.dart';
 import '../modules/danhsachbd/bindings/danhsachbd_binding.dart';
 import '../modules/danhsachbd/views/danhsachbd_view.dart';
+import '../modules/taodon/bindings/taodon_binding.dart';
+import '../modules/taodon/views/taodon_view.dart';
+import '../modules/nhaphang/bindings/nhaphang_binding.dart';
+import '../modules/nhaphang/views/nhaphang_view.dart';
 
 part 'app_routes.dart';
 
@@ -115,6 +119,16 @@ class AppPages {
       name: _Paths.DANHSACHBD,
       page: () => const DanhSachBDView(),
       binding: DanhSachBDBinding(),
+    ),
+    GetPage(
+      name: _Paths.TAODON,
+      page: () => const TaodonView(),
+      binding: TaodonBinding(),
+    ),
+    GetPage(
+      name: _Paths.NHAPHANG,
+      page: () => const NhapHangView(),
+      binding: NhapHangBinding(),
     ),
   ];
 }
