@@ -9,6 +9,9 @@ import '../models/nhaphang_model.dart';
 import '../services/address_suggestion_service.dart';
 
 class NhapHangController extends GetxController {
+  final scrollController = ScrollController();
+  final addressFocusNode = FocusNode();
+  final addressGlobalKey = GlobalKey();
   // ── Address suggestion service ───────────────────────
   final AddressSuggestionService addressService = AddressSuggestionService();
   final addressSuggestions = <AddressSuggestion>[].obs;
@@ -78,6 +81,20 @@ class NhapHangController extends GetxController {
   void onInit() {
     super.onInit();
     addressService.load();
+    addressFocusNode.addListener(_onAddressFocusChanged);
+  }
+
+  void _onAddressFocusChanged() {
+    if (addressFocusNode.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = addressGlobalKey.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(ctx,
+              alignment: 0.0,
+              duration: const Duration(milliseconds: 300));
+        }
+      });
+    }
   }
 
   void setUp(Customer cust, {String? hdrId, String? contractServiceCode}) {
@@ -103,6 +120,9 @@ class NhapHangController extends GetxController {
   @override
   void onClose() {
     _searchDebounce?.cancel();
+    addressFocusNode.removeListener(_onAddressFocusChanged);
+    addressFocusNode.dispose();
+    scrollController.dispose();
     tenNguoiNhanCtrl.dispose();
     soDienThoaiCtrl.dispose();
     diaChiCtrl.dispose();
@@ -131,7 +151,7 @@ class NhapHangController extends GetxController {
         diaChi: diaChiCtrl.text.trim(),
         dichVu: selectedDichVu.value!,
         khoiLuong: double.tryParse(khoiLuongCtrl.text.trim()) ?? 0,
-        cod: double.tryParse(codCtrl.text.trim()) ?? 0,
+        cod: double.tryParse(codCtrl.text.trim().replaceAll('.', '')) ?? 0,
         noiDungBG: noiDungCtrl.text.trim(),
       );
 

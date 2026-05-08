@@ -50,6 +50,7 @@ class NhapHangView extends GetView<NhapHangController> {
             // ── Scrollable form ─────────────────────────
             Expanded(
               child: SingleChildScrollView(
+                controller: controller.scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,6 +92,8 @@ class NhapHangView extends GetView<NhapHangController> {
 
                     // Địa chỉ
                     TextFormField(
+                      key: controller.addressGlobalKey,
+                      focusNode: controller.addressFocusNode,
                       controller: controller.diaChiCtrl,
                       keyboardType: TextInputType.streetAddress,
                       maxLines: 2,
@@ -262,7 +265,7 @@ class NhapHangView extends GetView<NhapHangController> {
                       hint: '0',
                       prefixIcon: Icons.payments_outlined,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: const [_ThousandsFormatter()],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty)
                           return 'Nhập số tiền COD';
@@ -571,6 +574,48 @@ class _SubmitButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────
 // Readonly small field for address components
 // ─────────────────────────────────────────────────────────
+class _ThousandsFormatter extends TextInputFormatter {
+  const _ThousandsFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final clean = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (clean.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    final textBeforeCursor =
+        newValue.text.substring(0, newValue.selection.baseOffset);
+    final digitsBeforeCursor =
+        textBeforeCursor.replaceAll(RegExp(r'[^\d]'), '').length;
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < clean.length; i++) {
+      if (i > 0 && (clean.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(clean[i]);
+    }
+    final formatted = buffer.toString();
+
+    int cursorPos = 0;
+    int digitsSeen = 0;
+    while (cursorPos < formatted.length && digitsSeen < digitsBeforeCursor) {
+      if (formatted[cursorPos] != '.') digitsSeen++;
+      cursorPos++;
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: cursorPos),
+    );
+  }
+}
+
 class _ReadonlyField extends StatelessWidget {
   final String label;
   final String value;

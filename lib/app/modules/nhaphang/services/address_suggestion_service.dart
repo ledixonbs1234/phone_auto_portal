@@ -109,7 +109,7 @@ class AddressSuggestionService {
 
     final nqTokens = nq.split(' ');
     if (nqTokens.length >= 2) {
-      for (final len in [2, 3]) {
+      for (final len in [3, 2]) {
         if (nqTokens.length >= len) {
           final abb = nqTokens.sublist(nqTokens.length - len).join(' ');
           if (_abbDict.containsKey(abb)) {
