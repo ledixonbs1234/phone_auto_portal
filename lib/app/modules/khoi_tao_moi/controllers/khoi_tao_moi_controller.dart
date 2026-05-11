@@ -36,6 +36,14 @@ class KhoiTaoMoiController extends GetxController {
   late TextEditingController textHintController;
   late FocusNode focusHint;
 
+  // Segmented input controllers
+  late TextEditingController prefixController;
+  late TextEditingController numberController;
+  late FocusNode prefixFocusNode;
+  late FocusNode numberFocusNode;
+  late ValueNotifier<List<SuggestionItem>> filteredSuggestions;
+  late ValueNotifier<bool> showSuggestions;
+
   late MobileScannerController mobileScannerController;
   StreamSubscription<BarcodeCapture>? onListenBarcode;
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -45,6 +53,14 @@ class KhoiTaoMoiController extends GetxController {
     super.onInit();
     textHintController = TextEditingController();
     focusHint = FocusNode();
+
+    // Segmented input controllers
+    prefixController = TextEditingController();
+    numberController = TextEditingController();
+    prefixFocusNode = FocusNode();
+    numberFocusNode = FocusNode();
+    filteredSuggestions = ValueNotifier<List<SuggestionItem>>([]);
+    showSuggestions = ValueNotifier<bool>(false);
 
     loadFromFirebase();
     isAutoSend.value = _storage.read('isAutoSend_khoitao') ?? false;
@@ -518,6 +534,106 @@ class KhoiTaoMoiController extends GetxController {
     focusHint.dispose();
     _audioPlayer.dispose();
     WakelockPlus.disable();
+    prefixController.dispose();
+    numberController.dispose();
+    prefixFocusNode.dispose();
+    numberFocusNode.dispose();
+    filteredSuggestions.dispose();
+    showSuggestions.dispose();
     super.onClose();
+  }
+
+  /// Combine prefix + number + "VN" into full code
+  String buildFullCode() {
+    final prefix = prefixController.text.trim().toUpperCase();
+    final number = numberController.text.trim();
+    return '$prefix${number}VN';
+  }
+
+  /// Submit the code (from auto-trigger or manual add button)
+  void submitCode() {
+    final prefix = prefixController.text.trim().toUpperCase();
+    final number = numberController.text.trim();
+
+    if (prefix.length < 2 || number.isEmpty) return;
+
+    final fullCode = '$prefix${number}VN';
+    HapticFeedback.lightImpact();
+    addMaHieuFromText(fullCode);
+    showSuggestions.value = false;
+
+    // Logic retention
+    if (isLockedCustomer.value) {
+      // Locked: clear both prefix and number, focus number
+      prefixController.clear();
+      numberController.clear();
+      numberFocusNode.requestFocus();
+    } else {
+      // Keep prefix, keep first 3 digits of number, focus number
+      if (number.length >= 3) {
+        numberController.text = number.substring(0, 3);
+        numberController.selection = TextSelection.fromPosition(
+          TextPosition(offset: numberController.text.length),
+        );
+      }
+      numberFocusNode.requestFocus();
+    }
+  }
+
+  /// Update filtered suggestions based on current input
+  void updateSuggestions() {
+    final prefix = prefixController.text.trim().toUpperCase();
+    final number = numberController.text.trim();
+
+    if (prefix.isEmpty && number.isEmpty) {
+      filteredSuggestions.value = [];
+      showSuggestions.value = false;
+      return;
+    }
+
+    final searchText = '$prefix$number';
+    var filtered = suggestMHs
+        .where((item) =>
+            item.maBuuGui.toUpperCase().contains(searchText) &&
+            !isMaHieuExists(item.maBuuGui))
+        .toList();
+
+    filteredSuggestions.value = filtered;
+    showSuggestions.value = filtered.isNotEmpty;
+
+    // Auto-select if exactly 1 match and customer is locked
+    if (filtered.length == 1 && isLockedCustomer.value) {
+      final item = filtered.first;
+      Future.delayed(const Duration(milliseconds: 100), () {
+        onSelectedSuggestion(item);
+        prefixController.clear();
+        numberController.clear();
+        showSuggestions.value = false;
+        numberFocusNode.requestFocus();
+      });
+    }
+  }
+
+  /// Handle suggestion selection
+  void onSuggestionSelected(SuggestionItem item) {
+    onSelectedSuggestion(item);
+    showSuggestions.value = false;
+
+    if (!isLockedCustomer.value) {
+      // Keep prefix and first 3 digits
+      if (item.maBuuGui.length >= 5) {
+        prefixController.text = item.maBuuGui.substring(0, 2);
+        numberController.text = item.maBuuGui.substring(2, 5);
+        numberController.selection = TextSelection.fromPosition(
+          TextPosition(offset: numberController.text.length),
+        );
+      }
+      numberFocusNode.requestFocus();
+    } else {
+      // Locked: clear both prefix and number, focus number
+      prefixController.clear();
+      numberController.clear();
+      numberFocusNode.requestFocus();
+    }
   }
 }

@@ -13,7 +13,6 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
   KhoiTaoMoiView({super.key});
 
   final TextEditingController textInputController = TextEditingController();
-  TextEditingController autocompleteTextController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -52,230 +51,305 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                 ],
               ),
             ),
+            // ── Segmented Input ──────────────────────────
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Gợi ý: ',
-                      style: TextStyle(color: AppTheme.textPrimary)),
-                  Expanded(
-                    child: Autocomplete<SuggestionItem>(
-                      optionsBuilder: (textEditingValue) {
-                        if (textEditingValue.text == '') {
-                          return const Iterable<SuggestionItem>.empty();
-                        }
-                        final searchText = textEditingValue.text.toUpperCase();
-                        var filtered = controller.suggestMHs.where((item) =>
-                            item.maBuuGui.toUpperCase().contains(searchText) &&
-                            !controller.isMaHieuExists(item.maBuuGui));
-
-                        if (filtered.length == 1 &&
-                            controller.isLockedCustomer.value) {
-                          final item = filtered.first;
-                          Future.delayed(const Duration(milliseconds: 100), () {
-                            controller.onSelectedSuggestion(item);
-                            autocompleteTextController.clear();
-                          });
-                          return const Iterable<SuggestionItem>.empty();
-                        }
-
-                        return filtered;
-                      },
-                      displayStringForOption: (SuggestionItem item) =>
-                          '${item.maBuuGui} - ${item.tenKH}',
-                      fieldViewBuilder: (context, textEditingController,
-                          focusNode, onFieldSubmitted) {
-                        autocompleteTextController = textEditingController;
-                        return TextField(
-                          controller: textEditingController,
-                          focusNode: focusNode,
-                          style: TextStyle(color: AppTheme.textPrimary),
-                          decoration: AppTheme.inputDecoration(
-                            label: 'Nhập hoặc chọn mã bưu gửi',
-                            suffix: IconButton(
-                              icon: const Icon(Icons.add_circle,
-                                  color: AppTheme.primaryBlue),
-                              onPressed: () {
-                                final code = textEditingController.text
-                                    .trim()
-                                    .toUpperCase();
-                                if (code.isNotEmpty) {
-                                  HapticFeedback.lightImpact();
-                                  controller.addMaHieuFromText(code);
-                                  if (!controller.isLockedCustomer.value && code.length >= 5) {
-                                    final prefix = code.substring(0, 5);
-                                    textEditingController.value = TextEditingValue(
-                                      text: prefix,
-                                      selection: TextSelection.collapsed(offset: prefix.length),
-                                    );
-                                    focusNode.requestFocus();
-                                  } else {
-                                    textEditingController.clear();
-                                    focusNode.requestFocus();
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.dividerColor),
+                    ),
+                    child: Row(
+                      children: [
+                        // Prefix field (2 letters)
+                        SizedBox(
+                          width: 48,
+                          child: TextField(
+                            controller: controller.prefixController,
+                            focusNode: controller.prefixFocusNode,
+                            maxLength: 2,
+                            textCapitalization: TextCapitalization.characters,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              letterSpacing: 2,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'CA',
+                              hintStyle: TextStyle(
+                                color: AppTheme.textSecondary.withValues(alpha: 0.4),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                letterSpacing: 2,
+                              ),
+                              counterText: '',
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 8),
+                              isDense: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
+                              UpperCaseTextFormatter(),
+                            ],
+                            onChanged: (value) {
+                              controller.updateSuggestions();
+                              if (value.length == 2) {
+                                controller.numberFocusNode.requestFocus();
+                              }
+                            },
+                          ),
+                        ),
+                        // Separator dot
+                        Container(
+                          width: 4,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        // Number field (9 digits)
+                        Expanded(
+                          child: KeyboardListener(
+                            focusNode: FocusNode(), // Dummy focus node for listener
+                            onKeyEvent: (event) {
+                              if (event is KeyDownEvent &&
+                                  event.logicalKey ==
+                                      LogicalKeyboardKey.backspace &&
+                                  controller.numberController.text.isEmpty) {
+                                controller.prefixFocusNode.requestFocus();
+                              }
+                            },
+                            child: TextField(
+                              controller: controller.numberController,
+                              focusNode: controller.numberFocusNode,
+                              maxLength: 9,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                letterSpacing: 1.5,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: '123456789',
+                                hintStyle: TextStyle(
+                                  color: AppTheme.textSecondary
+                                      .withValues(alpha: 0.4),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  letterSpacing: 1.5,
+                                ),
+                                counterText: '',
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 8),
+                                isDense: true,
+                              ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (value) {
+                                controller.updateSuggestions();
+                                // Auto-submit when 9 digits entered
+                                if (value.length == 9 &&
+                                    controller.prefixController.text
+                                            .trim()
+                                            .length ==
+                                        2) {
+                                  final fullCode = controller.buildFullCode();
+                                  // Check if there's a suggestion match first
+                                  var filtered =
+                                      controller.suggestMHs.where((item) =>
+                                          item.maBuuGui.toUpperCase().contains(
+                                              fullCode.replaceAll('VN', '')) &&
+                                          !controller.isMaHieuExists(
+                                              item.maBuuGui));
+                                  if (filtered.isEmpty) {
+                                    controller.submitCode();
                                   }
                                 }
                               },
-                            ),
-                          ).copyWith(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 12),
-                            isDense: true,
-                          ),
-                          textCapitalization: TextCapitalization.characters,
-                          onChanged: (value) {
-                            final code = value.trim().toUpperCase();
-                            if (code.length == 11) {
-                              var filtered = controller.suggestMHs.where((item) =>
-                                  item.maBuuGui.toUpperCase().contains(code) &&
-                                  !controller.isMaHieuExists(item.maBuuGui));
-                              if (filtered.isEmpty) {
-                                final newCode = code + "VN";
-                                HapticFeedback.lightImpact();
-                                controller.addMaHieuFromText(newCode);
-                                if (!controller.isLockedCustomer.value && newCode.length >= 5) {
-                                  final prefix = newCode.substring(0, 5);
-                                  textEditingController.value = TextEditingValue(
-                                    text: prefix,
-                                    selection: TextSelection.collapsed(offset: prefix.length),
-                                  );
-                                  focusNode.requestFocus();
-                                } else {
-                                  textEditingController.clear();
-                                  focusNode.requestFocus();
+                              onSubmitted: (_) {
+                                if (controller.prefixController.text
+                                            .trim()
+                                            .length >=
+                                        1 &&
+                                    controller.numberController.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                  controller.submitCode();
                                 }
-                              }
+                              },
+                            ),
+                          ),
+                        ),
+                        // VN label
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'VN',
+                            style: TextStyle(
+                              color: AppTheme.primaryBlue,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // Add button
+                        InkWell(
+                          onTap: () {
+                            if (controller.prefixController.text.trim().isNotEmpty ||
+                                controller.numberController.text.trim().isNotEmpty) {
+                              controller.submitCode();
                             }
                           },
-                          onSubmitted: (value) {
-                            final code = value.trim().toUpperCase();
-                            if (code.isNotEmpty) {
-                              HapticFeedback.lightImpact();
-                              controller.addMaHieuFromText(code);
-                              if (!controller.isLockedCustomer.value && code.length >= 5) {
-                                final prefix = code.substring(0, 5);
-                                textEditingController.value = TextEditingValue(
-                                  text: prefix,
-                                  selection: TextSelection.collapsed(offset: prefix.length),
-                                );
-                                focusNode.requestFocus();
-                              } else {
-                                textEditingController.clear();
-                                focusNode.requestFocus();
-                              }
-                            }
-                          },
-                        );
-                      },
-                      onSelected: (SuggestionItem item) {
-                        controller.onSelectedSuggestion(item);
-                        autocompleteTextController.clear();
-                      },
-                      optionsViewBuilder: (context, onSelected,
-                          Iterable<SuggestionItem> options) {
-                        return Align(
-                          alignment: Alignment.topLeft,
-                          child: Material(
-                            elevation: 4,
-                            color: AppTheme.surfaceCard,
-                            borderRadius: BorderRadius.circular(8),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                  maxHeight: 250, maxWidth: 350),
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                shrinkWrap: true,
-                                itemCount: options.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  final item = options.elementAt(index);
-                                  final isSelectedCustomer = controller
-                                          .isLockedCustomer.value &&
-                                      controller.lockedMaKH.value == item.maKH;
-                                  return InkWell(
-                                    onTap: () => onSelected(item),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isSelectedCustomer
-                                            ? AppTheme.primaryBlue
-                                                .withValues(alpha: 0.1)
-                                            : Colors.transparent,
-                                        border: Border(
-                                          bottom: BorderSide(
-                                              color: AppTheme.dividerColor),
-                                        ),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.add_circle,
+                                color: AppTheme.primaryBlue, size: 24),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // ── Suggestions Dropdown ────────────────
+                  ValueListenableBuilder<bool>(
+                    valueListenable: controller.showSuggestions,
+                    builder: (context, show, _) {
+                      if (!show) return const SizedBox.shrink();
+                      return ValueListenableBuilder<List<SuggestionItem>>(
+                        valueListenable: controller.filteredSuggestions,
+                        builder: (context, items, _) {
+                          if (items.isEmpty) return const SizedBox.shrink();
+                          return Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceCard,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppTheme.dividerColor),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            constraints: const BoxConstraints(maxHeight: 200),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: items.length,
+                              itemBuilder: (context, index) {
+                                final item = items[index];
+                                final isSelectedCustomer =
+                                    controller.isLockedCustomer.value &&
+                                        controller.lockedMaKH.value == item.maKH;
+                                return InkWell(
+                                  onTap: () => controller.onSuggestionSelected(item),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: isSelectedCustomer
+                                          ? AppTheme.primaryBlue
+                                              .withValues(alpha: 0.1)
+                                          : Colors.transparent,
+                                      border: Border(
+                                        bottom: BorderSide(
+                                            color: AppTheme.dividerColor),
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                item.maBuuGui,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppTheme.textPrimary,
+                                                  fontSize: 13,
+                                                  decoration:
+                                                      isSelectedCustomer
+                                                          ? TextDecoration
+                                                              .underline
+                                                          : null,
+                                                ),
+                                              ),
+                                            ),
+                                            if (item.khoiLuong != null &&
+                                                item.khoiLuong! > 0)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      Colors.orange.shade100,
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
                                                 child: Text(
-                                                  item.maBuuGui,
+                                                  '${item.khoiLuong}g',
                                                   style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.deepOrange,
                                                     fontWeight: FontWeight.bold,
-                                                    color: AppTheme.textPrimary,
-                                                    decoration:
-                                                        isSelectedCustomer
-                                                            ? TextDecoration
-                                                                .underline
-                                                            : null,
                                                   ),
                                                 ),
                                               ),
-                                              if (item.khoiLuong != null &&
-                                                  item.khoiLuong! > 0)
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        Colors.orange.shade100,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            4),
-                                                  ),
-                                                  child: Text(
-                                                    '${item.khoiLuong}g',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.deepOrange,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (isSelectedCustomer) ...[
-                                                SizedBox(width: 4),
-                                                Icon(Icons.lock,
-                                                    size: 14,
-                                                    color:
-                                                        AppTheme.primaryBlue),
-                                              ],
+                                            if (isSelectedCustomer) ...[
+                                              SizedBox(width: 4),
+                                              Icon(Icons.lock,
+                                                  size: 14,
+                                                  color:
+                                                      AppTheme.primaryBlue),
                                             ],
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            '${item.tenKH} (${item.maKH})',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppTheme.textSecondary),
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 2),
+                                        Text(
+                                          '${item.tenKH} (${item.maKH})',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppTheme.textSecondary),
+                                        ),
+                                      ],
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),
@@ -648,5 +722,11 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                         color: AppTheme.accentCyan, fontSize: 11),
                   )),
                 ]));
+  }
+}
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(text: newValue.text.toUpperCase(), selection: newValue.selection);
   }
 }
