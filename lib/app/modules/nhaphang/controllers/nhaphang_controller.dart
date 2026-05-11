@@ -76,6 +76,7 @@ class NhapHangController extends GetxController {
 
   // Loading / submit state
   final isSubmitting = false.obs;
+  Timer? _submitTimeout;
 
   @override
   void onInit() {
@@ -90,8 +91,7 @@ class NhapHangController extends GetxController {
         final ctx = addressGlobalKey.currentContext;
         if (ctx != null) {
           Scrollable.ensureVisible(ctx,
-              alignment: 0.0,
-              duration: const Duration(milliseconds: 300));
+              alignment: 0.0, duration: const Duration(milliseconds: 300));
         }
       });
     }
@@ -120,6 +120,7 @@ class NhapHangController extends GetxController {
   @override
   void onClose() {
     _searchDebounce?.cancel();
+    _submitTimeout?.cancel();
     addressFocusNode.removeListener(_onAddressFocusChanged);
     addressFocusNode.dispose();
     scrollController.dispose();
@@ -157,8 +158,9 @@ class NhapHangController extends GetxController {
 
       final db = FirebaseManager();
       db.addMessage(MessageReceiveModel(
-        'nhaphang',
+        'submitnhaphang',
         jsonEncode({
+          'hdrId': hdrIdText.value,
           'maKH': customer.maKH,
           'tenKH': customer.tenKH,
           ...model.toJson(),
@@ -166,28 +168,29 @@ class NhapHangController extends GetxController {
         nameMay: db.keyData ?? 'maychu',
       ));
 
-      Get.snackbar(
-        'Thành công',
-        'Đã gửi đơn hàng cho ${customer.tenKH}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22C55E).withValues(alpha: 0.85),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-
-      // Clear form after success
-      _clearForm();
+      _submitTimeout?.cancel();
+      _submitTimeout = Timer(const Duration(seconds: 30), () {
+        if (isSubmitting.value) {
+          isSubmitting.value = false;
+          Get.snackbar(
+            'Lỗi',
+            'Không nhận được phản hồi từ máy chủ',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.85),
+            colorText: Colors.white,
+          );
+        }
+      });
     } catch (e) {
       debugPrint('NhapHangController submitDon error: $e');
+      isSubmitting.value = false;
       Get.snackbar(
         'Lỗi',
-        'Không thể tạo đơn hàng: $e',
+        'Không thể gửi đơn hàng: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.85),
         colorText: Colors.white,
       );
-    } finally {
-      isSubmitting.value = false;
     }
   }
 
@@ -218,6 +221,34 @@ class NhapHangController extends GetxController {
           xa.value = data['xa']?.toString() ?? '';
         } catch (e) {
           debugPrint('NhapHangController getaddressok parse error: $e');
+        }
+      case 'submitnhaphangok':
+        _submitTimeout?.cancel();
+        if (isSubmitting.value) {
+          _clearForm();
+          isSubmitting.value = false;
+          Get.snackbar(
+            'Thành công',
+            'Đã tạo đơn hàng thành công',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFF22C55E).withValues(alpha: 0.85),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+        }
+      case 'submitnhaphangerror':
+        _submitTimeout?.cancel();
+        if (isSubmitting.value) {
+          isSubmitting.value = false;
+          Get.snackbar(
+            'Lỗi',
+            message.DoiTuong.isNotEmpty
+                ? message.DoiTuong
+                : 'Tạo đơn thất bại',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.85),
+            colorText: Colors.white,
+          );
         }
     }
   }
