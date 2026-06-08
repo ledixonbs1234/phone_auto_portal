@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 import 'package:phone_auto_portal/app/theme/app_theme.dart';
+import 'package:phone_auto_portal/app/routes/app_pages.dart';
 import '../controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 
@@ -528,12 +529,13 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 onLongPress: () => controller.layDuLieuLo(),
               ),
               const SizedBox(width: 8),
-              AppTheme.actionButton(
-                icon: Icons.save,
-                label: 'Xác Nhận',
-                color: AppTheme.dangerRed,
-                onPressed: () => _showConfirmProcessDialog(context),
-              ),
+               AppTheme.actionButton(
+                 icon: Icons.save,
+                 label: 'Xác Nhận',
+                 color: AppTheme.dangerRed,
+                 onPressed: () => _showConfirmProcessDialog(context),
+                 onLongPress: () => Get.toNamed(Routes.DINGOAI_CONFIG),
+               ),
               const SizedBox(width: 8),
               AppTheme.actionButton(
                 icon: Icons.send,

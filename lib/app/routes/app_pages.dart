@@ -34,6 +34,8 @@ import '../modules/taodon/bindings/taodon_binding.dart';
 import '../modules/taodon/views/taodon_view.dart';
 import '../modules/nhaphang/bindings/nhaphang_binding.dart';
 import '../modules/nhaphang/views/nhaphang_view.dart';
+import '../modules/dingoai_config/bindings/dingoai_config_binding.dart';
+import '../modules/dingoai_config/views/dingoai_config_view.dart';
 
 part 'app_routes.dart';
 
@@ -129,6 +131,11 @@ class AppPages {
       name: _Paths.NHAPHANG,
       page: () => const NhapHangView(),
       binding: NhapHangBinding(),
+    ),
+    GetPage(
+      name: _Paths.DINGOAI_CONFIG,
+      page: () => const DingoaiConfigView(),
+      binding: DingoaiConfigBinding(),
     ),
   ];
 }

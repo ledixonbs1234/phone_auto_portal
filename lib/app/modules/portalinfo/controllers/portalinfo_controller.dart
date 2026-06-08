@@ -41,6 +41,10 @@ class PortalinfoController extends GetxController {
 
   final stateText = "".obs;
 
+  // Variables for custom di ngoai config
+  final dingoaiCustomConfig = <Map<String, dynamic>>[].obs;
+  final selectedMayChuForCustom = "mayphu".obs;
+
   final isSortDiNgoai = false.obs;
 
   final countPortalSelected = 0.obs;
@@ -1033,6 +1037,42 @@ class PortalinfoController extends GetxController {
                       isSorted: isSortDiNgoai.value,
                       isPrinted: isPrinted.value)),
                   nameMay: FirebaseManager().keyData!));
+          break;
+        case "DINGOAI_CUSTOM_CONFIG":
+          waitingCodes = "";
+          stateText.value = "Đang gửi cấu hình đi ngoài tới PC ${selectedMayChuForCustom.value}";
+          
+          final configItems = dingoaiCustomConfig.toList();
+          final List<Map<String, dynamic>> payloadItems = [];
+
+          for (var config in configItems) {
+            final portalId = config['portalId'];
+            final action = config['action'];
+            
+            // Lọc codes thuộc portal này
+            final portalCodes = codes.where((c) => c.iD == portalId).toList();
+            final maHieus = portalCodes.map((e) => e.code!).toList();
+            final codeIDs = portalCodes.map((e) => e.IDCODE!).toList();
+
+            payloadItems.add({
+              'portalId': portalId,
+              'action': action,
+              'codes': maHieus,
+              'codeIDs': codeIDs,
+            });
+          }
+
+          final finalPayload = {
+            'mayChu': selectedMayChuForCustom.value,
+            'items': payloadItems,
+          };
+
+         FirebaseManager().addMessageToAppBD(selectedMayChu.value,
+              MessageReceiveModel("dingoaiquere", jsonEncode(finalPayload))
+          );
+          
+          // Reset config sau khi gửi
+          dingoaiCustomConfig.clear();
           break;
         case "THONGKE":
           showProvinceStatistics(codes);

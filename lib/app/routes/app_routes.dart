@@ -21,6 +21,7 @@ abstract class Routes {
   static const DANHSACHBD = _Paths.DANHSACHBD;
   static const TAODON = _Paths.TAODON;
   static const NHAPHANG = _Paths.NHAPHANG;
+  static const DINGOAI_CONFIG = _Paths.DINGOAI_CONFIG;
 }
 
 abstract class _Paths {
@@ -43,4 +44,5 @@ abstract class _Paths {
   static const DANHSACHBD = '/danhsachbd';
   static const TAODON = '/taodon';
   static const NHAPHANG = '/nhaphang';
+  static const DINGOAI_CONFIG = '/dingoai-config';
 }
