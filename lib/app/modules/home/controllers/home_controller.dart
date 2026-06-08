@@ -19,7 +19,7 @@ import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 import 'package:phone_auto_portal/app/modules/home/host_info.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
-import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
+
 
 import 'package:phone_auto_portal/data/UpdateService.dart';
 
@@ -188,33 +188,87 @@ class HomeController extends GetxController {
     stateText.value = "Đang lấy dữ liệu";
   }
 
+  void getMyPostData() async {
+    imageBytes.value = "";
+    String day = "-2";
+    if (dayLastController.text != "2" && dayLastController.text.isNotEmpty) {
+      day = (int.parse(dayLastController.text) * (-1)).toString();
+    }
+    FirebaseManager().addMessage(MessageReceiveModel(
+        "getmypostdata",
+        const JsonEncoder().convert(
+          {"day": day},
+        )));
+
+    FirebaseManager().showSnackBar("Đang lấy dữ liệu My Post");
+    stateText.value = "Đang lấy dữ liệu My Post";
+  }
+
   updateKhachHang() async {
-    khachHangs.clear();
     var temps = await FirebaseManager().getKhachHangs();
 
     if (temps.isNotEmpty) {
-      khachHangs.addAll(temps);
+      // Đảm bảo không trùng maKH
+      final khachHangMap = {for (var kh in temps) kh.maKH: kh};
+      khachHangs.assignAll(khachHangMap.values.toList());
+
       //selected lại khách hàng dựa vào lastSelectKH
       KhachHangs? currentKH;
       if (lastSelectKH.isNotEmpty) {
-        var finded = khachHangs
+        currentKH = khachHangs
             .firstWhereOrNull((element) => element.maKH == lastSelectKH);
-
-        if (finded != null) {
-          currentKH = finded;
-        }
-      } else {
-        currentKH = temps[0];
       }
+
       if (currentKH != null) {
         seKhachHangs.value = currentKH;
       } else {
-        seKhachHangs.value = temps[0];
+        seKhachHangs.value = khachHangs[0];
       }
       checkHopDong(seKhachHangs.value);
       FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
 
       stateText.value = "Cập nhật dữ liệu thành công";
+    }
+  }
+
+  Future<void> syncMyPostData() async {
+    var temps = await FirebaseManager().getKhachHangsVnPost();
+    if (temps.isNotEmpty) {
+      // 1. Chuyển list hiện tại thành Map để tra cứu/cập nhật nhanh
+      final khachHangMap = {for (var kh in khachHangs) kh.maKH: kh};
+
+      // 2. Lặp qua dữ liệu mới và cập nhật Map.
+      for (final newKh in temps) {
+        khachHangMap[newKh.maKH] = newKh;
+      }
+
+      // 3. Cập nhật lại list quan sát
+      khachHangs.assignAll(khachHangMap.values.toList());
+
+      // 4. Cập nhật lại seKhachHangs.value để tham chiếu đến instance mới trong list
+      if (seKhachHangs.value.maKH != null) {
+        var updatedKH = khachHangs.firstWhereOrNull(
+            (element) => element.maKH == seKhachHangs.value.maKH);
+        if (updatedKH != null) {
+          seKhachHangs.value = updatedKH;
+        }
+      }
+
+      // 5. Đồng bộ dữ liệu cho DetailController nếu đang mở
+      if (Get.isRegistered<DetailController>()) {
+        final detailController = Get.find<DetailController>();
+        if (detailController.khachHang.value.maKH != null) {
+          final updatedDetailKH = khachHangs.firstWhereOrNull(
+              (kh) => kh.maKH == detailController.khachHang.value.maKH);
+          if (updatedDetailKH != null) {
+            detailController.setUp(updatedDetailKH, detailController.account,
+                detailController.password);
+          }
+        }
+      }
+
+      khachHangs.refresh();
+      stateText.value = "Đồng bộ dữ liệu My Post thành công";
     }
   }
 
@@ -478,13 +532,6 @@ class HomeController extends GetxController {
     stateText.value = "Đang lấy dữ liệu";
   }
 
-  void goToMyPost() {
-    Get.toNamed("/myview");
-
-    var portalInfo = Get.find<MyviewController>();
-
-    portalInfo.updateKhachHang();
-  }
 
   // --- THAY THẾ BẰNG KHÓA API CỦA BẠN ---
   final String _geminiApiKey = 'AIzaSyDH5GCSoVSCDM-2PdKqzbEVEpmf8RGeZ_Y';

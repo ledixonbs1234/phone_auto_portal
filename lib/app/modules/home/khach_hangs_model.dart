@@ -19,6 +19,16 @@ class KhachHangs {
       this.timeNhanTin,
       this.countState});
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is KhachHangs &&
+          runtimeType == other.runtimeType &&
+          maKH == other.maKH;
+
+  @override
+  int get hashCode => maKH.hashCode;
+
   KhachHangs.fromJson(Map<dynamic, dynamic> json) {
     if (json['BuuGuis'] != null) {
       buuGuis = <BuuGuis>[];

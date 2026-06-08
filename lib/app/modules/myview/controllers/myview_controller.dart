@@ -45,12 +45,17 @@ class MyviewController extends GetxController {
   }
 
   void getMyPostData() async {
-    // imageBytes.value = "";
-    //kiểm tra dayLastController có khác 2 không, nếu khác thì save key is day
+    var home = Get.find<HomeController>();
+    String day = "-2";
+    if (home.dayLastController.text != "2" &&
+        home.dayLastController.text.isNotEmpty) {
+      day = (int.parse(home.dayLastController.text) * (-1)).toString();
+    }
+
     FirebaseManager().addMessage(MessageReceiveModel(
         "getmypostdata",
         const JsonEncoder().convert(
-          {"day": "-2", "maKH": seKhachHangs.value.maKH},
+          {"day": day},
         )));
 
     FirebaseManager().showSnackBar("Đang lấy dữ liệu");
@@ -71,36 +76,28 @@ class MyviewController extends GetxController {
     var temps = await FirebaseManager().getKhachHangsVnPost();
 
     if (temps.isNotEmpty) {
-      // --- BẮT ĐẦU THAY ĐỔI (TỐI ƯU) ---
-
       // 1. Chuyển list hiện tại thành Map để tra cứu/cập nhật nhanh (O(1))
       final khachHangMap = {for (var kh in khachHangs) kh.maKH: kh};
 
       // 2. Lặp qua dữ liệu mới và cập nhật Map.
-      // Thao tác này sẽ tự động thêm mới hoặc ghi đè (cập nhật).
       for (final newKh in temps) {
         khachHangMap[newKh.maKH] = newKh;
       }
 
-      // 3. Chuyển Map đã cập nhật trở lại thành List.
-      khachHangs.clear();
-      khachHangs.addAll(khachHangMap.values);
-      //selected lại khách hàng dựa vào lastSelectKH
+      // 3. Chuyển Map đã cập nhật trở lại thành List quan sát
+      khachHangs.assignAll(khachHangMap.values.toList());
+
+      // 4. Selected lại khách hàng
       KhachHangs? currentKH;
       if (lastSelectKH.isNotEmpty) {
-        var finded = khachHangs
+        currentKH = khachHangs
             .firstWhereOrNull((element) => element.maKH == lastSelectKH);
-
-        if (finded != null) {
-          currentKH = finded;
-        }
-      } else {
-        currentKH = temps[0];
       }
+
       if (currentKH != null) {
         seKhachHangs.value = currentKH;
       } else {
-        seKhachHangs.value = temps[0];
+        seKhachHangs.value = khachHangs[0];
       }
       FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
 
@@ -139,12 +136,16 @@ class MyviewController extends GetxController {
   }
 
   void findKhachHang(String value) {
-    // imageBytes.value = "";
-    //kiểm tra dayLastController có khác 2 không, nếu khác thì save key is day
+    var home = Get.find<HomeController>();
+    String day = "-2";
+    if (home.dayLastController.text != "2" &&
+        home.dayLastController.text.isNotEmpty) {
+      day = (int.parse(home.dayLastController.text) * (-1)).toString();
+    }
     FirebaseManager().addMessage(MessageReceiveModel(
         "getmypostdata",
         const JsonEncoder().convert(
-          {"day": "-2", "maKH": value.toUpperCase()},
+          {"day": day},
         )));
 
     FirebaseManager().showSnackBar("Đang lấy dữ liệu");

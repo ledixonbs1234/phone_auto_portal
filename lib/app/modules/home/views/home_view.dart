@@ -387,10 +387,10 @@ class HomeView extends GetView<HomeController> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: AppTheme.actionButton(
-                            icon: Icons.add_box_rounded,
+                            icon: Icons.post_add_rounded,
                             label: 'Get My Post',
                             color: AppTheme.successGreen,
-                            onPressed: () => controller.goToMyPost(),
+                            onPressed: () => controller.getMyPostData(),
                           ),
                         ),
                       ],

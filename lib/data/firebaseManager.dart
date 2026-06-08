@@ -11,7 +11,7 @@ import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_co
 import 'package:phone_auto_portal/app/modules/home/ExtractedData.dart';
 import 'package:phone_auto_portal/app/modules/home/hopdong_model.dart';
 import 'package:phone_auto_portal/app/modules/khoi_tao_moi/controllers/khoi_tao_moi_controller.dart';
-import 'package:phone_auto_portal/app/modules/myview/controllers/myview_controller.dart';
+
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
 import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controller.dart';
 import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
@@ -31,7 +31,7 @@ class FirebaseManager with WidgetsBindingObserver {
   final database = FirebaseDatabase.instance.ref();
   late DatabaseReference rootPath = database;
   late HomeController? home;
-  late MyviewController? myView;
+
   late DetailController? detail;
   late CreatenewController? createNew;
   late KhoiTaoMoiController? khoitaoMoi;
@@ -100,15 +100,11 @@ class FirebaseManager with WidgetsBindingObserver {
     streamTimeUpdateMyPost =
         database.child('MYVNPOST/TimeUpdate').onValue.listen((event) async {
       if (event.snapshot.value == null) return;
-      // if (lastTimeUpdateStamp == "") {
-      //   lastTimeUpdateStamp = event.snapshot.value as String;
-      //   return;
-      // }
+
       String time = event.snapshot.value as String;
 
-      myView = Get.find<MyviewController>();
-      myView?.timeUpdate.value = time;
-      await myView?.updateKhachHang();
+      home = Get.find<HomeController>();
+      await home?.syncMyPostData();
     });
 
     database.child("PORTAL/MAINPAGE").onValue.listen((event) {
@@ -184,11 +180,9 @@ class FirebaseManager with WidgetsBindingObserver {
           khoitaoMoi = Get.find<KhoiTaoMoiController>();
           portalInfo = Get.find<PortalinfoController>();
           editPage = Get.find<EditPageController>();
-          myView = Get.find<MyviewController>();
           taodon = Get.find<TaodonController>();
           //         autoBDController = Get.find<AutoBdController>();
           //         detailController = Get.find<DetailController>();
-          myView?.onListenNotification(message);
           portalInfo?.onListenNotification(message);
           detail?.onListenNotification(message);
           home?.onListenNotification(message);
