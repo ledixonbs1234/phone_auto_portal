@@ -8,6 +8,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/createnew/controllers/createnew_controller.dart';
+import 'package:phone_auto_portal/app/modules/dingoai_config/controllers/dingoai_config_controller.dart';
 import 'package:phone_auto_portal/app/modules/edit_page/controllers/edit_page_controller.dart';
 
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
@@ -31,7 +32,8 @@ class PortalinfoController extends GetxController {
 
   final maychus = <String>["maychu", "mayphu", "mayphusan", "maytest"].obs;
   final isDetailedView = false.obs; // false: Đơn giản, true: Chi tiết
-  final showDirection = false.obs; // false: Không hiển thị hướng, true: Hiển thị hướng RA/VÔ/Quảng Nam/Quảng Ngãi
+  final showDirection = false
+      .obs; // false: Không hiển thị hướng, true: Hiển thị hướng RA/VÔ/Quảng Nam/Quảng Ngãi
   final similarIdCodes =
       <String>{}.obs; // Set chứa IDCODE của các mục trùng tên
   final selectedMayChu = "mayphu".obs;
@@ -74,7 +76,7 @@ class PortalinfoController extends GetxController {
     if (_provinceDirectionMap != null) return;
     await _loadProvinceData();
     if (_provinceData == null) return;
-    
+
     _provinceDirectionMap = {};
 
     void addCodes(String key, String direction) {
@@ -98,7 +100,7 @@ class PortalinfoController extends GetxController {
   String? getPackageDirection(StateMaHieu item) {
     if (!showDirection.value || _provinceDirectionMap == null) return null;
     if (item.provinceCode == null || item.provinceCode!.isEmpty) return null;
-    
+
     final provinceCode = item.provinceCode!.trim();
     if (provinceCode == '55') {
       if (_isBinhDinhSpecialLocation(item.Address)) {
@@ -1040,15 +1042,16 @@ class PortalinfoController extends GetxController {
           break;
         case "DINGOAI_CUSTOM_CONFIG":
           waitingCodes = "";
-          stateText.value = "Đang gửi cấu hình đi ngoài tới PC ${selectedMayChuForCustom.value}";
-          
+          stateText.value =
+              "Đang gửi cấu hình đi ngoài tới PC ${selectedMayChuForCustom.value}";
+
           final configItems = dingoaiCustomConfig.toList();
           final List<Map<String, dynamic>> payloadItems = [];
 
           for (var config in configItems) {
             final portalId = config['portalId'];
             final action = config['action'];
-            
+
             // Lọc codes thuộc portal này
             final portalCodes = codes.where((c) => c.iD == portalId).toList();
             final maHieus = portalCodes.map((e) => e.code!).toList();
@@ -1067,12 +1070,18 @@ class PortalinfoController extends GetxController {
             'items': payloadItems,
           };
 
-         FirebaseManager().addMessageToAppBD(selectedMayChu.value,
-              MessageReceiveModel("dingoaiquere", jsonEncode(finalPayload))
-          );
-          
+          FirebaseManager().addMessageToAppBD(selectedMayChu.value,
+              MessageReceiveModel("dingoaiquere", jsonEncode(finalPayload)));
+
           // Reset config sau khi gửi
           dingoaiCustomConfig.clear();
+          break;
+
+        case "DINGOAI_CONFIG_INIT":
+          waitingCodes = "";
+          if (Get.isRegistered<DingoaiConfigController>()) {
+            Get.find<DingoaiConfigController>().onPackagesLoaded(codes);
+          }
           break;
         case "THONGKE":
           showProvinceStatistics(codes);

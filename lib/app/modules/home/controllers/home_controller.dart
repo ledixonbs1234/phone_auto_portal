@@ -237,9 +237,19 @@ class HomeController extends GetxController {
       // 1. Chuyển list hiện tại thành Map để tra cứu/cập nhật nhanh
       final khachHangMap = {for (var kh in khachHangs) kh.maKH: kh};
 
-      // 2. Lặp qua dữ liệu mới và cập nhật Map.
+      // 2. Lặp qua dữ liệu mới từ MyPost và ưu tiên thay thế danh sách bưu gửi
       for (final newKh in temps) {
-        khachHangMap[newKh.maKH] = newKh;
+        final existingKh = khachHangMap[newKh.maKH];
+        if (existingKh != null) {
+          // Ưu tiên dữ liệu MyPost: Thay thế toàn bộ danh sách buuGuis cũ bằng danh sách mới
+          existingKh.buuGuis = newKh.buuGuis;
+          // Cập nhật lại các thông tin cơ bản nếu cần
+          if (newKh.tenKH != null) existingKh.tenKH = newKh.tenKH;
+          if (newKh.countState != null) existingKh.countState = newKh.countState;
+        } else {
+          // Nếu khách hàng chưa tồn tại, thêm mới vào Map
+          khachHangMap[newKh.maKH] = newKh;
+        }
       }
 
       // 3. Cập nhật lại list quan sát
@@ -261,6 +271,7 @@ class HomeController extends GetxController {
           final updatedDetailKH = khachHangs.firstWhereOrNull(
               (kh) => kh.maKH == detailController.khachHang.value.maKH);
           if (updatedDetailKH != null) {
+            // Gọi setUp để làm mới toàn bộ trạng thái trong Detail
             detailController.setUp(updatedDetailKH, detailController.account,
                 detailController.password);
           }

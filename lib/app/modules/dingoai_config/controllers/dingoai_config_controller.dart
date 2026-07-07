@@ -1,8 +1,11 @@
+// Path: hone_auto_portal/lib/app/modules/dingoai_config/controllers/dingoai_config_controller.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/modules/home/messageReceiveModel.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_controller.dart';
+import 'package:phone_auto_portal/app/modules/portalinfo/state_ma_hieu_model.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
 import '../models/dingoai_config_item.dart';
 
@@ -11,11 +14,13 @@ class DingoaiConfigController extends GetxController {
   final selectedMayChu = "mayphu".obs;
   final maychus = <String>["maychu", "mayphu", "mayphusan", "maytest"].obs;
   final stateText = "".obs;
+  final isLoadingPackages = false.obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadSelectedPortals();
+    _fetchPackages();
   }
 
   void _loadSelectedPortals() {
@@ -34,39 +39,72 @@ class DingoaiConfigController extends GetxController {
     selectedMayChu.value = portalInfoController.selectedMayChu.value;
   }
 
+  // Tải danh sách bưu gửi của tất cả các portal đã chọn
+  void _fetchPackages() {
+    final portalInfoController = Get.find<PortalinfoController>();
+    final selectedPortalIds = portalInfoController.getSelectedsIdPortal();
+    if (selectedPortalIds.isNotEmpty) {
+      isLoadingPackages.value = true;
+      stateText.value = "Đang tải danh sách bưu gửi...";
+
+      portalInfoController.waitingCodes = "DINGOAI_CONFIG_INIT";
+      FirebaseManager().addMessage(
+          MessageReceiveModel("getMaHieus", jsonEncode(selectedPortalIds)));
+    }
+  }
+
+  // Callback được gọi từ PortalinfoController khi dữ liệu tải về thành công
+  void onPackagesLoaded(List<StateMaHieu> codes) {
+    isLoadingPackages.value = false;
+    stateText.value = "Đã tải xong danh sách bưu gửi";
+
+    for (var item in configItems) {
+      final portalCodes = codes.where((c) => c.iD == item.portalId).toList();
+      // Mặc định chọn tất cả
+      for (var code in portalCodes) {
+        code.selected = true;
+      }
+      item.packages = portalCodes;
+    }
+    configItems.refresh();
+  }
+
   void updateAction(int index, String action) {
     configItems[index].action = action;
     configItems.refresh();
   }
 
   void submitDiNgoaiConfig() {
-    // Lọc ra những item có action khác 'khong_chon'
-    final activeItems = configItems.where((item) => item.action != 'khong_chon').toList();
+    final activeItems = configItems.toList();
+    final List<Map<String, dynamic>> payloadItems = [];
 
-    if (activeItems.isEmpty) {
-      Get.snackbar(
-        'Cảnh báo',
-        'Vui lòng chọn ít nhất một hành động cho portal',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
-      return;
+    for (var item in activeItems) {
+      final portalId = item.portalId;
+      final action = item.action;
+
+      // CHỈ giữ lại các bưu gửi được chọn (selected == true)
+      final selectedPackages = item.packages.where((p) => p.selected).toList();
+
+      final maHieus = selectedPackages.map((e) => e.code!).toList();
+      final codeIDs = selectedPackages.map((e) => e.IDCODE!).toList();
+
+      payloadItems.add({
+        'portalId': portalId,
+        'action': action,
+        'codes': maHieus,
+        'codeIDs': codeIDs,
+      });
     }
 
-    stateText.value = "Đang lấy dữ liệu mã hiệu...";
+    final finalPayload = {
+      'mayChu': selectedMayChu.value,
+      'items': payloadItems,
+    };
 
-    // Lưu cấu hình vào PortalinfoController để xử lý sau khi nhận được mã hiệu
-    final portalInfoController = Get.find<PortalinfoController>();
-    portalInfoController.dingoaiCustomConfig.value = activeItems.map((item) => item.toJson()).toList();
-    portalInfoController.selectedMayChuForCustom.value = selectedMayChu.value;
-    portalInfoController.waitingCodes = "DINGOAI_CUSTOM_CONFIG";
+    stateText.value = "Đang gửi cấu hình đi ngoài...";
 
-    // Gửi yêu cầu lấy mã hiệu giống như luồng hiện tại
-    final selectedPortalIds = portalInfoController.getSelectedsIdPortal();
-    FirebaseManager().addMessage(
-      MessageReceiveModel("getMaHieus", jsonEncode(selectedPortalIds))
-    );
+    FirebaseManager().addMessageToAppBD(selectedMayChu.value,
+        MessageReceiveModel("dingoaiquere", jsonEncode(finalPayload)));
 
     Get.back(); // Quay lại màn hình trước
   }

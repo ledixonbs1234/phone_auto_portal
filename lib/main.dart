@@ -17,6 +17,7 @@ import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controll
 import 'package:phone_auto_portal/app/routes/app_pages.dart';
 import 'package:phone_auto_portal/data/UpdateService.dart';
 import 'package:phone_auto_portal/data/firebaseManager.dart';
+import 'package:phone_auto_portal/data/notification_controller.dart';
 import 'package:phone_auto_portal/firebase_options.dart';
 import 'package:url_strategy/url_strategy.dart';
 
@@ -53,6 +54,20 @@ Future<void> main() async {
       // Channel groups are only visual and are not required
 
       debug: true);
+
+  AwesomeNotifications().setListeners(
+      onActionReceivedMethod:         NotificationController.onActionReceivedMethod,
+      onNotificationCreatedMethod:    NotificationController.onNotificationCreatedMethod,
+      onNotificationDisplayedMethod:  NotificationController.onNotificationDisplayedMethod,
+      onDismissActionReceivedMethod:  NotificationController.onDismissActionReceivedMethod
+  );
+
+  AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+    if (!isAllowed) {
+      AwesomeNotifications().requestPermissionToSendNotifications();
+    }
+  });
+
   await GetStorage.init();
   // AwesomeNotifications().initialize(
   //     // set the icon to null if you want to use the default app icon

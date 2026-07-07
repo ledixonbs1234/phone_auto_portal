@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -170,6 +171,19 @@ class FirebaseManager with WidgetsBindingObserver {
             // (Tùy chọn) Xóa yêu cầu sau khi đã xử lý
             // callRef.remove();
             // }
+          }
+          if (message.Lenh == "mahieubd10") {
+            AwesomeNotifications().createNotification(
+              content: NotificationContent(
+                id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+                channelKey: "test",
+                title: "Nhận mã hiệu mới",
+                body: "Nhấp để sao chép mã và mở STM Max: ${message.DoiTuong}",
+                payload: {
+                  "code": message.DoiTuong,
+                },
+              ),
+            );
           }
           Get.printInfo(info: "lenh " + message.Lenh);
           //         GetStorage().write('getLastTimeStamp', lastTimeStamp);
