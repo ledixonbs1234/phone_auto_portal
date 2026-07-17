@@ -288,6 +288,14 @@ class PortalinfoController extends GetxController {
   final dialogSortOption = "Chưa chọn".obs; // Sorting option for dialog list
   final dialogSortAscending = false.obs; // Track sort direction
 
+  // Search state for improved dialog
+  final dialogSearchText = "".obs;
+  final dialogSearchMatches = <int>[].obs;
+  final dialogCurrentMatchIndex = (-1).obs;
+  ScrollController? dialogScrollController;
+  TextEditingController? dialogSearchTextController;
+  List<GlobalKey> dialogItemKeys = [];
+
   bool get isAnyItemSelectedInDialog =>
       currentMaHieusInPortal.any((item) => item.selected);
 
@@ -300,6 +308,127 @@ class PortalinfoController extends GetxController {
   void _updateSelectedDialogItemCount() {
     selectedDialogItemCount.value =
         currentMaHieusInPortal.where((item) => item.selected).length;
+  }
+
+  // Helper method to remove Vietnamese accents (không dấu)
+  String _removeSignVietnamese(String str) {
+    var unsigned = str.toLowerCase();
+    const signs = [
+      'a',
+      'áàảãạăắằẳẵặâấầẩẫậ',
+      'e',
+      'éèẻẽẹêếềểễệ',
+      'o',
+      'óòỏõọôốồổỗộơớờởỡợ',
+      'u',
+      'úùủũụưứừửữự',
+      'i',
+      'íìỉĩị',
+      'd',
+      'đ',
+      'y',
+      'ýỳỷỹỵ'
+    ];
+    for (int i = 0; i < signs.length; i += 2) {
+      final replaceChar = signs[i];
+      final originalChars = signs[i + 1];
+      for (int j = 0; j < originalChars.length; j++) {
+        unsigned = unsigned.replaceAll(originalChars[j], replaceChar);
+      }
+    }
+    return unsigned;
+  }
+
+  void searchInDialog(String query) {
+    dialogSearchText.value = query;
+    dialogSearchMatches.clear();
+    dialogCurrentMatchIndex.value = -1;
+
+    if (query.trim().isEmpty) {
+      update();
+      return;
+    }
+
+    final unsignedQuery = _removeSignVietnamese(query.trim());
+
+    // Find all matching indices in currentMaHieusInPortal
+    for (int i = 0; i < currentMaHieusInPortal.length; i++) {
+      final item = currentMaHieusInPortal[i];
+      final itemName = item.Name ?? "";
+      final unsignedName = _removeSignVietnamese(itemName);
+      if (unsignedName.contains(unsignedQuery)) {
+        dialogSearchMatches.add(i);
+      }
+    }
+
+    if (dialogSearchMatches.isNotEmpty) {
+      dialogCurrentMatchIndex.value = 0;
+    }
+    // Update UI first so widgets rebuild, then scroll after frame
+    update();
+    if (dialogSearchMatches.isNotEmpty) {
+      scrollToMatch(0);
+    }
+  }
+
+  void nextMatch() {
+    if (dialogSearchMatches.isEmpty) {
+      return;
+    }
+    dialogCurrentMatchIndex.value =
+        (dialogCurrentMatchIndex.value + 1) % dialogSearchMatches.length;
+    update();
+    scrollToMatch(dialogCurrentMatchIndex.value);
+  }
+
+  void previousMatch() {
+    if (dialogSearchMatches.isEmpty) {
+      return;
+    }
+    dialogCurrentMatchIndex.value =
+        (dialogCurrentMatchIndex.value - 1 + dialogSearchMatches.length) %
+            dialogSearchMatches.length;
+    update();
+    scrollToMatch(dialogCurrentMatchIndex.value);
+  }
+
+  void scrollToMatch(int matchIdx) {
+    if (matchIdx < 0 || matchIdx >= dialogSearchMatches.length) {
+      return;
+    }
+
+    final itemIndex = dialogSearchMatches[matchIdx];
+
+    // Chờ khung hình hiện tại được dựng xong để đảm bảo viewport đã sẵn sàng
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (dialogScrollController != null &&
+          dialogScrollController!.hasClients) {
+        // Định nghĩa chiều cao cố định giống hệt bên UI
+        final double itemHeight = isDetailedView.value ? 130.0 : 55.0;
+        const double separatorHeight = 1.0; // Đồng bộ với Divider(height: 1)
+        final double itemStep = itemHeight + separatorHeight;
+
+        // Lấy chiều cao vùng hiển thị thực tế của ListView (Viewport)
+        final double viewportHeight =
+            dialogScrollController!.position.viewportDimension;
+
+        // Công thức toán học tính toán offset chính xác để đưa dòng được chọn vào chính giữa màn hình
+        double targetOffset =
+            (itemIndex * itemStep) - (viewportHeight / 2) + (itemHeight / 2);
+
+        // Đảm bảo vị trí cuộn nằm trong giới hạn cho phép (không cuộn quá đầu hoặc cuối danh sách)
+        final double maxScroll =
+            dialogScrollController!.position.maxScrollExtent;
+        targetOffset = targetOffset.clamp(0.0, maxScroll);
+
+        // Cuộn mượt mà trực tiếp đến vị trí mong muốn chỉ với 1 hành động duy nhất
+        dialogScrollController!.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   // Sort dialog list based on selected option

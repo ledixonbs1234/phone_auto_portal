@@ -266,8 +266,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   flex: 2,
                   child: TextField(
                     controller: controller.barcodeInputController,
-                    style: TextStyle(
-                        fontSize: 14, color: AppTheme.textPrimary),
+                    style: TextStyle(fontSize: 14, color: AppTheme.textPrimary),
                     decoration: AppTheme.inputDecoration(
                       label: 'Mã sản phẩm',
                       hint: 'Nhập hoặc quét mã',
@@ -385,8 +384,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
               Expanded(
                 child: Text(
                   "$label: ${date.day}/${date.month}/${date.year}",
-                  style: TextStyle(
-                      fontSize: 12, color: AppTheme.textPrimary),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -485,8 +483,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
                   isExpanded: true,
                   dropdownColor: AppTheme.surfaceCard,
                   underline: const SizedBox.shrink(),
-                  style: TextStyle(
-                      fontSize: 13, color: AppTheme.textPrimary),
+                  style: TextStyle(fontSize: 13, color: AppTheme.textPrimary),
                   icon: Icon(Icons.keyboard_arrow_down_rounded,
                       color: AppTheme.textSecondary),
                   onChanged: (value) {
@@ -529,13 +526,13 @@ class PortalinfoView extends GetView<PortalinfoController> {
                 onLongPress: () => controller.layDuLieuLo(),
               ),
               const SizedBox(width: 8),
-               AppTheme.actionButton(
-                 icon: Icons.save,
-                 label: 'Xác Nhận',
-                 color: AppTheme.dangerRed,
-                 onPressed: () => _showConfirmProcessDialog(context),
-                 onLongPress: () => Get.toNamed(Routes.DINGOAI_CONFIG),
-               ),
+              AppTheme.actionButton(
+                icon: Icons.save,
+                label: 'Xác Nhận',
+                color: AppTheme.dangerRed,
+                onPressed: () => _showConfirmProcessDialog(context),
+                onLongPress: () => Get.toNamed(Routes.DINGOAI_CONFIG),
+              ),
               const SizedBox(width: 8),
               AppTheme.actionButton(
                 icon: Icons.send,
@@ -624,6 +621,18 @@ class PortalinfoView extends GetView<PortalinfoController> {
     final bool showDeleteButton = currentPortalStatus == "2";
 
     controller.similarIdCodes.clear();
+
+    // Initialize search state and controllers
+    final textController = TextEditingController();
+    controller.dialogSearchTextController = textController;
+    controller.dialogSearchText.value = "";
+    controller.dialogSearchMatches.clear();
+    controller.dialogCurrentMatchIndex.value = -1;
+
+    final scrollController = ScrollController();
+    controller.dialogScrollController = scrollController;
+
+    controller.dialogItemKeys.clear();
 
     Get.dialog(
       barrierDismissible: true,
@@ -797,6 +806,100 @@ class PortalinfoView extends GetView<PortalinfoController> {
                       );
                     }),
 
+                    // Search bar
+                    Obx(() {
+                      final hasMatches = dx.dialogSearchMatches.isNotEmpty;
+                      final matchCount = dx.dialogSearchMatches.length;
+                      final currentMatch = dx.dialogCurrentMatchIndex.value;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: textController,
+                                onChanged: (val) => dx.searchInDialog(val),
+                                style: TextStyle(
+                                    color: AppTheme.textPrimary, fontSize: 13),
+                                decoration: InputDecoration(
+                                  hintText: 'Tìm kiếm tên...',
+                                  hintStyle: TextStyle(
+                                    color: AppTheme.textSecondary
+                                        .withValues(alpha: 0.8),
+                                    fontSize: 13,
+                                  ),
+                                  prefixIcon: Icon(Icons.search,
+                                      color: AppTheme.textSecondary, size: 18),
+                                  suffixIcon: textController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(Icons.clear,
+                                              color: AppTheme.textSecondary,
+                                              size: 18),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          onPressed: () {
+                                            textController.clear();
+                                            dx.searchInDialog("");
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 8),
+                                  filled: true,
+                                  fillColor: AppTheme.surfaceDark,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (textController.text.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                hasMatches
+                                    ? '${currentMatch + 1}/$matchCount'
+                                    : '0/0',
+                                style: TextStyle(
+                                  color: hasMatches
+                                      ? AppTheme.accentCyan
+                                      : AppTheme.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                icon: const Icon(Icons.keyboard_arrow_up,
+                                    size: 20),
+                                color: hasMatches
+                                    ? AppTheme.accentCyan
+                                    : AppTheme.textSecondary,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: hasMatches
+                                    ? () => dx.previousMatch()
+                                    : null,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.keyboard_arrow_down,
+                                    size: 20),
+                                color: hasMatches
+                                    ? AppTheme.accentCyan
+                                    : AppTheme.textSecondary,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed:
+                                    hasMatches ? () => dx.nextMatch() : null,
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+
                     Divider(
                         color: AppTheme.dividerColor.withValues(alpha: 0.5)),
 
@@ -810,6 +913,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
                               ? AppTheme.emptyState(
                                   title: 'Không có dữ liệu mã hiệu')
                               : ListView.separated(
+                                  controller: controller.dialogScrollController,
+                                  cacheExtent: 5000,
                                   shrinkWrap: true,
                                   itemCount: dx.currentMaHieusInPortal.length,
                                   separatorBuilder: (_, __) => Divider(
@@ -817,15 +922,29 @@ class PortalinfoView extends GetView<PortalinfoController> {
                                       color: AppTheme.dividerColor
                                           .withValues(alpha: 0.3)),
                                   itemBuilder: (context, i) {
+                                    while (
+                                        controller.dialogItemKeys.length <= i) {
+                                      controller.dialogItemKeys
+                                          .add(GlobalKey());
+                                    }
                                     final item = dx.currentMaHieusInPortal[i];
                                     final isSimilar = controller.similarIdCodes
                                         .contains(item.IDCODE);
-                                    return _buildDialogListTile(
-                                      item: item,
-                                      isSimilar: isSimilar,
-                                      showDeleteButton: showDeleteButton,
-                                      index: index,
-                                      context: context,
+                                        final double itemHeight =
+                                        controller.isDetailedView.value
+                                            ? 130.0
+                                            : 55.0;
+                                    return Container(
+                                      height: itemHeight,
+                                      key: controller.dialogItemKeys[i],
+                                      child: _buildDialogListTile(
+                                        item: item,
+                                        isSimilar: isSimilar,
+                                        showDeleteButton: showDeleteButton,
+                                        index: index,
+                                        itemIndex: i,
+                                        context: context,
+                                      ),
                                     );
                                   },
                                 ),
@@ -841,7 +960,12 @@ class PortalinfoView extends GetView<PortalinfoController> {
           ),
         ),
       ),
-    );
+    ).then((value) {
+      controller.dialogSearchTextController?.dispose();
+      controller.dialogSearchTextController = null;
+      controller.dialogScrollController?.dispose();
+      controller.dialogScrollController = null;
+    });
   }
 
   // ── Dialog list tile ──────────────────────────────────
@@ -850,153 +974,176 @@ class PortalinfoView extends GetView<PortalinfoController> {
     required bool isSimilar,
     required bool showDeleteButton,
     required int index,
+    required int itemIndex,
     required BuildContext context,
   }) {
-    Color? tileColor;
-    if (item.selected) {
-      tileColor = AppTheme.primaryBlue.withValues(alpha: 0.15);
-    } else if (isSimilar) {
-      tileColor = AppTheme.warningOrange.withValues(alpha: 0.15);
-    }
+    return Obx(() {
+      final isMatch = controller.dialogSearchMatches.contains(itemIndex);
+      final isCurrentSearchMatch =
+          controller.dialogCurrentMatchIndex.value != -1 &&
+              controller.dialogSearchMatches.isNotEmpty &&
+              controller.dialogSearchMatches[
+                      controller.dialogCurrentMatchIndex.value] ==
+                  itemIndex;
 
-    return Obx(() => ListTile(
-          dense: true,
-          tileColor: tileColor,
-          onTap: showDeleteButton
-              ? () => controller.toggleItemSelectedInDialog(item)
-              : null,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-          title: Row(
-            children: [
-              if (isSimilar)
-                const Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.warning_amber_rounded,
-                      size: 16, color: AppTheme.warningOrange),
-                ),
-              Builder(
-                builder: (context) {
-                  final direction = controller.getPackageDirection(item);
-                  if (direction == null) return const SizedBox.shrink();
+      Color? tileColor;
+      if (isCurrentSearchMatch) {
+        tileColor = AppTheme.accentCyan.withValues(alpha: 0.35);
+      } else if (isMatch) {
+        tileColor = AppTheme.accentCyan.withValues(alpha: 0.12);
+      } else if (item.selected) {
+        tileColor = AppTheme.primaryBlue.withValues(alpha: 0.15);
+      } else if (isSimilar) {
+        tileColor = AppTheme.warningOrange.withValues(alpha: 0.15);
+      }
 
-                  Color directionBgColor = Colors.blue;
-                  Color directionColor = Colors.blue.shade700;
-                  String displayDirection = direction;
+      return ListTile(
+        dense: true,
+        tileColor: tileColor,
+        onTap: showDeleteButton
+            ? () => controller.toggleItemSelectedInDialog(item)
+            : null,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+        title: Row(
+          children: [
+            if (isSimilar)
+              const Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: Icon(Icons.warning_amber_rounded,
+                    size: 16, color: AppTheme.warningOrange),
+              ),
+            Builder(
+              builder: (context) {
+                final direction = controller.getPackageDirection(item);
+                if (direction == null) return const SizedBox.shrink();
 
-                  if (direction == 'RA') {
-                    directionBgColor = Colors.red;
-                    directionColor = Colors.red.shade700;
-                  } else if (direction == 'VÔ') {
-                    directionBgColor = Colors.green;
-                    directionColor = Colors.green.shade700;
-                  } else if (direction == 'Quảng Nam') {
-                    directionBgColor = Colors.orange;
-                    directionColor = Colors.orange.shade700;
-                    displayDirection = 'Q.Nam';
-                  } else if (direction == 'Quảng Ngãi') {
-                    directionBgColor = Colors.purple;
-                    directionColor = Colors.purple.shade700;
-                    displayDirection = 'Q.Ngãi';
-                  }
+                Color directionBgColor = Colors.blue;
+                Color directionColor = Colors.blue.shade700;
+                String displayDirection = direction;
 
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: directionBgColor.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: directionColor, width: 1),
+                if (direction == 'RA') {
+                  directionBgColor = Colors.red;
+                  directionColor = Colors.red.shade700;
+                } else if (direction == 'VÔ') {
+                  directionBgColor = Colors.green;
+                  directionColor = Colors.green.shade700;
+                } else if (direction == 'Quảng Nam') {
+                  directionBgColor = Colors.orange;
+                  directionColor = Colors.orange.shade700;
+                  displayDirection = 'Q.Nam';
+                } else if (direction == 'Quảng Ngãi') {
+                  directionBgColor = Colors.purple;
+                  directionColor = Colors.purple.shade700;
+                  displayDirection = 'Q.Ngãi';
+                }
+
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: directionBgColor.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: directionColor, width: 1),
+                  ),
+                  child: Text(
+                    displayDirection,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: directionColor,
                     ),
+                  ),
+                );
+              },
+            ),
+            Expanded(
+              child: Text(
+                item.code ?? 'N/A',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppTheme.textPrimary),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        subtitle: controller.isDetailedView.value
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 2),
+                  SizedBox(
+                    // Chiều cao ước tính cho 2 dòng: fontSize (13) * line-height (1.3) * 2 dòng ≈ 34.
+                    // Bạn có thể điều chỉnh con số này để phù hợp với font chữ thực tế.
+                    height: 34,
                     child: Text(
-                      displayDirection,
+                      item.Name ?? "Không có tên",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: directionColor,
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        height:
+                            1.3, // Thuộc tính này giúp kiểm soát khoảng cách dòng tốt hơn
                       ),
                     ),
-                  );
-                },
-              ),
-              Expanded(
-                child: Text(
-                  item.code ?? 'N/A',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: AppTheme.textPrimary),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          subtitle: controller.isDetailedView.value
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 2),
-                    Text(item.Name ?? "Không có tên",
-                        style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13)),
-                    Text(_getLastWords(item.Address, 50),
-                        style: TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 12),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    Text(item.Date ?? '',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                            color: AppTheme.textSecondary)),
-                  ],
-                )
-              : Text(item.Date ?? 'N/A',
-                  style: TextStyle(
-                      fontSize: 12, color: AppTheme.textSecondary)),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(item.Weight ?? '0',
+                  ),
+                  Text(_getLastWords(item.Address, 50),
                       style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.textPrimary)),
-                  Text(item.Money ?? '0',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.successGreen,
-                        fontWeight: FontWeight.bold,
-                      )),
+                          color: AppTheme.textSecondary, fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                  Text(item.Date ?? '',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: AppTheme.textSecondary)),
                 ],
+              )
+            : Text(item.Date ?? 'N/A',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(item.Weight ?? '0',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textPrimary)),
+                Text(item.Money ?? '0',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.successGreen,
+                      fontWeight: FontWeight.bold,
+                    )),
+              ],
+            ),
+            if (showDeleteButton) ...[
+              const SizedBox(width: 4),
+              _buildIconDialogButton(
+                icon: Icons.scale,
+                color: AppTheme.primaryBlue,
+                tooltip: 'Sửa KL',
+                onPressed: () => _showChangeWeightDialog(context, item, index),
               ),
-              if (showDeleteButton) ...[
-                const SizedBox(width: 4),
-                _buildIconDialogButton(
-                  icon: Icons.scale,
-                  color: AppTheme.primaryBlue,
-                  tooltip: 'Sửa KL',
-                  onPressed: () =>
-                      _showChangeWeightDialog(context, item, index),
-                ),
-                _buildIconDialogButton(
-                  icon: Icons.delete,
-                  color: AppTheme.dangerRed,
-                  tooltip: 'Xóa',
-                  onPressed: () =>
-                      _showConfirmDeleteDialog(context, item, index),
-                ),
-              ]
-            ],
-          ),
-        ));
+              _buildIconDialogButton(
+                icon: Icons.delete,
+                color: AppTheme.dangerRed,
+                tooltip: 'Xóa',
+                onPressed: () => _showConfirmDeleteDialog(context, item, index),
+              ),
+            ]
+          ],
+        ),
+      );
+    });
   }
 
   // ── Delete all selected button ─────────────────────
@@ -1133,15 +1280,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text("Xác nhận xóa",
-            style: TextStyle(color: AppTheme.textPrimary)),
+        title:
+            Text("Xác nhận xóa", style: TextStyle(color: AppTheme.textPrimary)),
         content: Text("Bạn có chắc chắn muốn xóa bưu gửi ${item.code ?? ''}?",
             style: TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text("Hủy",
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text("Hủy", style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -1161,16 +1307,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
       AlertDialog(
         backgroundColor: AppTheme.surfaceCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text("Xác nhận xóa",
-            style: TextStyle(color: AppTheme.textPrimary)),
-        content: Text(
-            "Bạn có chắc chắn muốn xóa các bưu gửi đã chọn không?",
+        title:
+            Text("Xác nhận xóa", style: TextStyle(color: AppTheme.textPrimary)),
+        content: Text("Bạn có chắc chắn muốn xóa các bưu gửi đã chọn không?",
             style: TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text("Hủy",
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text("Hủy", style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -1204,8 +1348,7 @@ class PortalinfoView extends GetView<PortalinfoController> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text("Hủy",
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text("Hủy", style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1273,16 +1416,14 @@ class PortalinfoView extends GetView<PortalinfoController> {
           child: SingleChildScrollView(
             child: Text(
               contentMessage.trim(),
-              style:
-                  TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text("Hủy",
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text("Hủy", style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {

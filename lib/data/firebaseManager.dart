@@ -17,6 +17,7 @@ import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_
 import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controller.dart';
 import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
@@ -173,17 +174,7 @@ class FirebaseManager with WidgetsBindingObserver {
             // }
           }
           if (message.Lenh == "mahieubd10") {
-            AwesomeNotifications().createNotification(
-              content: NotificationContent(
-                id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-                channelKey: "test",
-                title: "Nhận mã hiệu mới",
-                body: "Nhấp để sao chép mã và mở STM Max: ${message.DoiTuong}",
-                payload: {
-                  "code": message.DoiTuong,
-                },
-              ),
-            );
+            _shareZaloCode(message.DoiTuong);
           }
           Get.printInfo(info: "lenh " + message.Lenh);
           //         GetStorage().write('getLastTimeStamp', lastTimeStamp);
@@ -361,6 +352,35 @@ class FirebaseManager with WidgetsBindingObserver {
       Get.snackbar(
         'Lỗi gọi điện',
         'Không thể thực hiện cuộc gọi đến $phoneNumber',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  /// Chia sẻ mã hiệu qua Zalo
+  /// Sử dụng deep link Zalo để mở app và cho phép người dùng chọn người nhận
+  Future<void> _shareZaloCode(String code) async {
+    try {
+      'Attempting to share code: $code'.printInfo();
+
+      // Gọi hộp thoại chia sẻ của hệ thống
+      final ShareResult result =
+          await SharePlus.instance.share(ShareParams(text: code));
+
+      // Kiểm tra kết quả nếu cần (tùy chọn)
+      if (result.status == ShareResultStatus.success) {
+        'Successfully shared code'.printInfo();
+      } else {
+        'Share dismissed or failed'.printInfo();
+      }
+    } catch (e) {
+      'Error sharing code: $e'.printInfo();
+      Get.snackbar(
+        'Lỗi chia sẻ',
+        'Không thể chia sẻ mã hiệu $code',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
