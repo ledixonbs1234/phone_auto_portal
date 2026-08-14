@@ -364,6 +364,8 @@ class PortalinfoView extends GetView<PortalinfoController> {
           if (picked != null) {
             if (isFrom) {
               controller.fromDate.value = picked;
+              // Tự động đồng bộ toDate với fromDate
+              controller.toDate.value = picked;
             } else {
               controller.toDate.value = picked;
             }
