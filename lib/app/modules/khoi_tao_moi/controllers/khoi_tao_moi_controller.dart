@@ -125,6 +125,11 @@ class KhoiTaoMoiController extends GetxController {
     }
   }
 
+  int get lockedCustomerPackageCount {
+    if (lockedMaKH.value.isEmpty) return 0;
+    return allSuggestMHs.where((item) => item.maKH == lockedMaKH.value).length;
+  }
+
   void refreshSuggestions() {
     if (isLockedCustomer.value && lockedMaKH.value.isNotEmpty) {
       suggestMHs.value =

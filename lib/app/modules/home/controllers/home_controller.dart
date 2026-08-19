@@ -204,29 +204,42 @@ class HomeController extends GetxController {
     stateText.value = "Đang lấy dữ liệu My Post";
   }
 
-  updateKhachHang() async {
+    updateKhachHang() async {
     var temps = await FirebaseManager().getKhachHangs();
-
     if (temps.isNotEmpty) {
       // Đảm bảo không trùng maKH
       final khachHangMap = {for (var kh in temps) kh.maKH: kh};
       khachHangs.assignAll(khachHangMap.values.toList());
-
       //selected lại khách hàng dựa vào lastSelectKH
       KhachHangs? currentKH;
       if (lastSelectKH.isNotEmpty) {
         currentKH = khachHangs
             .firstWhereOrNull((element) => element.maKH == lastSelectKH);
       }
-
       if (currentKH != null) {
         seKhachHangs.value = currentKH;
       } else {
         seKhachHangs.value = khachHangs[0];
       }
       checkHopDong(seKhachHangs.value);
-      FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
 
+      // Đồng bộ dữ liệu cho DetailController nếu đang mở
+      if (Get.isRegistered<DetailController>()) {
+        final detailController = Get.find<DetailController>();
+        if (detailController.khachHang.value.maKH != null) {
+          final updatedDetailKH = khachHangs.firstWhereOrNull(
+              (kh) => kh.maKH == detailController.khachHang.value.maKH);
+          if (updatedDetailKH != null) {
+            detailController.setUp(
+              updatedDetailKH,
+              detailController.account,
+              detailController.password,
+            );
+          }
+        }
+      }
+
+      FirebaseManager().showSnackBar('Cập nhật dữ liệu thành công');
       stateText.value = "Cập nhật dữ liệu thành công";
     }
   }

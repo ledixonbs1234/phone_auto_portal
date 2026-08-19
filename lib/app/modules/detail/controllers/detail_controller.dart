@@ -46,50 +46,62 @@ class DetailController extends GetxController {
     update();
   }
 
-  void updateBuuguiFromCheck() {
+    void updateBuuguiFromCheck() {
     buuGuis.clear();
+    if (khachHang.value.buuGuis == null) {
+      iSeBuuGui.value = -1;
+      buuGuis.refresh();
+      update();
+      return;
+    }
+    final allBG = khachHang.value.buuGuis!;
     if (isCheckedDangGom.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!.where((element) =>
+      buuGuis.addAll(allBG.where((element) =>
           element.trangThai == 'Đang đi thu gom' ||
           element.trangThai == 'Tạo đơn'));
     }
     if (isCheckNhanHang.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!.where((element) =>
+      buuGuis.addAll(allBG.where((element) =>
           element.trangThai == 'Nhận hàng thành công' ||
           element.trangThai == 'Bưu tá nhận yêu cầu thu gom'));
     }
     if (isCheckPhanHuong.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!.where((element) =>
+      buuGuis.addAll(allBG.where((element) =>
           element.trangThai == 'Đã phân hướng' ||
           element.trangThai == 'Đã lấy hàng'));
     }
     if (isCheckChapNhan.value) {
-      buuGuis.addAll(khachHang.value.buuGuis!
-          .where((element) => element.trangThai == 'Đã chấp nhận'));
+      buuGuis.addAll(allBG.where((element) => element.trangThai == 'Đã chấp nhận'));
     }
-
     if (buuGuis.isNotEmpty) {
-      final small = buuGuis.where((m) => m.khoiLuong! < 2000).toList();
-      //remove in small if m.maBuuGui.Length < 13
-      small.removeWhere((element) => element.maBuuGui!.length < 13);
-      final large = buuGuis.where((m) => m.khoiLuong! >= 2000).toList();
-      large.removeWhere((element) => element.maBuuGui!.length < 13);
+      final small = buuGuis.where((m) => (m.khoiLuong ?? 0) < 2000).toList();
+      small.removeWhere((element) => (element.maBuuGui ?? '').length < 13);
+      final large = buuGuis.where((m) => (m.khoiLuong ?? 0) >= 2000).toList();
+      large.removeWhere((element) => (element.maBuuGui ?? '').length < 13);
       small.sort((a, b) {
-        if (a.maBuuGui!.substring(9, 11) == b.maBuuGui!.substring(9, 11)) {
-          return int.parse(b.maBuuGui!.substring(8, 9)) -
-              int.parse(a.maBuuGui!.substring(8, 9));
-        } else {
-          return int.parse(b.maBuuGui!.substring(9, 11)) -
-              int.parse(a.maBuuGui!.substring(9, 11));
+        try {
+          if (a.maBuuGui!.substring(9, 11) == b.maBuuGui!.substring(9, 11)) {
+            return int.parse(b.maBuuGui!.substring(8, 9)) -
+                int.parse(a.maBuuGui!.substring(8, 9));
+          } else {
+            return int.parse(b.maBuuGui!.substring(9, 11)) -
+                int.parse(a.maBuuGui!.substring(9, 11));
+          }
+        } catch (_) {
+          return 0;
         }
       });
       large.sort((a, b) {
-        if (a.maBuuGui!.substring(9, 11) == b.maBuuGui!.substring(9, 11)) {
-          return int.parse(a.maBuuGui!.substring(8, 9)) -
-              int.parse(b.maBuuGui!.substring(8, 9));
-        } else {
-          return int.parse(b.maBuuGui!.substring(9, 11)) -
-              int.parse(a.maBuuGui!.substring(9, 11));
+        try {
+          if (a.maBuuGui!.substring(9, 11) == b.maBuuGui!.substring(9, 11)) {
+            return int.parse(a.maBuuGui!.substring(8, 9)) -
+                int.parse(b.maBuuGui!.substring(8, 9));
+          } else {
+            return int.parse(b.maBuuGui!.substring(9, 11)) -
+                int.parse(a.maBuuGui!.substring(9, 11));
+          }
+        } catch (_) {
+          return 0;
         }
       });
       buuGuis.value = large + small;
@@ -101,10 +113,14 @@ class DetailController extends GetxController {
         for (var bg in buuGuis) {
           bg.isBlackList = value.contains(bg.maBuuGui);
         }
-
+        buuGuis.refresh();
         update();
       });
+    } else {
+      iSeBuuGui.value = -1;
     }
+    buuGuis.refresh();
+    update();
   }
 
   void increment() => count.value++;

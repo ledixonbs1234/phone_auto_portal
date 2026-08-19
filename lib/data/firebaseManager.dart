@@ -17,6 +17,7 @@ import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_
 import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controller.dart';
 import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -377,15 +378,20 @@ class FirebaseManager with WidgetsBindingObserver {
         'Share dismissed or failed'.printInfo();
       }
     } catch (e) {
-      'Error sharing code: $e'.printInfo();
-      Get.snackbar(
-        'Lỗi chia sẻ',
-        'Không thể chia sẻ mã hiệu $code',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      'Error in _shareZaloCode: $e'.printInfo();
+      // Fallback khi xảy ra lỗi runtime
+      try {
+        await SharePlus.instance.share(ShareParams(text: code));
+      } catch (shareErr) {
+        Get.snackbar(
+          'Lỗi chia sẻ',
+          'Không thể chuyển tiếp mã hiệu $code: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+      }
     }
   }
 

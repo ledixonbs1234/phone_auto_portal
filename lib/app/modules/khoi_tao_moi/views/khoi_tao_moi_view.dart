@@ -458,6 +458,32 @@ class KhoiTaoMoiView extends GetView<KhoiTaoMoiController> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: controller.isLockedCustomer.value
+                                          ? AppTheme.primaryBlue
+                                          : AppTheme.surfaceCard,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: controller.isLockedCustomer.value
+                                            ? AppTheme.primaryBlue
+                                            : AppTheme.dividerColor,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '${controller.lockedCustomerPackageCount} đơn',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: controller.isLockedCustomer.value
+                                            ? Colors.white
+                                            : AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ),
                                   const SizedBox(width: 4),
                                   GestureDetector(
                                     onTap: () {
