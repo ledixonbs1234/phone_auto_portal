@@ -1,9 +1,9 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:phone_auto_portal/data/tms_automation_bridge.dart';
 
 class NotificationController {
-  static const MethodChannel _channel = MethodChannel('com.example.phone_auto_portal/volume');
-
   /// Use this method to detect when a new notification or a schedule is created
   @pragma("vm:entry-point")
   static Future<void> onNotificationCreatedMethod(
@@ -31,19 +31,24 @@ class NotificationController {
       ReceivedAction receivedAction) async {
     final payload = receivedAction.payload;
     if (payload != null && payload.containsKey('code')) {
-      final code = payload['code'];
-      if (code != null && code.isNotEmpty) {
-        // Copy to clipboard
-        await Clipboard.setData(ClipboardData(text: code));
-        
-        // Launch STM Max app
-        try {
-          await _channel.invokeMethod('launchApp', {'appName': 'STM Max'});
-        } catch (e) {
-          // Fallback or print log
-          print("Error launching STM Max: $e");
+      final code = payload['code'] ?? '';
+      final buttonKey = receivedAction.buttonKeyPressed;
+
+      if (buttonKey == 'COPY_ONLY') {
+        if (code.isNotEmpty) {
+          await Clipboard.setData(ClipboardData(text: code));
+          Get.snackbar('Đã sao chép', 'Mã BD10: $code',
+              snackPosition: SnackPosition.BOTTOM);
         }
+        return;
       }
+
+      // Mặc định (nhấp vào thông báo hoặc nút BẮT ĐẦU TỰ ĐỘNG):
+      // Kích hoạt chuỗi hành động tự động hóa TMS qua Accessibility Service
+      await TmsAutomationBridge.startAutomation(
+        code: code,
+        targetApp: 'TMS',
+      );
     }
   }
 }

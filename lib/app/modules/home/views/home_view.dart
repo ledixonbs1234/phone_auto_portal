@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phone_auto_portal/app/widgets/host_selection_widget.dart';
 import 'package:phone_auto_portal/app/theme/app_theme.dart';
+import 'package:phone_auto_portal/data/tms_automation_bridge.dart';
 
 import '../controllers/home_controller.dart';
 
@@ -283,6 +284,46 @@ class HomeView extends GetView<HomeController> {
         appBar: AppTheme.buildAppBar(
           title: '',
           titleWidget: const HostSelectionWidget(),
+          actions: [
+            IconButton(
+              tooltip: 'Cài đặt Trợ năng TMS',
+              icon: const Icon(Icons.accessibility_new_rounded, color: AppTheme.accentCyan),
+              onPressed: () async {
+                final isEnabled = await TmsAutomationBridge.isAccessibilityEnabled();
+                if (isEnabled) {
+                  Get.snackbar(
+                    'Trợ năng TMS',
+                    'Dịch vụ tự động hóa TMS đang HOẠT ĐỘNG sẵn sàng.',
+                    snackPosition: SnackPosition.TOP,
+                    backgroundColor: Colors.green.shade700,
+                    colorText: Colors.white,
+                  );
+                } else {
+                  Get.dialog(
+                    AlertDialog(
+                      title: const Text('Bật Dịch Vụ Trợ Năng TMS'),
+                      content: const Text(
+                        'Để ứng dụng có thể tự động nhận lệnh và điền mã BD10 trên app TMS, bạn cần bật "TMS Automation Service" trong Cài đặt Trợ năng của Android.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text('Đóng'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.back();
+                            TmsAutomationBridge.openAccessibilitySettings();
+                          },
+                          child: const Text('Mở Cài Đặt'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => controller.gotoPortalInfo(),

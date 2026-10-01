@@ -17,7 +17,6 @@ import 'package:phone_auto_portal/app/modules/portalinfo/controllers/portalinfo_
 import 'package:phone_auto_portal/app/modules/taodon/controllers/taodon_controller.dart';
 import 'package:phone_auto_portal/app/modules/nhaphang/controllers/nhaphang_controller.dart';
 import 'package:phone_auto_portal/app/modules/portalinfo/portal_model.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -175,7 +174,38 @@ class FirebaseManager with WidgetsBindingObserver {
             // }
           }
           if (message.Lenh == "mahieubd10") {
-            _shareZaloCode(message.DoiTuong);
+            final code = message.DoiTuong;
+            AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+              if (!isAllowed) {
+                AwesomeNotifications().requestPermissionToSendNotifications();
+              }
+            });
+
+            AwesomeNotifications().createNotification(
+              content: NotificationContent(
+                id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+                channelKey: "test",
+                title: "Lệnh quét BD10 TMS",
+                body: "Nhấn để tự động mở TMS và thực hiện xử lý mã: $code",
+                payload: {
+                  "code": code,
+                  "action": "tms_bd10",
+                },
+                notificationLayout: NotificationLayout.Default,
+              ),
+              actionButtons: [
+                NotificationActionButton(
+                  key: 'AUTO_START',
+                  label: 'BẮT ĐẦU TỰ ĐỘNG',
+                  actionType: ActionType.Default,
+                ),
+                NotificationActionButton(
+                  key: 'COPY_ONLY',
+                  label: 'Chỉ sao chép',
+                  actionType: ActionType.Default,
+                ),
+              ],
+            );
           }
           Get.printInfo(info: "lenh " + message.Lenh);
           //         GetStorage().write('getLastTimeStamp', lastTimeStamp);

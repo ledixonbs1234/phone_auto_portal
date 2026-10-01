@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Phone Auto Portal</string>
+    <string name="tms_accessibility_service_name">TMS Automation Service</string>
+    <string name="tms_accessibility_service_description">Dịch vụ hỗ trợ tự động hóa thao tác quét mã BD10 và quản lý chuyến đi trên ứng dụng TMS VNPost.</string>
+</resources>
