@@ -41,7 +41,8 @@ class MainActivity : FlutterActivity() {
                 "startTmsAutomation" -> {
                     val code = call.argument<String>("code") ?: ""
                     val targetApp = call.argument<String>("targetApp") ?: "TMS"
-                    val started = startTmsAutomation(code, targetApp)
+                    val startStep = call.argument<String>("startStep") ?: "STEP_1_ACCEPT_ORDER"
+                    val started = startTmsAutomation(code, targetApp, startStep)
                     result.success(started)
                 }
                 "stopTmsAutomation" -> {
@@ -65,7 +66,8 @@ class MainActivity : FlutterActivity() {
                 "startTmsAutomation" -> {
                     val code = call.argument<String>("code") ?: ""
                     val targetApp = call.argument<String>("targetApp") ?: "TMS"
-                    val started = startTmsAutomation(code, targetApp)
+                    val startStep = call.argument<String>("startStep") ?: "STEP_1_ACCEPT_ORDER"
+                    val started = startTmsAutomation(code, targetApp, startStep)
                     result.success(started)
                 }
                 "stopTmsAutomation" -> {
@@ -117,10 +119,10 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun startTmsAutomation(code: String, targetApp: String): Boolean {
+    private fun startTmsAutomation(code: String, targetApp: String, startStep: String = "STEP_1_ACCEPT_ORDER"): Boolean {
         val service = TmsAccessibilityService.instance
         if (service != null) {
-            service.startAutomation(code, targetApp)
+            service.startAutomation(code, targetApp, startStep)
             return true
         } else {
             // Chưa bật accessibility service

@@ -17,6 +17,178 @@ class HomeView extends GetView<HomeController> {
 
 
 
+  // ── Test Auto TMS Dialog (Hỗ trợ chọn cảnh/bước bắt đầu) ─────────
+  void _showTestAutoDialog(BuildContext context) {
+    final codeController =
+        TextEditingController(text: '593330591520605131');
+    final appController = TextEditingController(text: 'TMS');
+    String selectedStepId = 'STEP_1_ACCEPT_ORDER';
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) {
+          final currentStepItem = TmsAutomationBridge.supportedSteps.firstWhere(
+            (s) => s.id == selectedStepId,
+            orElse: () => TmsAutomationBridge.supportedSteps.first,
+          );
+
+          return AlertDialog(
+            backgroundColor: AppTheme.surfaceCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.smart_toy_rounded, color: AppTheme.accentCyan),
+                const SizedBox(width: 10),
+                const Text(
+                  'Test Tự Động TMS',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Chọn cảnh (bước bắt đầu) để kiểm thử trực tiếp trên App TMS mà không cần chạy lại từ đầu:',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'BƯỚC BẮT ĐẦU KIỂM THỬ:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentCyan),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: currentStepItem.color.withOpacity(0.6), width: 1.5),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedStepId,
+                          isExpanded: true,
+                          dropdownColor: const Color(0xFF1E293B),
+                          icon: Icon(Icons.arrow_drop_down_circle_rounded, color: currentStepItem.color),
+                          items: TmsAutomationBridge.supportedSteps.map((step) {
+                            return DropdownMenuItem<String>(
+                              value: step.id,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: step.color.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(step.icon, color: step.color, size: 18),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          step.title,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          step.description,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                selectedStepId = val;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: codeController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: AppTheme.inputDecoration(label: 'Mã BD10 thử nghiệm'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: appController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: AppTheme.inputDecoration(
+                          label: 'Tên App TMS (hoặc Package)'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Đóng'),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.stop_circle_rounded),
+                label: const Text('Dừng Auto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.dangerRed,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  Get.back();
+                  await TmsAutomationBridge.stopAutomation();
+                },
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Chạy Test Auto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  final code = codeController.text.trim();
+                  final app = appController.text.trim();
+                  Get.back();
+                  await TmsAutomationBridge.startAutomation(
+                    code: code,
+                    targetApp: app.isNotEmpty ? app : 'TMS',
+                    startStep: selectedStepId,
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   // ── Login Dialog ───────────────────────────────────
   void _showLoginDialog(BuildContext context) {
     final usernameController = TextEditingController(
@@ -776,6 +948,12 @@ class HomeView extends GetView<HomeController> {
                           label: 'Chụp Ảnh',
                           color: const Color(0xFFD946EF),
                           onPressed: () => controller.goToCaptureImage(),
+                        ),
+                        _buildNavChip(
+                          icon: Icons.smart_toy_rounded,
+                          label: 'Test Auto',
+                          color: const Color(0xFF10B981),
+                          onPressed: () => _showTestAutoDialog(context),
                         ),
                       ],
                     ),
