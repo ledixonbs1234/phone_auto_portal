@@ -15,13 +15,10 @@ import '../user_info.dart';
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
-
-
   // ── Test Auto TMS Dialog (Hỗ trợ chọn cảnh/bước bắt đầu) ─────────
   void _showTestAutoDialog(BuildContext context) {
-    final codeController =
-        TextEditingController(text: '593330591520605131');
-    final appController = TextEditingController(text: 'TMS');
+    final codeController = TextEditingController(text: '5932005932800610071');
+    final appController = TextEditingController(text: 'STM');
     String selectedStepId = 'STEP_1_ACCEPT_ORDER';
 
     Get.dialog(
@@ -34,7 +31,8 @@ class HomeView extends GetView<HomeController> {
 
           return AlertDialog(
             backgroundColor: AppTheme.surfaceCard,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
               children: [
                 const Icon(Icons.smart_toy_rounded, color: AppTheme.accentCyan),
@@ -59,22 +57,29 @@ class HomeView extends GetView<HomeController> {
                     const SizedBox(height: 14),
                     const Text(
                       'BƯỚC BẮT ĐẦU KIỂM THỬ:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentCyan),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.accentCyan),
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.25),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: currentStepItem.color.withOpacity(0.6), width: 1.5),
+                        border: Border.all(
+                            color: currentStepItem.color.withOpacity(0.6),
+                            width: 1.5),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: selectedStepId,
                           isExpanded: true,
                           dropdownColor: const Color(0xFF1E293B),
-                          icon: Icon(Icons.arrow_drop_down_circle_rounded, color: currentStepItem.color),
+                          icon: Icon(Icons.arrow_drop_down_circle_rounded,
+                              color: currentStepItem.color),
                           items: TmsAutomationBridge.supportedSteps.map((step) {
                             return DropdownMenuItem<String>(
                               value: step.id,
@@ -86,13 +91,16 @@ class HomeView extends GetView<HomeController> {
                                       color: step.color.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Icon(step.icon, color: step.color, size: 18),
+                                    child: Icon(step.icon,
+                                        color: step.color, size: 18),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           step.title,
@@ -134,7 +142,8 @@ class HomeView extends GetView<HomeController> {
                     TextField(
                       controller: codeController,
                       style: const TextStyle(color: Colors.white),
-                      decoration: AppTheme.inputDecoration(label: 'Mã BD10 thử nghiệm'),
+                      decoration:
+                          AppTheme.inputDecoration(label: 'Mã BD10 thử nghiệm'),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -266,8 +275,7 @@ class HomeView extends GetView<HomeController> {
             backgroundColor: AppTheme.surfaceCard,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            titlePadding:
-                const EdgeInsets.only(left: 20, right: 12, top: 12),
+            titlePadding: const EdgeInsets.only(left: 20, right: 12, top: 12),
             title: Row(
               children: [
                 Container(
@@ -302,8 +310,7 @@ class HomeView extends GetView<HomeController> {
                   TextField(
                     enabled: false,
                     controller: controller.maKHController,
-                    style: TextStyle(
-                        color: AppTheme.dangerRed, fontSize: 16),
+                    style: TextStyle(color: AppTheme.dangerRed, fontSize: 16),
                     decoration: AppTheme.inputDecoration(label: 'Mã KH'),
                   ),
                   SizedBox(height: 10),
@@ -328,8 +335,7 @@ class HomeView extends GetView<HomeController> {
                           value: controller.isHaveHopDong.value,
                           activeColor: AppTheme.successGreen,
                           checkColor: Colors.white,
-                          side:
-                              BorderSide(color: AppTheme.textSecondary),
+                          side: BorderSide(color: AppTheme.textSecondary),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4)),
                           onChanged: controller.isEditHopDong.value
@@ -345,18 +351,17 @@ class HomeView extends GetView<HomeController> {
                           enabled: controller.isEditHopDong.value,
                           keyboardType: TextInputType.number,
                           controller: controller.numberHopDongController,
-                          style:
-                              TextStyle(color: AppTheme.textPrimary),
+                          style: TextStyle(color: AppTheme.textPrimary),
                           decoration: InputDecoration(
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 8),
                             enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                    color: AppTheme.dividerColor)),
+                                borderSide:
+                                    BorderSide(color: AppTheme.dividerColor)),
                             focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                    color: AppTheme.primaryBlue)),
+                                borderSide:
+                                    BorderSide(color: AppTheme.primaryBlue)),
                           ),
                         ),
                       ),
@@ -459,9 +464,11 @@ class HomeView extends GetView<HomeController> {
           actions: [
             IconButton(
               tooltip: 'Cài đặt Trợ năng TMS',
-              icon: const Icon(Icons.accessibility_new_rounded, color: AppTheme.accentCyan),
+              icon: const Icon(Icons.accessibility_new_rounded,
+                  color: AppTheme.accentCyan),
               onPressed: () async {
-                final isEnabled = await TmsAutomationBridge.isAccessibilityEnabled();
+                final isEnabled =
+                    await TmsAutomationBridge.isAccessibilityEnabled();
                 if (isEnabled) {
                   Get.snackbar(
                     'Trợ năng TMS',
@@ -568,8 +575,8 @@ class HomeView extends GetView<HomeController> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryBlue
-                                  .withValues(alpha: 0.12),
+                              color:
+                                  AppTheme.primaryBlue.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                   color: AppTheme.primaryBlue
@@ -654,8 +661,8 @@ class HomeView extends GetView<HomeController> {
                                       icon: Icons.login_rounded,
                                       label: 'GD',
                                       color: const Color(0xFF9B5DE5),
-                                      onPressed: () => controller.loginPNS(
-                                          isGiaoDich: true),
+                                      onPressed: () =>
+                                          controller.loginPNS(isGiaoDich: true),
                                     ),
                                   ],
                                 ),
@@ -686,8 +693,7 @@ class HomeView extends GetView<HomeController> {
                             color: AppTheme.textSecondary),
                         value: controller.seKhachHangs.value,
                         items: controller.khachHangs
-                            .map<DropdownMenuItem<KhachHangs>>(
-                                (KhachHangs e) {
+                            .map<DropdownMenuItem<KhachHangs>>((KhachHangs e) {
                           return DropdownMenuItem<KhachHangs>(
                             value: e,
                             child: Row(
@@ -747,7 +753,8 @@ class HomeView extends GetView<HomeController> {
                     child: Row(
                       children: [
                         Icon(Icons.access_time_rounded,
-                            color: AppTheme.warningOrange.withValues(alpha: 0.7),
+                            color:
+                                AppTheme.warningOrange.withValues(alpha: 0.7),
                             size: 16),
                         SizedBox(width: 6),
                         Text(
@@ -773,8 +780,7 @@ class HomeView extends GetView<HomeController> {
                           child: TextField(
                             controller: controller.textMHController,
                             keyboardType: TextInputType.number,
-                            style:
-                                TextStyle(color: AppTheme.textPrimary),
+                            style: TextStyle(color: AppTheme.textPrimary),
                             decoration: AppTheme.inputDecoration(
                                 label: '', hint: 'Nhập mã hiệu'),
                             onChanged: (value) {
@@ -812,8 +818,7 @@ class HomeView extends GetView<HomeController> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: controller.isHaveHopDong.value
-                                  ? AppTheme.accentCyan
-                                      .withValues(alpha: 0.3)
+                                  ? AppTheme.accentCyan.withValues(alpha: 0.3)
                                   : AppTheme.dividerColor,
                             ),
                           ),
@@ -835,12 +840,10 @@ class HomeView extends GetView<HomeController> {
                               SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      controller.maKHController.text
-                                              .isNotEmpty
+                                      controller.maKHController.text.isNotEmpty
                                           ? controller.maKHController.text
                                           : 'Chưa chọn KH',
                                       style: TextStyle(
@@ -856,8 +859,7 @@ class HomeView extends GetView<HomeController> {
                                           ? 'HĐ: ${controller.numberHopDongController.text.isNotEmpty ? controller.numberHopDongController.text : "—"}'
                                           : 'Không có hợp đồng',
                                       style: TextStyle(
-                                        color: controller
-                                                .isHaveHopDong.value
+                                        color: controller.isHaveHopDong.value
                                             ? AppTheme.successGreen
                                             : AppTheme.textSecondary,
                                         fontSize: 12,
@@ -870,8 +872,7 @@ class HomeView extends GetView<HomeController> {
                                 icon: Icons.rocket_launch_rounded,
                                 label: 'Khởi tạo',
                                 color: AppTheme.accentCyan,
-                                onPressed: () =>
-                                    controller.khoiTaoPortal(),
+                                onPressed: () => controller.khoiTaoPortal(),
                               ),
                               SizedBox(width: 8),
                               Icon(

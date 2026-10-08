@@ -22,7 +22,6 @@ import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -31,24 +30,23 @@ class TmsAccessibilityService : AccessibilityService() {
 
     enum class AutomationStep {
         IDLE,
-        STEP_1_ACCEPT_ORDER,       // Bấm NHẬN LỆNH
-        STEP_2_VIEW_DETAIL,        // Bấm CHI TIẾT
-        STEP_3_START_TRIP,          // Bấm BẮT ĐẦU (nút cam)
-        STEP_3B_CLICK_POINT_593200, // Bấm nút "593200" (Chọn điểm 593200 trên lộ trình)
-       
-        STEP_5_CLICK_VAO_POINT_1,   // Bấm VÀO điểm 1
-        STEP_6_CLICK_SCAN_BD10_1,   // Bấm SCAN BD10
-        STEP_7_INPUT_BD10_CODE,     // Điền mã BD10 và bấm Thêm
-        STEP_8_CONFIRM_BD10_1,      // Bấm Xác nhận (modal Danh sách BD10)
-        STEP_9_CLICK_RA_POINT_1,    // Bấm RA điểm 1
-        STEP_10_SELECT_SECOND_POINT,// Chọn điểm thứ 2 trong lộ trình
-        STEP_11_CLICK_VAO_POINT_2,  // Bấm VÀO điểm 2
-        STEP_12_CLICK_SCAN_BD10_2,  // Bấm SCAN BD10 điểm 2
-        STEP_13_CLICK_DS_BD10_LEN,  // Bấm DS BD10 lên (xanh lá)
-        STEP_14_SELECT_ALL_AND_ADD, // Chọn tất cả mã BD10 và bấm Thêm
-        STEP_15_CONFIRM_BD10_2,     // Bấm Xác nhận (modal Danh sách BD10)
-        STEP_16_CLICK_RA_POINT_2,   // Bấm RA điểm 2 (kết thúc)
-        STEP_DONE                   // Hoàn thành
+        STEP_1_ACCEPT_ORDER,       // Scene 1: Nhận lệnh / Bấm [NHẬN LỆNH] & popup [Đồng ý]
+        STEP_2_VIEW_DETAIL,        // Scene 2: Mở Chi tiết chuyến (tab Đã nhận -> bấm [CHI TIẾT])
+        STEP_3_START_TRIP,          // Scene 3: Bắt đầu chuyến đi (Bấm cam [BẮT ĐẦU])
+        STEP_3B_CLICK_POINT_593200, // Scene 4: Lộ trình -> Chọn Điểm 1 (593200)
+        STEP_5_CLICK_VAO_POINT_1,   // Scene 5: Chi tiết Điểm 1 -> Bấm [Đến điểm] & popup [Đồng ý]
+        STEP_6_CLICK_SCAN_BD10_1,   // Scene 6: Điểm 1 đã đến -> Bấm nút [SCAN BD10]
+        STEP_7_INPUT_BD10_CODE,     // Scene 7: Popup BD10 Điểm 1 -> Điền mã BD10 & bấm [Thêm]
+        STEP_8_CONFIRM_BD10_1,      // Scene 8: Popup BD10 Điểm 1 -> Bấm [Xác nhận]
+        STEP_9_CLICK_RA_POINT_1,    // Scene 9: Chi tiết Điểm 1 -> Bấm [Đi khỏi điểm] & popup [Đồng ý]
+        STEP_10_SELECT_SECOND_POINT,// Scene 10: Lộ trình -> Chọn Điểm 2 (593280)
+        STEP_11_CLICK_VAO_POINT_2,  // Scene 11: Chi tiết Điểm 2 -> Bấm [Đến điểm] & popup [Đồng ý]
+        STEP_12_CLICK_SCAN_BD10_2,  // Scene 12: Điểm 2 đã đến -> Bấm nút [SCAN BD10]
+        STEP_13_CLICK_DS_BD10_LEN,  // Scene 13: Popup BD10 Điểm 2 -> Bấm [DS BD10 lên] (xanh lá)
+        STEP_14_SELECT_ALL_AND_ADD, // Scene 14: Popup con -> Chọn mã & bấm [Thêm] (xanh lá)
+        STEP_15_CONFIRM_BD10_2,     // Scene 15: Popup BD10 Điểm 2 -> Bấm [Xác nhận]
+        STEP_16_CLICK_RA_POINT_2,   // Scene 16: Chi tiết Điểm 2 -> Bấm [Đi khỏi điểm] & popup [Đồng ý]
+        STEP_DONE                   // Hoàn thành toàn bộ
     }
 
     companion object {
@@ -74,7 +72,6 @@ class TmsAccessibilityService : AccessibilityService() {
             AutomationStep.STEP_2_VIEW_DETAIL,
             AutomationStep.STEP_3_START_TRIP,
             AutomationStep.STEP_3B_CLICK_POINT_593200,
-          
             AutomationStep.STEP_5_CLICK_VAO_POINT_1,
             AutomationStep.STEP_6_CLICK_SCAN_BD10_1,
             AutomationStep.STEP_7_INPUT_BD10_CODE,
@@ -89,32 +86,44 @@ class TmsAccessibilityService : AccessibilityService() {
             AutomationStep.STEP_16_CLICK_RA_POINT_2
         )
 
+        // Cấu hình khoảng thời gian giãn cách giữa các lần bấm lại (Debounce / Rate-limit)
+        private const val DEFAULT_ACTION_INTERVAL_MS = 1400L // 1.4 giây đối với click thường
+        private const val NETWORK_ACTION_INTERVAL_MS = 2200L // 2.2 giây đối với thao tác có gọi mạng/popup
+        private const val MAX_RETRY_PER_SCENE = 15 // Tối đa 15 lần retry (~20-30s) trước khi dừng an toàn
+
         fun isServiceRunning(): Boolean {
             return instance != null
         }
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var stepStartTime: Long = 0L
-    private val stepTimeoutMs: Long = 20000L // 20s timeout tối đa cho mỗi bước
+    
+    // Quản lý Reactive State Machine
+    private var activeScene: AutomationStep = AutomationStep.IDLE
+    private var lastActionTimestamp: Long = 0L
+    private var sceneRetryCount: Int = 0
     private var totalInactiveCount: Int = 0
-    private var isActionPending: Boolean = false
- private var step13RetryCount: Int = 0
-    private var lastStep13ClickTime: Long = 0L
-    // Window Manager cho nút dừng nổi (Floating Stop Overlay)
+
+    // Ghi nhớ trạng thái đã hoàn thành xử lý popup BD10 tại từng điểm
+    private var isPoint1Bd10Done: Boolean = false
+    private var isPoint2Bd10Done: Boolean = false
+    private var isClickBD10OneTime: Boolean = false
+
+    // Window Manager cho thanh điều khiển nổi
     private var windowManager: WindowManager? = null
     private var stopOverlayView: View? = null
 
+    // Vòng lặp quan sát và phản ứng tự thích ứng (State-Driven Reactive Loop)
     private val automationRunnable = object : Runnable {
         override fun run() {
             if (!isRunning || !isContinuousMode) return
             try {
-                processAutomationStep()
+                processAutomationCycle()
             } catch (e: Exception) {
-                Log.e(TAG, "Lỗi trong processAutomationStep: ${e.message}", e)
+                Log.e(TAG, "Lỗi trong processAutomationCycle: ${e.message}", e)
             }
             if (isRunning && isContinuousMode) {
-                mainHandler.postDelayed(this, 800)
+                mainHandler.postDelayed(this, 500) // Chu kỳ quét 500ms cực kỳ mượt mà
             }
         }
     }
@@ -127,22 +136,18 @@ class TmsAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Chỉ tự động xử lý khi ở chế độ chạy liên hoàn (Continuous Auto Mode)
         if (!isRunning || !isContinuousMode || event == null) return
 
         val pkg = event.packageName?.toString() ?: ""
-        // Chỉ xử lý event nếu là từ App TMS hoặc App của chúng ta
         if (pkg.isNotEmpty() && !isTmsPackage(pkg) && !pkg.contains("phone_auto_portal")) {
             return
         }
 
-        // Khi có thay đổi cửa sổ hoặc nội dung, kích hoạt kiểm tra ngay nếu không bận
+        // Khi cửa sổ hoặc nội dung thay đổi, kích hoạt ngay chu kỳ kiểm tra
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-            if (!isActionPending) {
-                mainHandler.removeCallbacks(automationRunnable)
-                mainHandler.post(automationRunnable)
-            }
+            mainHandler.removeCallbacks(automationRunnable)
+            mainHandler.post(automationRunnable)
         }
     }
 
@@ -167,7 +172,7 @@ class TmsAccessibilityService : AccessibilityService() {
         bd10CodeToInput = code.trim()
         targetAppName = appName
         isRunning = true
-        isContinuousMode = true // Khởi động ở chế độ chạy tự động liên hoàn
+        isContinuousMode = true
 
         val parsedStep = try {
             AutomationStep.valueOf(startStepName)
@@ -175,23 +180,26 @@ class TmsAccessibilityService : AccessibilityService() {
             AutomationStep.STEP_1_ACCEPT_ORDER
         }
         currentStep = parsedStep
-        stepStartTime = System.currentTimeMillis()
+        activeScene = AutomationStep.IDLE
+        lastActionTimestamp = 0L
+        sceneRetryCount = 0
         totalInactiveCount = 0
-        isActionPending = false
+        isPoint1Bd10Done = false
+        isPoint2Bd10Done = false
 
-        Log.i(TAG, "Bắt đầu tự động hóa TMS từ bước: $currentStep (${getStepShortName(currentStep)}) với mã BD10: $bd10CodeToInput, targetApp: $targetAppName")
+        Log.i(TAG, "🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TMS (State-Driven Engine) | Bước đầu: $currentStep | Mã BD10: $bd10CodeToInput")
         Toast.makeText(this, "Bắt đầu tự động hóa: ${getStepShortName(currentStep)}", Toast.LENGTH_SHORT).show()
 
-        // 1. Hiển thị nút DỪNG thủ công nổi trên màn hình
+        // 1. Hiển thị thanh điều khiển nổi
         showStopOverlayButton()
         updateOverlayStepText(currentStep.name)
 
         // 2. Mở App TMS
         launchApp(targetAppName)
 
-        // 3. Chạy vòng lặp State Machine
+        // 3. Chạy vòng lặp tự động hóa
         mainHandler.removeCallbacks(automationRunnable)
-        mainHandler.postDelayed(automationRunnable, 1500)
+        mainHandler.postDelayed(automationRunnable, 1200)
     }
 
     private fun getStepShortName(step: AutomationStep): String {
@@ -200,7 +208,6 @@ class TmsAccessibilityService : AccessibilityService() {
             AutomationStep.STEP_2_VIEW_DETAIL -> "2. Chi Tiết"
             AutomationStep.STEP_3_START_TRIP -> "3. Bắt Đầu"
             AutomationStep.STEP_3B_CLICK_POINT_593200 -> "3B. Bấm 593200"
-           
             AutomationStep.STEP_5_CLICK_VAO_POINT_1 -> "5. Vào Điểm 1"
             AutomationStep.STEP_6_CLICK_SCAN_BD10_1 -> "6. Scan Điểm 1"
             AutomationStep.STEP_7_INPUT_BD10_CODE -> "7. Nhập Mã BD10"
@@ -223,25 +230,12 @@ class TmsAccessibilityService : AccessibilityService() {
         isRunning = false
         isContinuousMode = false
         currentStep = AutomationStep.IDLE
-        isActionPending = false
+        activeScene = AutomationStep.IDLE
+        isPoint1Bd10Done = false
+        isPoint2Bd10Done = false
         mainHandler.removeCallbacks(automationRunnable)
         removeStopOverlayButton()
-        Log.i(TAG, "Đã dừng tự động hóa TMS")
-    }
-
-    private fun nextStep(step: AutomationStep, delayMs: Long = 800) {
-        currentStep = step
-        stepStartTime = System.currentTimeMillis()
-        totalInactiveCount = 0
-        isActionPending = true
-        Log.i(TAG, ">>> CHUYỂN SANG BƯỚC TIẾP THEO: $currentStep")
-step13RetryCount = 0
-        lastStep13ClickTime = 0L
-        updateOverlayStepText(step.name)
-
-        mainHandler.postDelayed({
-            isActionPending = false
-        }, delayMs)
+        Log.i(TAG, "🛑 Đã dừng tự động hóa TMS")
     }
 
     private fun isTmsPackage(pkgName: String): Boolean {
@@ -249,11 +243,21 @@ step13RetryCount = 0
             return true
         }
         val lower = pkgName.lowercase()
-        return lower.contains("tms") || lower.contains("stm") || lower.contains("vnpost") || lower.contains("mypost")
+        return lower.contains("stm")
     }
 
-        private fun processAutomationStep() {
-        if (isActionPending || !isRunning || !isContinuousMode) return
+    // =========================================================================
+    // TRÁI TIM ĐIỀU PHỐI TỰ THÍCH ỨNG (STATE-DRIVEN AUTONOMOUS ENGINE)
+    // =========================================================================
+
+    /**
+     * Vòng lặp điều phối chính:
+     * 1. Quét nhận diện chính xác Scene hiện tại trên màn hình TMS.
+     * 2. Nếu phát hiện Scene MỚI (Scene tiếp theo đã tới) -> Chuyển trạng thái & Thực thi ngay.
+     * 3. Nếu vẫn ở Scene CŨ (Scene tiếp theo CHƯA TỚI) -> Chờ đúng chu kỳ và BẤM LẠI BUTTON CŨ (Retry)!
+     */
+    private fun processAutomationCycle() {
+        if (!isRunning || !isContinuousMode) return
 
         val rootNode = rootInActiveWindow ?: run {
             Log.d(TAG, "rootInActiveWindow is null, đang chờ...")
@@ -262,18 +266,14 @@ step13RetryCount = 0
 
         val currentPkg = rootNode.packageName?.toString() ?: ""
 
-        // =====================================================================
-        // KIỂM TRA ỨNG DỤNG TMS CÓ ĐANG ACTIVE KHÔNG
-        // =====================================================================
         if (currentPkg.isNotEmpty() && !isTmsPackage(currentPkg)) {
             if (currentPkg.contains("phone_auto_portal")) {
-                Log.d(TAG, "Đang ở màn hình app phone_auto_portal, đang chờ chuyển sang TMS...")
+                Log.d(TAG, "Đang ở app portal, đang chờ chuyển sang TMS...")
                 return
             }
-
             totalInactiveCount++
-            if (totalInactiveCount % 5 == 0) {
-                Log.d(TAG, "App TMS không active (cửa sổ hiện tại: $currentPkg). Tạm dừng chờ TMS active...")
+            if (totalInactiveCount % 6 == 0) {
+                Log.d(TAG, "App TMS không active ($currentPkg), đang chờ...")
             }
             return
         }
@@ -283,145 +283,398 @@ step13RetryCount = 0
             Log.i(TAG, "Đã nhận diện package TMS active: $targetPackageName")
         }
 
-        // Kiểm tra timeout cho bước hiện tại (chỉ áp dụng trong Continuous Auto Mode)
-        if (System.currentTimeMillis() - stepStartTime > stepTimeoutMs) {
-            Log.w(TAG, "Đang chờ phần tử của bước: $currentStep trên màn hình TMS...")
-            handleStepTimeout(rootNode)
+        // 1. NHẬN DIỆN MÀN HÌNH HIỆN TẠI (Detect Current Active Scene)
+        val detectedScene = detectCurrentScene(rootNode)
+
+        if (detectedScene == AutomationStep.IDLE) {
+            // Màn hình đang load hoặc ở trạng thái chưa định danh, kiên nhẫn chờ chu kỳ tiếp
             return
         }
 
-        // Thực thi bước hiện tại trong chế độ tự động liên hoàn
-        val success = executeStepAction(currentStep, rootNode)
-        if (success) {
-            val idx = RUNNABLE_STEPS.indexOf(currentStep)
-            val nextStepEnum = if (idx >= 0 && idx < RUNNABLE_STEPS.size - 1) {
-                RUNNABLE_STEPS[idx + 1]
-            } else {
-                AutomationStep.STEP_DONE
+        if (detectedScene == AutomationStep.STEP_DONE) {
+            Log.i(TAG, "==============================================")
+            Log.i(TAG, "🎉 ĐÃ HOÀN THÀNH TOÀN BỘ TIẾN TRÌNH TỰ ĐỘNG HÓA TMS!")
+            Log.i(TAG, "==============================================")
+            Toast.makeText(this, "🎉 Hoàn tất tự động hóa TMS!", Toast.LENGTH_LONG).show()
+            stopAutomation()
+            return
+        }
+
+        val now = System.currentTimeMillis()
+
+        // 2. NẾU PHÁT HIỆN SCENE MỚI (Màn hình đã chuyển sang Scene tiếp theo thành công)
+        if (detectedScene != activeScene) {
+            Log.i(TAG, "🔄 [SCENE CHUYỂN ĐỔI] $activeScene ──> $detectedScene (${getStepShortName(detectedScene)})")
+            activeScene = detectedScene
+            currentStep = detectedScene
+            sceneRetryCount = 0
+            updateOverlayStepText(detectedScene.name)
+
+            // Thực thi ngay hành động của Scene mới
+            val executed = executeSceneAction(detectedScene, rootNode)
+            if (executed) {
+                lastActionTimestamp = now
             }
-            val delay = when (currentStep) {
-                AutomationStep.STEP_1_ACCEPT_ORDER, 
-                AutomationStep.STEP_3_START_TRIP, 
-                AutomationStep.STEP_3B_CLICK_POINT_593200,
-                AutomationStep.STEP_5_CLICK_VAO_POINT_1 -> 6000L // 👈 THÊM DÒNG NÀY ĐỂ CHỜ POPUP ĐÓNG HẲN (1.5s)
-                AutomationStep.STEP_11_CLICK_VAO_POINT_2 -> 8000L
-                AutomationStep.STEP_10_SELECT_SECOND_POINT -> 2000L
-                AutomationStep.STEP_7_INPUT_BD10_CODE, 
-                AutomationStep.STEP_14_SELECT_ALL_AND_ADD -> 1200L
-                AutomationStep.STEP_8_CONFIRM_BD10_1, AutomationStep.STEP_15_CONFIRM_BD10_2 -> 1200L
-                AutomationStep.STEP_9_CLICK_RA_POINT_1 -> 8500L 
-                else -> 800L
+            return
+        }
+
+        // 3. NẾU VẪN ĐANG Ở SCENE CŨ (Scene tiếp theo CHƯA TỚI):
+        val requiredInterval = getRequiredIntervalForScene(detectedScene)
+
+        // Kiểm tra xem đã trôi qua đủ thời gian giãn cách chưa
+        if (now - lastActionTimestamp >= requiredInterval) {
+            sceneRetryCount++
+
+            if (sceneRetryCount > MAX_RETRY_PER_SCENE) {
+                Log.w(TAG, "⚠️ Scene $detectedScene đã thử lại $sceneRetryCount lần quá giới hạn. Đang reset thử lại...")
+                sceneRetryCount = 1
             }
-            nextStep(nextStepEnum, delay)
+
+            Log.w(TAG, "🔁 [RETRY #$sceneRetryCount] Scene tiếp theo chưa tới, đang bấm lại nút của: ${getStepShortName(detectedScene)}...")
+            mainHandler.post {
+                Toast.makeText(this, "👉 Nhấn lại: ${getStepShortName(detectedScene)} (#$sceneRetryCount)", Toast.LENGTH_SHORT).show()
+            }
+
+            val executed = executeSceneAction(detectedScene, rootNode)
+            if (executed) {
+                lastActionTimestamp = now
+            }
         }
     }
 
+    private fun getRequiredIntervalForScene(scene: AutomationStep): Long {
+        return when (scene) {
+            AutomationStep.STEP_1_ACCEPT_ORDER,
+            AutomationStep.STEP_5_CLICK_VAO_POINT_1,
+            AutomationStep.STEP_9_CLICK_RA_POINT_1,
+            AutomationStep.STEP_11_CLICK_VAO_POINT_2,
+            AutomationStep.STEP_16_CLICK_RA_POINT_2 -> NETWORK_ACTION_INTERVAL_MS // Thao tác mạng/popup cần 2.2s
+            AutomationStep.STEP_13_CLICK_DS_BD10_LEN -> 1600L
+            else -> DEFAULT_ACTION_INTERVAL_MS // 1.4s cho các nút bình thường
+        }
+    }
+
+    // =========================================================================
+    // BỘ NHẬN DIỆN MÀN HÌNH ĐẶC TRƯNG (DISTINCTIVE SCENE RECOGNITION DETECTIVE)
+    // =========================================================================
+
     /**
-     * Thực thi một bước cụ thể trên cây giao diện (UI Tree) hiện tại.
-     * Trả về true nếu đã tìm thấy và thực hiện thành công thao tác (hoặc màn hình đã ở bước tiếp theo), false nếu không tìm thấy.
+     * Phân tích cây UI để xác định DUY NHẤT 1 Scene đang hoạt động.
+     * Quy tắc: Kiểm tra từ các Modal con bên trong nhất -> Modal cha -> Chi tiết Điểm -> Lộ trình -> Menu ngoài.
+     * TUYỆT ĐỐI KHÔNG sử dụng các từ khóa chung chung gây nhầm lẫn giữa các màn hình.
      */
-    private fun executeStepAction(step: AutomationStep, rootNode: AccessibilityNodeInfo): Boolean {
-        return when (step) {
+    private fun detectCurrentScene(root: AccessibilityNodeInfo): AutomationStep {
+        // -------------------------------------------------------------
+        // A. CÁC MODAL VÀ POPUP NỔI (Ưu tiên cao nhất)
+        // -------------------------------------------------------------
+
+        // 1. Modal con bên trong nhất: "DS BD10 tại điểm lên" (Ảnh 13 & 14)
+        if (isAtDsLenSubModal(root)) {
+            return AutomationStep.STEP_14_SELECT_ALL_AND_ADD
+        }
+
+         val screen1find = hasAllExactTexts(root,listOf("NHẬN LỆNH","Lệnh mới"))
+         if(screen1find){
+            Log.i(TAG, "🚀 Đang ở màn hình 1: Nhận lệnh (10:00 - 17:50)")
+             return AutomationStep.STEP_1_ACCEPT_ORDER
+         }
+         val screen2find = hasAllExactTexts(root,listOf("CHI TIẾT","Đã nhận lệnh"))
+         if(screen2find){
+            Log.i(TAG, "🚀 Đang ở màn hình 2: Chi tiết lệnh")
+            return AutomationStep.STEP_2_VIEW_DETAIL
+         }
+
+         val screen3find = hasAllExactTexts(root,listOf("Chi tiết chuyến","BẮT ĐẦU"))
+         if(screen3find){
+            Log.i(TAG, "🚀 Đang ở màn hình 3: Chi tiết chuyến (Bắt đầu)")
+            return AutomationStep.STEP_3_START_TRIP
+         }
+
+                 // 2. Modal "Danh sách BD10" (Điểm 1 & Điểm 2)
+        if (isAtBd10MainModal(root) || hasAllExactTexts(root, listOf("Danh sách BD10", "Thêm", "Xác nhận"))) {
+            val hasDsLenBtn = findNodeByTexts(root, listOf("DS BD10 lên", "DS BD10 LEN", "DS BD10 len", "DS BD10 LÊN")) != null
+            val hasItemsInList = hasBd10ItemInTable(root)
+
+            if (hasDsLenBtn) {
+                // Điểm 2 (có nút DS BD10 lên):
+                return if (hasItemsInList) {
+                    Log.i(TAG, "🚀 Popup BD10 Điểm 2 - Có mã trong bảng -> Bấm Xác nhận")
+                    isPoint1Bd10Done = true
+                    AutomationStep.STEP_15_CONFIRM_BD10_2
+                } else {
+                    Log.i(TAG, "🚀 Popup BD10 Điểm 2 - Bảng rỗng -> Bấm DS BD10 lên")
+                    AutomationStep.STEP_13_CLICK_DS_BD10_LEN
+                }
+            } else {
+                // Popup nhập tay mã BD10 (Điểm 1 hoặc Điểm 2):
+                val isPoint2Screen = findNodeByTexts(root, listOf("- 593280")) != null
+                return if (hasItemsInList) {
+                    Log.i(TAG, "🚀 Popup BD10 - Có mã trong bảng -> Bấm Xác nhận")
+                    if (isPoint2Screen) AutomationStep.STEP_15_CONFIRM_BD10_2 else AutomationStep.STEP_8_CONFIRM_BD10_1
+                } else {
+                    Log.i(TAG, "🚀 Popup BD10 - Bảng rỗng -> Nhập mã BD10 & Thêm")
+                    AutomationStep.STEP_7_INPUT_BD10_CODE
+                }
+            }
+        }
+
+        // 4. Popup "Xác nhận đến điểm?" (Ảnh 6, 10)
+        if (findNodeByTexts(root, listOf("Xác nhận đến điểm?", "Xác nhận đến điểm")) != null) {
+            val isPoint2 = findNodeByTexts(root, listOf("593280", "BCP Hoài Nhơn", "Giao hàng")) != null
+            return if (isPoint2) AutomationStep.STEP_11_CLICK_VAO_POINT_2 else AutomationStep.STEP_5_CLICK_VAO_POINT_1
+        }
+
+        // 5. Popup "Xác nhận rời điểm?" (Ảnh 8, 16)
+        if (findNodeByTexts(root, listOf("Xác nhận rời điểm?", "Xác nhận rời điểm")) != null) {
+            val isPoint2 = findNodeByTexts(root, listOf("593280", "BCP Hoài Nhơn", "Giao hàng")) != null
+            return if (isPoint2) AutomationStep.STEP_16_CLICK_RA_POINT_2 else AutomationStep.STEP_9_CLICK_RA_POINT_1
+        }
+
+        // -------------------------------------------------------------
+        // B. MÀN HÌNH CHI TIẾT ĐIỂM (Có 3 block: Đến điểm, Đi khỏi điểm, Cập nhật vị trí)
+        // -------------------------------------------------------------
+        if (isAtPointDetailScreen(root)) {
+            val isPoint2 = findNodeByTexts(root, listOf("593280")) != null
+
+            if (isPoint2) {
+                // === ĐIỂM 2 (593280) ===
+                val isArrived2 = isPointArrived(root)
+                if (!isArrived2) {
+                    return AutomationStep.STEP_11_CLICK_VAO_POINT_2 // Chưa đến -> Bấm Đến điểm
+                }
+
+                // Đã đến điểm 2:
+                // Nếu vừa xử lý popup BD10 xong (vừa từ popup con quay ra ngoài màn hình chính):
+                val justCameFromBd10Popup = activeScene in listOf(
+                    AutomationStep.STEP_7_INPUT_BD10_CODE,
+                    AutomationStep.STEP_8_CONFIRM_BD10_1,
+                    AutomationStep.STEP_13_CLICK_DS_BD10_LEN,
+                    AutomationStep.STEP_14_SELECT_ALL_AND_ADD,
+                    AutomationStep.STEP_15_CONFIRM_BD10_2
+                )
+                if (justCameFromBd10Popup) {
+                    isPoint2Bd10Done = true
+                }
+
+                val shouldLeavePoint = isPoint2Bd10Done || currentStep == AutomationStep.STEP_16_CLICK_RA_POINT_2
+
+                return if (shouldLeavePoint) {
+                    Log.i(TAG, "🚀 Đang ở chi tiết Điểm 2 (593280) - Đã xử lý xong BD10 -> Bấm [Đi khỏi điểm]")
+                    AutomationStep.STEP_16_CLICK_RA_POINT_2 // Đã scan xong -> Bấm Đi khỏi điểm!
+                } else {
+                    Log.i(TAG, "🚀 Đang ở chi tiết Điểm 2 (593280) - Chưa scan BD10 -> Bấm [SCAN BD10]")
+                    AutomationStep.STEP_12_CLICK_SCAN_BD10_2 // Có nút SCAN BD10 -> Bấm Scan BD10
+                }
+            } else {
+                // === ĐIỂM 1 (593200) ===
+                val isArrived1 = isPointArrived(root)
+                if (!isArrived1) {
+                    return AutomationStep.STEP_5_CLICK_VAO_POINT_1 // Chưa đến -> Bấm Đến điểm
+                }
+
+                // Đã đến điểm 1:
+                val justCameFromBd10Popup = activeScene in listOf(
+                    AutomationStep.STEP_7_INPUT_BD10_CODE,
+                    AutomationStep.STEP_8_CONFIRM_BD10_1
+                )
+                if (justCameFromBd10Popup) {
+                    isPoint1Bd10Done = true
+                }
+
+                val shouldLeavePoint = isPoint1Bd10Done 
+
+                return if (shouldLeavePoint) {
+                    Log.i(TAG, "🚀 Đang ở chi tiết Điểm 1 (593200) - Đã xử lý xong BD10 -> Bấm [Đi khỏi điểm]")
+                    AutomationStep.STEP_9_CLICK_RA_POINT_1 // Đã scan xong -> Bấm Đi khỏi điểm!
+                } else {
+                    Log.i(TAG, "🚀 Đang ở chi tiết Điểm 1 (593200) - Chưa scan BD10 -> Bấm [SCAN BD10]")
+                    AutomationStep.STEP_6_CLICK_SCAN_BD10_1 // Có nút SCAN BD10 -> Bấm Scan
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // C. MÀN HÌNH LỘ TRÌNH TỔNG QUAN ("Chuyến đang chạy" / tab TRẠNG THÁI & LỘ TRÌNH)
+        // -------------------------------------------------------------
+        if (isAtRouteOverviewScreen(root)) {
+            // Kiểm tra trạng thái Điểm 1 (593200)
+            val point1Completed = isPoint1CompletedOnRoute(root)
+
+            return if (!point1Completed) {
+                AutomationStep.STEP_3B_CLICK_POINT_593200 // Điểm 1 chưa xong -> Chọn Điểm 1
+            } else {
+                // Điểm 1 đã xong -> Kiểm tra Điểm 2
+                val point2Completed = isPoint2CompletedOnRoute(root)
+                if (!point2Completed) {
+                    AutomationStep.STEP_10_SELECT_SECOND_POINT // Điểm 2 chưa xong -> Chọn Điểm 2
+                } else {
+                    AutomationStep.STEP_DONE // Cả 2 điểm đã xong -> Hoàn thành!
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // D. CÁC MÀN HÌNH TRƯỚC KHI BẮT ĐẦU CHUYẾN
+        // -------------------------------------------------------------
+
+
+
+
+        return AutomationStep.IDLE
+    }
+
+    // Các hàm kiểm tra phân biệt Screen Signature chuyên sâu:
+
+    private fun isAtDsLenSubModal(root: AccessibilityNodeInfo): Boolean {
+        return findNodeByTexts(root, listOf("DS BD10 tại điểm lên", "tai diem len", "Nhập mã BD10")) != null
+    }
+
+    private fun isAtBd10MainModal(root: AccessibilityNodeInfo): Boolean {
+        if (isAtDsLenSubModal(root)) return false
+        return findNodeByTexts(root, listOf("Danh sách BD10", "SCAN MÃ BD10", "SCAN QR BD10", "Nhập tay mã BD10")) != null
+    }
+
+    private fun isAtPointDetailScreen(root: AccessibilityNodeInfo): Boolean {
+        // Màn hình chi tiết điểm luôn có các ô block header đặc trưng
+        val hasVaoBtn = findNodeByTexts(root, listOf("Đến điểm", "ĐẾN ĐIỂM", "Đến Điểm")) != null
+        val hasRaBtn = findNodeByTexts(root, listOf("Đi khỏi điểm", "ĐI KHỎI ĐIỂM", "Đi Khỏi Điểm")) != null
+        val hasLocationBtn = findNodeByTexts(root, listOf("Cập nhật vị trí", "Cap nhat vi tri")) != null
+        val hasNhantatOrGiaotat = findNodeByTexts(root, listOf("Nhận hàng tại:", "Giao hàng tại:", "Nhận hàng tại", "Giao hàng tại")) != null
+
+        return (hasVaoBtn || hasRaBtn || hasLocationBtn) && hasNhantatOrGiaotat
+    }
+
+    private fun isPointArrived(root: AccessibilityNodeInfo): Boolean {
+        return findNodeByTexts(root, listOf("Trạng thái: Đã đến", "Thực tế đến", "Đã đến")) != null
+    }
+
+    private fun isAtRouteOverviewScreen(root: AccessibilityNodeInfo): Boolean {
+        // Màn hình Lộ trình tổng quan có tab TRẠNG THÁI / LỘ TRÌNH / HÌNH ẢNH nhưng KHÔNG có các block Đến điểm / Đi khỏi điểm
+        if (isAtPointDetailScreen(root)) return false
+        val hasRouteTabs = findNodeByTexts(root, listOf("TRẠNG THÁI", "LỘ TRÌNH", "HÌNH ẢNH", "Tên điểm", "BỘ LỌC")) != null
+        val hasTripTitle = findNodeByTexts(root, listOf("Chuyến đang chạy", "Chuyển đang chạy")) != null
+        return hasRouteTabs || hasTripTitle
+    }
+
+    /**
+     * Tìm ViewGroup/CardView bao bọc riêng 1 Card điểm trên Lộ trình (không leo ra RecyclerView/ScrollView chung)
+     */
+    private fun findItemCardContainer(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        var current: AccessibilityNodeInfo? = node
+        while (current != null) {
+            val parent = current.parent ?: break
+            val parentClass = parent.className?.toString() ?: ""
+
+            // Nếu parent là container danh sách cuộn -> current chính là item card hoàn chỉnh
+            if (parentClass.contains("RecyclerView", ignoreCase = true) ||
+                parentClass.contains("ListView", ignoreCase = true) ||
+                parentClass.contains("ScrollView", ignoreCase = true) ||
+                parentClass.contains("ViewPager", ignoreCase = true)) {
+                return current
+            }
+
+            current = parent
+        }
+        return node.parent?.parent ?: node.parent
+    }
+
+    private fun isPoint1CompletedOnRoute(root: AccessibilityNodeInfo): Boolean {
+        // Điểm 1 (593200) hoàn thành khi có chữ "Đã đi" hoặc "Thực tế rời" và KHÔNG có "Chưa đến điểm"
+        val point1Node = findNodeByTexts(root, listOf("593200"))
+        if (point1Node != null) {
+            val cardContainer = findItemCardContainer(point1Node)
+            if (cardContainer != null) {
+                val hasChuaDen = findNodeByTexts(cardContainer, listOf("Chưa đến điểm", "Chua den diem", "CHƯA ĐẾN ĐIỂM")) != null
+                if (hasChuaDen) return false
+
+                val hasDaDi = findNodeByTexts(cardContainer, listOf("Trạng thái: Đã đi", "Đã đi", "Thực tế rời")) != null
+                if (hasDaDi) return true
+            }
+        }
+        return false
+    }
+
+    private fun isPoint2CompletedOnRoute(root: AccessibilityNodeInfo): Boolean {
+        // Điểm 2 (593280) hoàn thành khi có chữ "Đã đi" hoặc "Thực tế rời" và KHÔNG có "Chưa đến điểm"
+        val point2Node = findNodeByTexts(root, listOf("593280"))
+        if (point2Node != null) {
+            val cardContainer = findItemCardContainer(point2Node)
+            if (cardContainer != null) {
+                // 1. Nếu card có chữ "Chưa đến điểm" -> Chắc chắn chưa hoàn thành!
+                val isNotArrived = findNodeByTexts(cardContainer, listOf("Chưa đến điểm", "Chua den diem", "CHƯA ĐẾN ĐIỂM")) != null
+                if (isNotArrived) return false
+
+                // 2. Chỉ hoàn thành khi có "Đã đi" hoặc "Thực tế rời" trong CHÍNH CARD NÀY
+                val hasDaDi = findNodeByTexts(cardContainer, listOf("Trạng thái: Đã đi", "Đã đi", "Thực tế rời")) != null
+                if (hasDaDi) return true
+            }
+        }
+        return false
+    }
+
+    private fun hasBd10ItemInTable(root: AccessibilityNodeInfo): Boolean {
+        // Kiểm tra xem trong bảng Danh sách BD10 đã có dòng mã BD10 nào chưa (dãy số >= 10 ký tự)
+        val items = findBd10ItemsInPopup(root)
+        return items.isNotEmpty()
+    }
+
+    // =========================================================================
+    // THỰC THI HÀNH ĐỘNG THEO SCENE (SCENE ACTION EXECUTOR)
+    // =========================================================================
+
+    /**
+     * Thực thi đúng hành động của Scene được truyền vào.
+     * Trả về true nếu đã gửi lệnh tương tác (click / nhập liệu) thành công.
+     */
+    private fun executeSceneAction(scene: AutomationStep, rootNode: AccessibilityNodeInfo): Boolean {
+        return when (scene) {
             // -------------------------------------------------------------
-            // BƯỚC 1: Nhận lệnh tại tab "Lệnh mới"
+            // SCENE 1: Nhận lệnh tại tab "Lệnh mới" (Ảnh 1 & 2)
             // -------------------------------------------------------------
             AutomationStep.STEP_1_ACCEPT_ORDER -> {
-                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Đồng Ý", "Dong y", "DONG Y", "Chấp nhận", "CHẤP NHẬN", "OK", "Ok"))
-                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Bạn muốn nhận lệnh này?", "Hủy", "HUY")) != null) {
-                    Log.i(TAG, "Bước 1: Phát hiện popup [Bạn muốn nhận lệnh này?], đang bấm nút [Đồng ý]...")
-                    return clickNode(popupAgreeBtn, "Nút Đồng ý")
+                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Chấp nhận", "OK"))
+                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Bạn muốn nhận lệnh này?", "Hủy")) != null) {
+                    Log.i(TAG, "Scene 1: Phát hiện popup [Bạn muốn nhận lệnh này?], đang bấm [Đồng ý]...")
+                    return clickNode(popupAgreeBtn, "Nút Đồng ý Popup Nhận Lệnh")
                 }
 
                 val acceptBtn = findNodeByTexts(rootNode, listOf("NHẬN LỆNH", "Nhận lệnh", "NHAN LENH"))
                 if (acceptBtn != null) {
-                    Log.i(TAG, "Bước 1: Tìm thấy nút [NHẬN LỆNH], đang bấm...")
+                    Log.i(TAG, "Scene 1: Tìm thấy nút [NHẬN LỆNH], đang bấm...")
                     return clickNode(acceptBtn, "Nút NHẬN LỆNH")
                 }
-
-                val detailBtn = findNodeByTexts(rootNode, listOf("CHI TIẾT", "Chi tiết", "CHI TIET", "Chi Tiết"))
-                if (detailBtn != null) {
-                    Log.i(TAG, "Bước 1: Đã ở màn hình có nút [CHI TIẾT]")
-                    return true
-                }
-
-                val startBtn = findNodeByTexts(rootNode, listOf("BẮT ĐẦU", "Bắt đầu", "BAT DAU"))
-                if (startBtn != null) {
-                    Log.i(TAG, "Bước 1: Đã ở màn hình chi tiết chuyến")
-                    return true
-                }
-
-                if (findNodeByTexts(rootNode, listOf("TRẠNG THÁI", "LỘ TRÌNH", "Chuyến đang chạy", "Chuyển đang chạy")) != null) {
-                    Log.i(TAG, "Bước 1: Đã ở màn hình chuyến đang chạy")
-                    return true
-                }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 2: Bấm nút "CHI TIẾT" (Màn hình Đã nhận lệnh)
+            // SCENE 2: Bấm nút "CHI TIẾT" tại tab "Đã nhận" (Ảnh 3)
             // -------------------------------------------------------------
             AutomationStep.STEP_2_VIEW_DETAIL -> {
-                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Đồng Ý", "Dong y", "DONG Y", "Chấp nhận", "CHẤP NHẬN", "OK", "Ok"))
-                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Bạn muốn nhận lệnh này?", "Hủy", "HUY")) != null) {
-                    Log.i(TAG, "Bước 2: Phát hiện popup [Bạn muốn nhận lệnh này?], đang bấm nút [Đồng ý]...")
-                    return clickNode(popupAgreeBtn, "Nút Đồng ý")
-                }
-
-                val detailBtn = findNodeByTexts(rootNode, listOf("CHI TIẾT", "Chi tiết", "CHI TIET", "Chi Tiết"))
+                val detailBtn = findNodeByTexts(rootNode, listOf("CHI TIẾT", "Chi tiết", "CHI TIET"))
                 if (detailBtn != null) {
-                    Log.i(TAG, "Bước 2: Tìm thấy nút [CHI TIẾT], đang bấm...")
+                    Log.i(TAG, "Scene 2: Tìm thấy nút [CHI TIẾT], đang bấm...")
                     return clickNode(detailBtn, "Nút CHI TIẾT")
                 }
-
-                val startBtn = findNodeByTexts(rootNode, listOf("BẮT ĐẦU", "Bắt đầu", "BAT DAU"))
-                if (startBtn != null) {
-                    Log.i(TAG, "Bước 2: Đã thấy nút [BẮT ĐẦU]")
-                    return true
-                }
-
-                val hasPopup = findNodeByTexts(rootNode, listOf("Bạn muốn nhận lệnh này?", "Hủy")) != null
-                if (!hasPopup) {
-                    val acceptBtn = findNodeByTexts(rootNode, listOf("NHẬN LỆNH", "Nhận lệnh", "NHAN LENH"))
-                    if (acceptBtn != null) {
-                        return clickNode(acceptBtn, "Nút NHẬN LỆNH (Retry từ Bước 2)")
-                    }
-                    val daNhanTab = findNodeByTexts(rootNode, listOf("Đã nhận", "ĐÃ NHẬN", "Da nhan"))
-                    if (daNhanTab != null && findNodeByTexts(rootNode, listOf("Lệnh mới", "Chuyến mới")) != null) {
-                        return clickNode(daNhanTab, "Tab Đã nhận")
-                    }
-                }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 3: Bấm nút "BẮT ĐẦU" (Chi tiết chuyến)
+            // SCENE 3: Bấm nút cam "BẮT ĐẦU" tại Chi tiết chuyến (Ảnh 4)
             // -------------------------------------------------------------
             AutomationStep.STEP_3_START_TRIP -> {
-                val startBtn = findNodeByTexts(rootNode, listOf("BẮT ĐẦU", "Bắt đầu"))
+                val startBtn = findNodeByTexts(rootNode, listOf("BẮT ĐẦU", "Bắt đầu", "BAT DAU"))
                 if (startBtn != null) {
-                    Log.i(TAG, "Bước 3: Tìm thấy nút [BẮT ĐẦU], đang bấm...")
+                    Log.i(TAG, "Scene 3: Tìm thấy nút [BẮT ĐẦU], đang bấm...")
                     return clickNode(startBtn, "Nút BẮT ĐẦU")
-                }
-                if (findNodeByTexts(rootNode, listOf("Chuyến đang chạy", "TRẠNG THÁI", "LỘ TRÌNH","HÌNH ẢNH")) != null) {
-                    Log.i(TAG, "Bước 3: Đã vào màn hình chuyến đang chạy")
-                    return true
                 }
                 false
             }
 
-                        // -------------------------------------------------------------
-            // BƯỚC 3B: Bấm nút "593200" (Chọn điểm 593200 trên lộ trình)
+            // -------------------------------------------------------------
+            // SCENE 4: Chọn Điểm 1 (593200) trên Lộ trình (Ảnh 5)
             // -------------------------------------------------------------
             AutomationStep.STEP_3B_CLICK_POINT_593200 -> {
-                if (handleArrivalNotificationPopup(rootNode, "Bước 3B")) return true
-
-                // Nếu đã ở màn hình chi tiết điểm 1 (thấy Đến điểm hoặc Nhận hàng tại:) -> Đã chọn điểm thành công
-                if (findNodeByTexts(rootNode, listOf("đi khỏi điểm")) != null) {
-                    Log.i(TAG, "Bước 3B: Đã ở màn hình chi tiết điểm 1 (593200)")
-                    return true
-                }
-
-                val btn593200 = findNodeByTexts(rootNode, listOf("593200"))
+               val btn593200 = findNodeByTexts(rootNode, listOf("593200"))
                 if (btn593200 != null) {
                     Log.i(TAG, "Bước 3B: Tìm thấy nút [593200], đang bấm...")
                     val target = findClickableParent(btn593200) ?: btn593200
@@ -433,236 +686,158 @@ step13RetryCount = 0
                     Log.i(TAG, "Bước 3B: Tìm thấy điểm đầu tiên qua fallback, đang click chọn...")
                     return clickNode(firstPointNode, "Điểm 593200 (Fallback)")
                 }
-
                 false
             }
 
-
             // -------------------------------------------------------------
-            // BƯỚC 5: Bấm nút/tab "Đến điểm" (VÀO) của điểm 1 & Xác nhận popup
+            // SCENE 5: Chi tiết Điểm 1 -> Bấm [Đến điểm] & popup [Đồng ý] (Ảnh 6)
             // -------------------------------------------------------------
-           AutomationStep.STEP_5_CLICK_VAO_POINT_1 -> {
-                // 1. Nếu popup [Thông báo / Xác nhận đến điểm] đã hiện sẵn từ trước -> Bấm [Đồng ý] ngay
-                if (handleArrivalNotificationPopup(rootNode, "Bước 5")) return true
-
-                // 2. Kiểm tra nếu ĐÃ ĐẾN ĐIỂM THÀNH CÔNG (Trạng thái: Đã đến, Thực tế đến)
-                val isArrived = findNodeByTexts(rootNode, listOf("Trạng thái: Đã đến", "Đã đến", "Thực tế đến")) != null
-                if (isArrived) {
-                    Log.i(TAG, "Bước 5: Đã xác nhận đến điểm 1 thành công (Trạng thái: Đã đến)")
-                    return true
+            AutomationStep.STEP_5_CLICK_VAO_POINT_1 -> {
+                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "OK"))
+                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Xác nhận đến điểm?", "Xác nhận đến điểm", "Thông báo")) != null) {
+                    Log.i(TAG, "Scene 5: Phát hiện popup [Xác nhận đến điểm?], đang bấm [Đồng ý]...")
+                    return clickNode(popupAgreeBtn, "Nút Đồng ý Đến Điểm 1")
                 }
 
-                // 3. Nếu chưa đến điểm -> Tìm nút [Đến điểm] để bấm
-                val vaoBtn = findNodeByTexts(rootNode, listOf("đến điểm", "ĐẾN ĐIỂM", "Đến Điểm"))
+                val vaoBtn = findNodeByTexts(rootNode, listOf("Đến điểm", "ĐẾN ĐIỂM", "Đến Điểm"))
                 if (vaoBtn != null) {
-                    Log.i(TAG, "Bước 5: Tìm thấy nút [Đến điểm], đang bấm...")
-                    clickNode(vaoBtn, "Nút Đến điểm 1")
-
-                    // 👉 CHỜ 600ms CHO POPUP HIỆN LÊN RỒI TỰ ĐỘNG BẤM [ĐỒNG Ý]
-                    mainHandler.postDelayed({
-                        val currentRoot = rootInActiveWindow ?: return@postDelayed
-                        
-                        // Cách 1: Dùng hàm kiểm tra popup chuẩn
-                        if (!handleArrivalNotificationPopup(currentRoot, "Bước 5 (Tự động bấm popup)")) {
-                            // Cách 2: Quét tìm trực tiếp nút [Đồng ý] / [Xác nhận] / [OK] phòng khi tiêu đề popup khác chữ "Thông báo"
-                            val agreeBtn = findNodeByTexts(currentRoot, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "Chấp nhận", "Xác nhận", "OK", "Ok"))
-                            if (agreeBtn != null) {
-                                Log.i(TAG, "Bước 5: Đang bấm nút Đồng ý trên popup...")
-                                clickNode(agreeBtn, "Nút Đồng ý Popup Đến Điểm")
-                            }
-                        }
-                    }, 600)
-
-                    return true
+                    Log.i(TAG, "Scene 5: Tìm thấy ô [Đến điểm 1], đang bấm...")
+                    return clickNode(vaoBtn, "Ô Đến điểm 1")
                 }
-
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 6: Bấm nút "SCAN BD10" tại điểm 1
+            // SCENE 6: Điểm 1 đã đến -> Bấm nút [SCAN BD10] (Ảnh 6 & 7)
             // -------------------------------------------------------------
             AutomationStep.STEP_6_CLICK_SCAN_BD10_1 -> {
-                if (findNodeByTexts(rootNode, listOf("Danh sách BD10", "Danh sach BD10", "Nhập tay mã BD10")) != null ||
-                    findEditTextNode(rootNode) != null) {
-                    Log.i(TAG, "Bước 6: Đã thấy popup [Danh sách BD10]")
-                    return true
-                }
-
-                val scanBtn = findNodeByTexts(rootNode, listOf("SCAN BD10", "Scan BD10", "SCAN BD 10", "SCAN MÃ BD10"))
+                val scanBtn = findNodeByTexts(rootNode, listOf("SCAN BD10", "Scan BD10", "SCAN BD 10"))
                 if (scanBtn != null) {
-                    Log.i(TAG, "Bước 6: Tìm thấy nút [SCAN BD10], đang bấm...")
-                    return clickNode(scanBtn, "Nút SCAN BD10")
+                    Log.i(TAG, "Scene 6: Tìm thấy nút [SCAN BD10 Điểm 1], đang bấm...")
+                    return clickNode(scanBtn, "Nút SCAN BD10 Điểm 1")
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 7: Điền mã BD10 vào ô nhập và bấm nút "Thêm"
+            // SCENE 7: Popup BD10 Điểm 1 -> Nhập mã BD10 & Bấm [Thêm] (Ảnh 7)
             // -------------------------------------------------------------
             AutomationStep.STEP_7_INPUT_BD10_CODE -> {
+                // Lấy mã từ Clipboard nếu bộ nhớ rỗng
+                ensureBd10CodeLoaded()
+
                 val editText = findEditTextNode(rootNode)
                 if (editText != null && bd10CodeToInput.isNotEmpty()) {
-                    Log.i(TAG, "Bước 7: Tìm thấy ô EditText, đang điền mã BD10: $bd10CodeToInput")
-                    if (setTextOnNode(editText, bd10CodeToInput)) {
+                    Log.i(TAG, "Scene 7: Đang điền mã BD10: $bd10CodeToInput vào ô nhập...")
+                    val textSet = setTextOnNode(editText, bd10CodeToInput)
+                    if (textSet) {
                         mainHandler.postDelayed({
                             val root = rootInActiveWindow ?: return@postDelayed
                             val addBtn = findNodeByTexts(root, listOf("Thêm", "THÊM", "Them"))
                             if (addBtn != null) {
-                                Log.i(TAG, "Bước 7: Tìm thấy nút [Thêm], đang bấm...")
-                                clickNode(addBtn, "Nút Thêm mã BD10")
+                                Log.i(TAG, "Scene 7: Đang bấm nút [Thêm] mã BD10...")
+                                clickNode(addBtn, "Nút Thêm mã BD10 Điểm 1")
                             }
-                        }, 500)
+                        }, 400)
                         return true
                     }
                 } else if (bd10CodeToInput.isEmpty()) {
-                    Log.w(TAG, "Bước 7: Không có mã BD10 cần nhập -> hoàn thành")
+                    Log.w(TAG, "Scene 7: bd10CodeToInput đang trống!")
                     return true
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 8: Bấm nút "Xác nhận" (modal Danh sách BD10)
+            // SCENE 8: Popup BD10 Điểm 1 -> Bấm [Xác nhận] (Ảnh 7)
             // -------------------------------------------------------------
             AutomationStep.STEP_8_CONFIRM_BD10_1 -> {
-                val confirmBtn = findNodeByTexts(rootNode, listOf("Xác nhận", "XÁC NHẬN", "Xac nhan", "XAC NHAN"))
+                val confirmBtn = findNodeByTexts(rootNode, listOf("Xác nhận", "XÁC NHẬN", "Xac nhan"))
                 if (confirmBtn != null) {
-                    Log.i(TAG, "Bước 8: Tìm thấy nút [Xác nhận], đang bấm...")
-                    return clickNode(confirmBtn, "Nút Xác nhận Modal BD10")
-                }
-
-                val raBtn = findNodeByTexts(rootNode, listOf("RA", "Ra"))
-                if (raBtn != null && findNodeByTexts(rootNode, listOf("Danh sách BD10")) == null) {
-                    Log.i(TAG, "Bước 8: Modal đã đóng, thấy nút [RA]")
-                    return true
+                    Log.i(TAG, "Scene 8: Tìm thấy nút [Xác nhận] Modal Điểm 1, đang bấm...")
+                    val clicked = clickNode(confirmBtn, "Nút Xác nhận Modal Điểm 1")
+                    if (clicked) {
+                        isPoint1Bd10Done = true
+                    }
+                    return clicked
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 9: Bấm nút/tab "RA" của điểm 1
+            // SCENE 9: Chi tiết Điểm 1 -> Bấm [Đi khỏi điểm] & popup [Đồng ý] (Ảnh 8)
             // -------------------------------------------------------------
-           AutomationStep.STEP_9_CLICK_RA_POINT_1 -> {
-                // 1. Nếu popup thông báo rời điểm đã hiện sẵn -> Bấm [Đồng ý] ngay
-                if (handleArrivalNotificationPopup(rootNode, "Bước 9")) return true
+            AutomationStep.STEP_9_CLICK_RA_POINT_1 -> {
+                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "OK"))
+                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Xác nhận rời điểm?", "Xác nhận rời điểm", "Thông báo")) != null) {
+                    Log.i(TAG, "Scene 9: Phát hiện popup [Xác nhận rời điểm?], đang bấm [Đồng ý]...")
+                    val clicked = clickNode(popupAgreeBtn, "Nút Đồng ý Rời Điểm 1")
+                    if (clicked) {
+                        isPoint1Bd10Done = false
+                    }
+                    return clicked
+                }
 
-                // 2. Tìm nút "Đi khỏi điểm" để bấm
-                val raBtn = findNodeByTexts(rootNode, listOf("Đi khỏi điểm", "ĐI KHỎI ĐIỂM", "Đi Khỏi Điểm", "RA", "Ra"))
+                val raBtn = findNodeByTexts(rootNode, listOf("Đi khỏi điểm"))
                 if (raBtn != null) {
-                    Log.i(TAG, "Bước 9: Tìm thấy nút [Đi khỏi điểm], đang bấm...")
-                    clickNode(raBtn, "Nút Đi khỏi điểm 1")
-
-                    // 👉 CHỜ 600ms CHO POPUP XUẤT HIỆN RỒI TỰ ĐỘNG BẤM [ĐỒNG Ý]
-                    mainHandler.postDelayed({
-                        val currentRoot = rootInActiveWindow ?: return@postDelayed
-                        if (!handleArrivalNotificationPopup(currentRoot, "Bước 9 (Popup rời điểm)")) {
-                            val agreeBtn = findNodeByTexts(currentRoot, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "Xác nhận", "OK", "Ok"))
-                            if (agreeBtn != null) {
-                                Log.i(TAG, "Bước 9: Đang bấm nút Đồng ý popup rời điểm...")
-                                clickNode(agreeBtn, "Nút Đồng ý Rời Điểm")
-                            }
-                        }
-                    }, 600)
-
-                    // Hiển thị thông báo để biết đang chờ 8 giây
-                    Toast.makeText(this, "⏳ Đã xác nhận rời điểm 1. Đang chờ 8 giây...", Toast.LENGTH_SHORT).show()
-                    return true
+                    Log.i(TAG, "Scene 9: Tìm thấy ô [Đi khỏi điểm 1], đang bấm...")
+                    return clickNode(raBtn, "Ô Đi khỏi điểm 1")
                 }
-
-                // 3. Nếu màn hình đã quay lại lộ trình chuyến
-                if (findNodeByTexts(rootNode, listOf("BCP", "Giao hàng", "Chuyến đang chạy", "LỘ TRÌNH")) != null) {
-                    Log.i(TAG, "Bước 9: Đã ở màn hình lộ trình chuyến")
-                    return true
-                }
-
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 10: Chọn điểm thứ 2 trong lộ trình (Điểm bưu cục giao/trả)
+            // SCENE 10: Chọn Điểm 2 (593280) trên Lộ trình (Ảnh 9)
             // -------------------------------------------------------------
             AutomationStep.STEP_10_SELECT_SECOND_POINT -> {
-               
-                val vaoBtn = findNodeByTexts(rootNode, listOf("593280"))
-                if (vaoBtn != null) {
-                    clickNode(vaoBtn,"Điểm thứ 2")
-                    return true
+                val btn593280 = findNodeByTexts(rootNode, listOf("593280"))
+                if (btn593280 != null) {
+                    Log.i(TAG, "Scene 10: Tìm thấy Card [593280], đang bấm...")
+                    val target = findClickableParent(btn593280) ?: btn593280
+                    return clickNode(target, "Card Điểm 593280")
                 }
-
+                val secondPointNode = findSecondRoutePointNode(rootNode)
+                if (secondPointNode != null) {
+                    Log.i(TAG, "Scene 10: Tìm thấy Điểm 2 qua fallback, đang bấm...")
+                    return clickNode(secondPointNode, "Điểm 2 (Fallback)")
+                }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 11: Bấm nút/tab "VÀO" của điểm 2
+            // SCENE 11: Chi tiết Điểm 2 -> Bấm [Đến điểm] & popup [Đồng ý] (Ảnh 10 & 11)
             // -------------------------------------------------------------
             AutomationStep.STEP_11_CLICK_VAO_POINT_2 -> {
-               
+                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "OK"))
+                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Xác nhận đến điểm?", "Xác nhận đến điểm", "Thông báo")) != null) {
+                    Log.i(TAG, "Scene 11: Phát hiện popup [Xác nhận đến điểm?], đang bấm [Đồng ý]...")
+                    return clickNode(popupAgreeBtn, "Nút Đồng ý Đến Điểm 2")
+                }
 
-                val vaoBtn = findNodeByTexts(rootNode, listOf("Đến điểm"))
+                val vaoBtn = findNodeByTexts(rootNode, listOf("Đến điểm", "ĐẾN ĐIỂM", "Đến Điểm"))
                 if (vaoBtn != null) {
-                    Log.i(TAG, "Bước 11: Tìm thấy nút [VÀO / Đến điểm], đang bấm...")
-                    clickNode(vaoBtn, "Nút VÀO Điểm 2")
-                    mainHandler.postDelayed({
-                        val currentRoot = rootInActiveWindow ?: return@postDelayed
-                        if (!handleArrivalNotificationPopup(currentRoot, "Bước 11 (Popup đến điểm 2)")) {
-                            val agreeBtn = findNodeByTexts(currentRoot, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "Chấp nhận", "Xác nhận", "OK", "Ok"))
-                            if (agreeBtn != null) {
-                                Log.i(TAG, "Bước 11: Đang bấm nút Đồng ý popup đến điểm 2...")
-                                clickNode(agreeBtn, "Nút Đồng ý Điểm 2")
-                            }
-                        }
-                    }, 600)
-                    return true
+                    Log.i(TAG, "Scene 11: Tìm thấy ô [Đến điểm 2], đang bấm...")
+                    return clickNode(vaoBtn, "Ô Đến điểm 2")
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 12: Bấm nút "SCAN BD10" tại điểm 2
+            // SCENE 12: Điểm 2 đã đến -> Bấm nút [SCAN BD10] (Ảnh 11)
             // -------------------------------------------------------------
             AutomationStep.STEP_12_CLICK_SCAN_BD10_2 -> {
-                val dsLenBtn = findNodeByTexts(rootNode, listOf("DS BD10 lên", "DS BD10 LEN", "DS BD10 len", "DS BD10 LÊN"))
-                if (dsLenBtn != null) return true
-
-                val scanBtn = findNodeByTexts(rootNode, listOf("SCAN BD10", "Scan BD10", "SCAN BD 10", "SCAN MÃ BD10"))
+                val scanBtn = findNodeByTexts(rootNode, listOf("SCAN BD10"))
                 if (scanBtn != null) {
-                    Log.i(TAG, "Bước 12: Tìm thấy nút [SCAN BD10], đang bấm...")
+                    Log.i(TAG, "Scene 12: Tìm thấy nút [SCAN BD10 Điểm 2], đang bấm...")
                     return clickNode(scanBtn, "Nút SCAN BD10 Điểm 2")
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 13: Bấm nút "DS BD10 lên" (màu xanh lá)
+            // SCENE 13: Popup BD10 Điểm 2 -> Bấm nút xanh lá [DS BD10 lên] (Ảnh 12)
             // -------------------------------------------------------------
             AutomationStep.STEP_13_CLICK_DS_BD10_LEN -> {
-                // 🎯 1. ĐIỀU KIỆN TIÊN QUYẾT: Nếu ĐÃ THẤY popup "DS BD10 tại điểm lên" -> XONG BƯỚC 13!
-                val popupModal = findNodeByTexts(rootNode, listOf("DS BD10 tại điểm lên", "tai diem len", "điểm lên"))
-                if (popupModal != null) {
-                    Log.i(TAG, "Bước 13: ✅ ĐÃ MỞ THÀNH CÔNG popup [DS BD10 tại điểm lên] -> Chuyển sang Bước 14!")
-                    step13RetryCount = 0
-                    return true
-                }
-
-                // 2. Nếu đã thử bấm đủ 5 lần mà popup vẫn không mở -> Dừng cảnh báo
-                if (step13RetryCount >= 5) {
-                    Log.e(TAG, "Bước 13: ❌ Đã thử bấm 5 lần nhưng popup không mở!")
-                    mainHandler.post {
-                        Toast.makeText(this, "⚠️ Không thể mở DS BD10 sau 5 lần thử!", Toast.LENGTH_LONG).show()
-                    }
-                    stopAutomation()
-                    return false
-                }
-
-                // 3. Giãn cách: Mỗi lần bấm cách nhau ít nhất 1.5 giây để tránh chớp nút liên tục
-                val now = System.currentTimeMillis()
-                if (now - lastStep13ClickTime < 1500L) {
-                    // Đang trong thời gian 1.5s chờ popup tải, kiên nhẫn đợi không click spam
-                    return false
-                }
-
-                // 4. Tìm nút xanh lá "DS BD10 lên"
                 var dsLenBtn = findNodeByTexts(rootNode, listOf(
                     "DS BD10\nlên", "DS BD10\nLên", "DS BD10\nLEN",
                     "DS BD10 lên", "DS BD10 len", "DS BD10"
@@ -672,257 +847,105 @@ step13RetryCount = 0
                     dsLenBtn = findNodeRecursive(rootNode) { node ->
                         val txt = (node.text?.toString() ?: "").replace("\n", " ").trim().lowercase()
                         val desc = (node.contentDescription?.toString() ?: "").replace("\n", " ").trim().lowercase()
-                        (txt.contains("ds bd10") || desc.contains("ds bd10")) && 
+                        (txt.contains("ds bd10") || desc.contains("ds bd10")) &&
                         !txt.contains("danh sách") && !desc.contains("danh sách")
                     }
                 }
 
-                // 5. Thực hiện bấm nút và tăng biến đếm
                 if (dsLenBtn != null) {
-                    step13RetryCount++
-                    lastStep13ClickTime = now
-
+                    Log.i(TAG, "Scene 13: Tìm thấy nút xanh lá [DS BD10 lên], đang bấm...")
                     val target = findClickableParent(dsLenBtn) ?: dsLenBtn
                     val bounds = Rect()
                     target.getBoundsInScreen(bounds)
-                    val cx = bounds.centerX().toFloat()
-                    val cy = bounds.centerY().toFloat()
-
-                    Log.i(TAG, "Bước 13: Đang bấm [DS BD10 lên] lần $step13RetryCount/5...")
-                    mainHandler.post {
-                        Toast.makeText(this, "👉 Bấm DS BD10 lên (lần $step13RetryCount/5)...", Toast.LENGTH_SHORT).show()
-                    }
-
                     if (bounds.width() > 0 && bounds.height() > 0) {
-                        performGestureClick(cx, cy)
-                    } else {
-                        clickNode(target, "Nút DS BD10 lên")
+                        performGestureClick(bounds.centerX().toFloat(), bounds.centerY().toFloat())
                     }
-
-                    // 👉 Nếu đang chạy tự động: Trả về FALSE để CHƯA CHUYỂN BƯỚC NGAY,
-                    // mà chờ vòng lặp 800ms kế tiếp kiểm tra xem popup đã mở chưa.
-                    // Chỉ khi popup ĐÃ MỞ (ở mục 1) thì mới trả về TRUE!
-                    return !isContinuousMode
+                    return clickNode(target, "Nút DS BD10 lên")
                 }
-
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 14: Bấm nút "Thêm" trong popup "DS BD10 tại điểm lên"
+            // SCENE 14: Popup con -> Chọn item mã BD10 & Bấm [Thêm] (xanh lá) (Ảnh 13 & 14)
             // -------------------------------------------------------------
             AutomationStep.STEP_14_SELECT_ALL_AND_ADD -> {
-                // 1. Tìm chính xác nút [Thêm] màu xanh lá của popup "DS BD10 tại điểm lên" (tránh nút Thêm xanh dương của ô nhập tay)
-                val addBtn = findAddButtonInDsLenPopup(rootNode)
+                if(!isClickBD10OneTime){
+                        isClickBD10OneTime = true
+                // 1. Click chọn các item mã BD10 trong popup con nếu chưa chọn
+                val items = findBd10ItemsInPopup(rootNode)
+                for (item in items) {
+                    val clickableItem = findClickableParent(item) ?: item
+                    clickNode(clickableItem, "Item BD10 (${item.text})")
+                }
+            }
+
+                // 2. Tìm chính xác nút [Thêm] màu xanh lá của popup con này
+               val addBtn = findThem(rootNode, 2) // Truyền 1 hoặc 2 tại đây
                 if (addBtn != null) {
-                    Log.i(TAG, "Bước 14: Tìm thấy nút [Thêm] popup DS BD10 tại điểm lên, đang bấm...")
-                    return clickNode(addBtn, "Nút Thêm popup DS BD10 Điểm 2")
-                }
-
-                // 2. Nếu popup DS BD10 tại điểm lên đã đóng và đã thấy nút Xác nhận -> coi như xong bước 14
-                if (findNodeByTexts(rootNode, listOf("Xác nhận", "XÁC NHẬN")) != null) {
-                    Log.i(TAG, "Bước 14: Đã ở màn hình có nút [Xác nhận]")
-                    return true
-                }
-
-                // 3. Nếu thấy nút RA và không còn popup -> coi như đã xong
-                val raBtn = findNodeByTexts(rootNode, listOf("RA", "Ra"))
-                if (raBtn != null && findNodeByTexts(rootNode, listOf("DS BD10", "Danh sách BD10")) == null) {
-                    return true
+                    return clickNode(addBtn, "Nút Thêm số ")
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 15: Bấm nút "Xác nhận" (modal Danh sách BD10 tại điểm 2)
+            // SCENE 15: Popup BD10 Điểm 2 -> Bấm [Xác nhận] (Ảnh 15)
             // -------------------------------------------------------------
             AutomationStep.STEP_15_CONFIRM_BD10_2 -> {
-                // Self-healing: Nếu màn hình vẫn còn popup "DS BD10 tại điểm lên" (thấy nút Thêm) -> bấm nút Thêm giúp người dùng
-                val addBtn = findAddButtonInDsLenPopup(rootNode)
-                if (addBtn != null && findNodeByTexts(rootNode, listOf("DS BD10 tại điểm lên", "DS BD10 tai diem len", "điểm lên")) != null) {
-                    Log.i(TAG, "Bước 15: Phát hiện vẫn còn popup [DS BD10 tại điểm lên], tự động bấm nút [Thêm]...")
-                    return clickNode(addBtn, "Nút Thêm (Self-healing từ Bước 15)")
-                }
-
-                 val items = findBd10ItemsInPopup(rootNode)
-                for (item in items) {
-                    clickNode(item)
-                    Log.i(TAG, "Bước 14: Đã click chọn mã BD10 item: ${item.text}")
-                }
-
-                val confirmBtn = findNodeByTexts(rootNode, listOf("Xác nhận", "XÁC NHẬN", "Xac nhan", "XAC NHAN"))
+                val confirmBtn = findNodeByTexts(rootNode, listOf("Xác nhận", "XÁC NHẬN", "Xac nhan"))
                 if (confirmBtn != null) {
-                    Log.i(TAG, "Bước 15: Tìm thấy nút [Xác nhận], đang bấm...")
-                    return clickNode(confirmBtn, "Nút Xác nhận Modal Điểm 2")
-                }
-
-                val raBtn = findNodeByTexts(rootNode, listOf("RA", "Ra"))
-                if (raBtn != null && findNodeByTexts(rootNode, listOf("Danh sách BD10")) == null) {
-                    Log.i(TAG, "Bước 15: Modal đã đóng, thấy nút [RA]")
-                    return true
+                    Log.i(TAG, "Scene 15: Tìm thấy nút [Xác nhận] Modal Điểm 2, đang bấm...")
+                    val clicked = clickNode(confirmBtn, "Nút Xác nhận Modal Điểm 2")
+                    if (clicked) {
+                        isPoint2Bd10Done = true
+                    }
+                    return clicked
                 }
                 false
             }
 
             // -------------------------------------------------------------
-            // BƯỚC 16: Bấm nút/tab "RA" của điểm 2 (Kết thúc chuyến)
+            // SCENE 16: Chi tiết Điểm 2 -> Bấm [Đi khỏi điểm] & popup [Đồng ý] (Ảnh 16)
             // -------------------------------------------------------------
             AutomationStep.STEP_16_CLICK_RA_POINT_2 -> {
-                if (handleArrivalNotificationPopup(rootNode, "Bước 16")) return true
+                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "OK"))
+                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Xác nhận rời điểm?", "Xác nhận rời điểm", "Thông báo")) != null) {
+                    Log.i(TAG, "Scene 16: Phát hiện popup [Xác nhận rời điểm?], đang bấm [Đồng ý]...")
+                    val clicked = clickNode(popupAgreeBtn, "Nút Đồng ý Rời Điểm 2")
+                    if (clicked) {
+                        isPoint2Bd10Done = false
+                    }
+                    return clicked
+                }
 
-                val raBtn = findNodeByTexts(rootNode, listOf("RA", "Ra", "Đi khỏi điểm", "Kết thúc chuyến"))
+                val raBtn = findNodeByTexts(rootNode, listOf("Đi khỏi điểm"))
                 if (raBtn != null) {
-                    Log.i(TAG, "Bước 16: Tìm thấy nút [RA / Kết thúc chuyến], đang bấm...")
-                    return clickNode(raBtn, "Nút RA Điểm 2")
+                    Log.i(TAG, "Scene 16: Tìm thấy ô [Đi khỏi điểm 2 / Kết thúc], đang bấm...")
+                    return clickNode(raBtn, "Ô Đi khỏi điểm 2")
                 }
                 false
             }
 
-            // -------------------------------------------------------------
-            // BƯỚC CUỐI: Hoàn thành tự động hóa
-            // -------------------------------------------------------------
             AutomationStep.STEP_DONE -> {
-                Log.i(TAG, "==============================================")
-                Log.i(TAG, " ĐÃ HOÀN THÀNH TOÀN BỘ TIẾN TRÌNH TỰ ĐỘNG HÓA TMS!")
-                Log.i(TAG, "==============================================")
-                Toast.makeText(this, "Hoàn tất tự động hóa quét BD10 TMS!", Toast.LENGTH_LONG).show()
+                Log.i(TAG, "Đã hoàn thành toàn bộ tiến trình.")
                 stopAutomation()
                 true
             }
 
-            AutomationStep.IDLE -> {
-                false
-            }
+            AutomationStep.IDLE -> false
         }
     }
 
-    /**
-     * Kiểm tra và bấm nút [Đồng ý] của popup Thông báo (Xác nhận đến điểm / rời điểm / nhận lệnh)
-     */
-    private fun handleArrivalNotificationPopup(rootNode: AccessibilityNodeInfo, currentStepName: String): Boolean {
-        val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Dong y", "DONG Y", "Chấp nhận", "OK", "Ok"))
-        val isArrivalPopup = findNodeByTexts(rootNode, listOf("Thông báo", "Xác nhận đến điểm?", "Xác nhận rời điểm?", "Xác nhận đến điểm", "Xác nhận rời điểm", "Bạn muốn nhận lệnh này?")) != null
-        if (popupAgreeBtn != null && isArrivalPopup) {
-            Log.i(TAG, "[$currentStepName] Phát hiện popup Thông báo, đang bấm [Đồng ý]...")
-            clickNode(popupAgreeBtn, "Nút Đồng ý Popup ($currentStepName)")
-            return true
-        }
-        return false
-    }
-
-    /**
-     * Xử lý timeout an toàn: Dump UI để debug và tự động phục hồi nếu kẹt
-     */
-    private fun handleStepTimeout(rootNode: AccessibilityNodeInfo) {
-        stepStartTime = System.currentTimeMillis() // Reset timer để chờ tiếp
-        Log.w(TAG, "⏳ TIMEOUT bước $currentStep sau ${stepTimeoutMs}ms. Đang dump cây UI và tự động khôi phục...")
-        logNodeHierarchy(rootNode)
-
-        // 1. Kiểm tra nếu có popup Thông báo / Xác nhận đến điểm đang che màn hình
-        if (handleArrivalNotificationPopup(rootNode, "Timeout $currentStep")) {
-            return
-        }
-
-        // Tự động kiểm tra và chuyển bước hoặc retry nếu màn hình có phần tử tương ứng
-        when (currentStep) {
-            AutomationStep.STEP_1_ACCEPT_ORDER, AutomationStep.STEP_2_VIEW_DETAIL -> {
-                val acceptBtn = findNodeByTexts(rootNode, listOf("NHẬN LỆNH", "Nhận lệnh", "NHAN LENH"))
-                if (acceptBtn != null) {
-                    Log.w(TAG, "Timeout: Phát hiện vẫn còn nút [NHẬN LỆNH], bấm lại...")
-                    clickNode(acceptBtn, "Nút NHẬN LỆNH (Timeout Retry)")
-                    return
+    private fun ensureBd10CodeLoaded() {
+        if (bd10CodeToInput.isEmpty()) {
+            try {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                val clipText = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()?.trim() ?: ""
+                if (clipText.isNotEmpty()) {
+                    bd10CodeToInput = clipText
+                    Log.i(TAG, "Tự động nạp mã BD10 từ Clipboard: $bd10CodeToInput")
                 }
-
-                val popupAgreeBtn = findNodeByTexts(rootNode, listOf("Đồng ý", "ĐỒNG Ý", "Đồng Ý", "Dong y", "DONG Y", "Chấp nhận", "OK"))
-                if (popupAgreeBtn != null && findNodeByTexts(rootNode, listOf("Bạn muốn nhận lệnh này?", "Hủy", "HUY")) != null) {
-                    Log.i(TAG, "Timeout: Phát hiện popup xác nhận nhận lệnh chưa đóng, bấm [Đồng ý]...")
-                    clickNode(popupAgreeBtn, "Nút Đồng ý (Timeout)")
-                    return
-                }
-
-                val detailBtn = findNodeByTexts(rootNode, listOf("CHI TIẾT", "Chi tiết", "CHI TIET", "Chi Tiết"))
-                if (detailBtn != null) {
-                    Log.i(TAG, "Timeout: Đã thấy nút [CHI TIẾT], bấm chi tiết...")
-                    if (clickNode(detailBtn, "Nút CHI TIẾT (Timeout)")) {
-                        nextStep(AutomationStep.STEP_3_START_TRIP, 1000)
-                        return
-                    }
-                }
-
-                val startBtn = findNodeByTexts(rootNode, listOf("BẮT ĐẦU", "Bắt đầu", "BAT DAU"))
-                if (startBtn != null) {
-                    Log.i(TAG, "Timeout: Đã thấy nút [BẮT ĐẦU] -> sang Bước 3")
-                    nextStep(AutomationStep.STEP_3_START_TRIP, 500)
-                    return
-                }
-
-                val daNhanTab = findNodeByTexts(rootNode, listOf("Đã nhận", "ĐÃ NHẬN", "Da nhan"))
-                if (daNhanTab != null) {
-                    Log.i(TAG, "Timeout: Thử bấm chuyển sang tab [Đã nhận]...")
-                    clickNode(daNhanTab, "Tab Đã nhận (Timeout)")
-                }
-            }
-            AutomationStep.STEP_3_START_TRIP -> {
-                val startBtn = findNodeByTexts(rootNode, listOf("BẮT ĐẦU", "Bắt đầu", "BAT DAU"))
-                if (startBtn != null) {
-                    clickNode(startBtn, "Nút BẮT ĐẦU (Timeout Retry)")
-                } else if (findNodeByTexts(rootNode, listOf("TRẠNG THÁI", "LỘ TRÌNH")) != null) {
-                    nextStep(AutomationStep.STEP_3B_CLICK_POINT_593200, 500)
-                }
-            }
-            AutomationStep.STEP_3B_CLICK_POINT_593200 -> {
-                if (findNodeByTexts(rootNode, listOf("Đến điểm", "ĐẾN ĐIỂM", "Nhận hàng tại", "Trạng thái: Chưa đến điểm", "Trạng thái: Đã đến", "Thực tế đến")) != null) {
-                    nextStep(AutomationStep.STEP_5_CLICK_VAO_POINT_1, 500)
-                } else {
-                    val btn593200 = findNodeByTexts(rootNode, listOf("593200", "Hoài Nhơn", "Hòai Nhơn"))
-                    if (btn593200 != null) {
-                        val target = findClickableParent(btn593200) ?: btn593200
-                        clickNode(target, "Nút 593200 (Timeout Retry)")
-                    } else {
-                        val firstPoint = findFirstRoutePointNode(rootNode)
-                        if (firstPoint != null) {
-                            clickNode(firstPoint, "Điểm 1 (Timeout Retry)")
-                        }
-                    }
-                }
-            }
-            AutomationStep.STEP_5_CLICK_VAO_POINT_1 -> {
-                if (findNodeByTexts(rootNode, listOf("Trạng thái: Đã đến", "Đã đến", "Thực tế đến")) != null) {
-                    nextStep(AutomationStep.STEP_6_CLICK_SCAN_BD10_1, 500)
-                } else {
-                    val vaoBtn = findNodeByTexts(rootNode, listOf("Đến điểm", "ĐẾN ĐIỂM", "VÀO", "Vào", "VAO"))
-                    if (vaoBtn != null) {
-                        clickNode(vaoBtn, "Nút Đến điểm 1 (Timeout Retry)")
-                    }
-                }
-            }
-            AutomationStep.STEP_6_CLICK_SCAN_BD10_1 -> {
-                if (findNodeByTexts(rootNode, listOf("Danh sách BD10", "Nhập tay mã BD10")) != null) {
-                    nextStep(AutomationStep.STEP_7_INPUT_BD10_CODE, 500)
-                } else {
-                    val scanBtn = findNodeByTexts(rootNode, listOf("SCAN BD10", "Scan BD10", "SCAN BD 10"))
-                    if (scanBtn != null) {
-                        clickNode(scanBtn, "Nút SCAN BD10 (Timeout Retry)")
-                    }
-                }
-            }
-            AutomationStep.STEP_11_CLICK_VAO_POINT_2 -> {
-                if (findNodeByTexts(rootNode, listOf("SCAN BD10", "Scan BD10")) != null) {
-                    nextStep(AutomationStep.STEP_12_CLICK_SCAN_BD10_2, 500)
-                }
-            }
-            AutomationStep.STEP_12_CLICK_SCAN_BD10_2 -> {
-                if (findNodeByTexts(rootNode, listOf("DS BD10 lên", "DS BD10 LEN")) != null) {
-                    nextStep(AutomationStep.STEP_13_CLICK_DS_BD10_LEN, 500)
-                }
-            }
-            AutomationStep.STEP_13_CLICK_DS_BD10_LEN -> {
-                if (findNodeByTexts(rootNode, listOf("DS BD10 tại điểm lên")) != null) {
-                    nextStep(AutomationStep.STEP_14_SELECT_ALL_AND_ADD, 500)
-                }
-            }
-            else -> {
-                Log.d(TAG, "Vẫn đang chờ bước: $currentStep...")
+            } catch (e: Exception) {
+                Log.w(TAG, "Không thể đọc Clipboard: ${e.message}")
             }
         }
     }
@@ -932,7 +955,7 @@ step13RetryCount = 0
     // =========================================================================
 
     /**
-     * Bấm nút TIẾN (⏭): CHỈ chuyển con trỏ sang bước tiếp theo để chọn, TUYỆT ĐỐI KHÔNG tự động chạy!
+     * Bấm nút TIẾN (⏭): Chuyển con trỏ sang bước tiếp theo để chọn
      */
     fun stepForward() {
         isContinuousMode = false
@@ -941,10 +964,7 @@ step13RetryCount = 0
         val idx = RUNNABLE_STEPS.indexOf(currentStep)
         val nextIdx = if (idx >= 0 && idx < RUNNABLE_STEPS.size - 1) idx + 1 else 0
         currentStep = RUNNABLE_STEPS[nextIdx]
-
-        stepStartTime = System.currentTimeMillis()
-        totalInactiveCount = 0
-        isActionPending = false
+        activeScene = currentStep
 
         Log.i(TAG, "⏭ [Thủ công] Đã chọn bước: $currentStep (${getStepShortName(currentStep)})")
         Toast.makeText(this, "⏭ Đã chọn: ${getStepShortName(currentStep)}", Toast.LENGTH_SHORT).show()
@@ -952,7 +972,7 @@ step13RetryCount = 0
     }
 
     /**
-     * Bấm nút LÙI (⏮): CHỈ chuyển con trỏ sang bước trước đó để chọn, TUYỆT ĐỐI KHÔNG tự động chạy!
+     * Bấm nút LÙI (⏮): Chuyển con trỏ sang bước trước đó để chọn
      */
     fun stepBackward() {
         isContinuousMode = false
@@ -961,10 +981,7 @@ step13RetryCount = 0
         val idx = RUNNABLE_STEPS.indexOf(currentStep)
         val prevIdx = if (idx > 0) idx - 1 else RUNNABLE_STEPS.size - 1
         currentStep = RUNNABLE_STEPS[prevIdx]
-
-        stepStartTime = System.currentTimeMillis()
-        totalInactiveCount = 0
-        isActionPending = false
+        activeScene = currentStep
 
         Log.i(TAG, "⏮ [Thủ công] Đã chọn bước: $currentStep (${getStepShortName(currentStep)})")
         Toast.makeText(this, "⏮ Đã chọn: ${getStepShortName(currentStep)}", Toast.LENGTH_SHORT).show()
@@ -972,10 +989,9 @@ step13RetryCount = 0
     }
 
     /**
-     * Bấm nút CHẠY (⚡ Chạy): CHỈ chạy duy nhất bước đang được chọn (Single-Step Execution).
-     * Sau khi chạy xong bước đó:
-     * - Cập nhật bước tiếp theo lên thanh nổi để sẵn sàng cho lần bấm tiếp theo.
-     * - DỪNG LẠI tại đó (KHÔNG tự động chạy lan man sang các bước kế tiếp).
+     * Bấm nút CHẠY (⚡ Chạy):
+     * - Tự động phát hiện Scene thực tế đang hiển thị trên màn hình và thực thi đúng hành động.
+     * - Nếu không tự phát hiện được, chạy bước người dùng đang chọn trên thanh nổi.
      */
     fun runCurrentStepManually() {
         isContinuousMode = false
@@ -984,31 +1000,8 @@ step13RetryCount = 0
         if (!isRunning) {
             isRunning = true
         }
-        if (currentStep == AutomationStep.IDLE || currentStep == AutomationStep.STEP_DONE) {
-            currentStep = RUNNABLE_STEPS.first()
-            updateOverlayStepText(currentStep.name)
-        }
 
-        // Tự động lấy mã BD10 từ Clipboard hệ thống nếu biến trong bộ nhớ đang rỗng
-        if (bd10CodeToInput.isEmpty()) {
-            try {
-                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                val clipText = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()?.trim() ?: ""
-                if (clipText.isNotEmpty()) {
-                    bd10CodeToInput = clipText
-                    Log.i(TAG, "Lấy mã BD10 từ Clipboard: $bd10CodeToInput")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Không thể đọc Clipboard: ${e.message}")
-            }
-        }
-
-        isActionPending = false
-        stepStartTime = System.currentTimeMillis()
-        val stepToRun = currentStep
-
-        Log.i(TAG, "⚡ [Thủ công] Bắt đầu chạy duy nhất bước: $stepToRun (${getStepShortName(stepToRun)})")
-        Toast.makeText(this, "⚡ Đang chạy: ${getStepShortName(stepToRun)}...", Toast.LENGTH_SHORT).show()
+        ensureBd10CodeLoaded()
 
         mainHandler.post {
             try {
@@ -1024,7 +1017,22 @@ step13RetryCount = 0
                     return@post
                 }
 
-                val success = executeStepAction(stepToRun, rootNode)
+                // 1. Ưu tiên: Nếu người dùng đã dùng nút ⏮/⏭ chọn thủ công bước rời điểm (STEP_9 hoặc STEP_16)
+                val detectedScene = detectCurrentScene(rootNode)
+                val stepToRun = if (currentStep == AutomationStep.STEP_16_CLICK_RA_POINT_2 || currentStep == AutomationStep.STEP_9_CLICK_RA_POINT_1) {
+                    currentStep
+                } else if (detectedScene != AutomationStep.IDLE && detectedScene != AutomationStep.STEP_DONE) {
+                    detectedScene
+                } else if (currentStep != AutomationStep.IDLE && currentStep != AutomationStep.STEP_DONE) {
+                    currentStep
+                } else {
+                    RUNNABLE_STEPS.first()
+                }
+
+                Log.i(TAG, "⚡ [Thủ công] Bắt đầu thực thi: $stepToRun (${getStepShortName(stepToRun)})")
+                Toast.makeText(this, "⚡ Đang chạy: ${getStepShortName(stepToRun)}...", Toast.LENGTH_SHORT).show()
+
+                val success = executeSceneAction(stepToRun, rootNode)
                 if (success) {
                     val idx = RUNNABLE_STEPS.indexOf(stepToRun)
                     val nextStep = if (idx >= 0 && idx < RUNNABLE_STEPS.size - 1) {
@@ -1037,11 +1045,11 @@ step13RetryCount = 0
                     Log.i(TAG, "✅ [Thủ công] Đã chạy xong: ${getStepShortName(stepToRun)} -> Sẵn sàng: ${getStepShortName(nextStep)}")
                     Toast.makeText(this, "✅ Xong: ${getStepShortName(stepToRun)}\n👉 Tiếp theo: ${getStepShortName(nextStep)}", Toast.LENGTH_SHORT).show()
                 } else {
-                    Log.w(TAG, "⚠️ [Thủ công] Không tìm thấy nút cho: ${getStepShortName(stepToRun)}")
+                    Log.w(TAG, "⚠️ [Thủ công] Không tìm thấy phần tử cho: ${getStepShortName(stepToRun)}")
                     Toast.makeText(this, "⚠️ Không thấy nút cho: ${getStepShortName(stepToRun)}\nHãy kiểm tra màn hình hoặc dùng ⏮/⏭ chọn lại!", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Lỗi thực thi thủ công bước $stepToRun: ${e.message}", e)
+                Log.e(TAG, "Lỗi thực thi thủ công: ${e.message}", e)
                 Toast.makeText(this, "❌ Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
@@ -1185,7 +1193,6 @@ step13RetryCount = 0
                 mainBar.addView(space())
                 mainBar.addView(btnRun)
 
-                // Hỗ trợ kéo thả thanh công cụ
                 var initialX = 0
                 var initialY = 0
                 var initialTouchX = 0f
@@ -1198,7 +1205,7 @@ step13RetryCount = 0
                             initialY = layoutParams.y
                             initialTouchX = event.rawX
                             initialTouchY = event.rawY
-                            false // Trả về false để các nút con vẫn nhận click
+                            false
                         }
                         MotionEvent.ACTION_MOVE -> {
                             val diffX = Math.abs(event.rawX - initialTouchX)
@@ -1267,6 +1274,134 @@ step13RetryCount = 0
         return java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC).lowercase().trim()
     }
 
+    /**
+     * Kiểm tra xem trên màn hình CÓ ĐẦY ĐỦ TẤT CẢ các chuỗi trong [targetTexts] hay không (Phép toán AND).
+     * Phục vụ đắc lực cho việc nhận diện chính xác màn hình (Scene Signature) khi debug.
+     *
+     * Ví dụ: hasAllTexts(root, listOf("Đã nhận lệnh", "CHI TIẾT"), exactMatch = true)
+     * -> Yêu cầu trên màn hình phải đồng thời xuất hiện cả 2 cụm từ này.
+     *
+     * @param root Node gốc của cửa sổ đang kiểm tra (rootInActiveWindow)
+     * @param targetTexts Danh sách các chuỗi bắt buộc phải cùng xuất hiện
+     * @param exactMatch Nếu true: so khớp trùng khớp 100% nội dung (bỏ qua hoa thường, khoảng trắng và chuẩn hóa Unicode).
+     *                   Nếu false: chỉ cần text của phần tử chứa (contains) từ khóa.
+     * @return true nếu TẤT CẢ các chuỗi trong list đều xuất hiện trên màn hình, ngược lại false.
+     */
+    fun hasAllTexts(
+        root: AccessibilityNodeInfo?,
+        targetTexts: List<String>,
+        exactMatch: Boolean = false
+    ): Boolean {
+        if (root == null || targetTexts.isEmpty()) return false
+
+        val screenTexts = mutableListOf<String>()
+        collectVisibleTexts(root, screenTexts)
+
+        val normalizedTargets = targetTexts.map { normalize(it) }
+
+        // Mọi target trong danh sách đều phải có ít nhất 1 node trên màn hình khớp
+        return normalizedTargets.all { target ->
+            screenTexts.any { screenText ->
+                if (exactMatch) {
+                    screenText == target
+                } else {
+                    screenText.contains(target)
+                }
+            }
+        }
+    }
+
+    /**
+     * Phiên bản tiện ích kiểm tra TRÙNG KHỚP CHÍNH XÁC 100% toàn bộ các chuỗi trong [targetTexts].
+     * (Bỏ qua hoa thường, khoảng trắng thừa và chuẩn hóa Unicode NFC).
+     */
+    fun hasAllExactTexts(root: AccessibilityNodeInfo?, targetTexts: List<String>): Boolean {
+        return hasAllTexts(root, targetTexts, exactMatch = true)
+    }
+
+    /**
+     * Kiểm tra điều kiện AND giữa các nhóm, trong mỗi nhóm là quan hệ OR (Từ đồng nghĩa / Biến thể).
+     * Ví dụ: listOf(listOf("Đã nhận lệnh", "Đã nhận"), listOf("CHI TIẾT", "Chi tiết"))
+     * -> Bắt buộc phải có (Đã nhận lệnh HOẶC Đã nhận) VÀ phải có (CHI TIẾT HOẶC Chi tiết).
+     */
+    fun hasAllTextGroups(
+        root: AccessibilityNodeInfo?,
+        targetGroups: List<List<String>>,
+        exactMatch: Boolean = false
+    ): Boolean {
+        if (root == null || targetGroups.isEmpty()) return false
+
+        val screenTexts = mutableListOf<String>()
+        collectVisibleTexts(root, screenTexts)
+
+        return targetGroups.all { group ->
+            val normalizedGroup = group.map { normalize(it) }
+            normalizedGroup.any { target ->
+                screenTexts.any { screenText ->
+                    if (exactMatch) screenText == target else screenText.contains(target)
+                }
+            }
+        }
+    }
+
+    /**
+     * Tìm và trả về danh sách các Node tương ứng với TẤT CẢ các chuỗi trong [targetTexts] (Phép toán AND).
+     * Nếu thiếu dù chỉ 1 từ khóa trong danh sách -> trả về null.
+     * Thuận tiện để vừa xác nhận có đủ cả 2 text, vừa lấy luôn node để click ngay.
+     */
+    fun findNodesMatchingAllTexts(
+        root: AccessibilityNodeInfo?,
+        targetTexts: List<String>,
+        exactMatch: Boolean = false
+    ): Map<String, AccessibilityNodeInfo>? {
+        if (root == null || targetTexts.isEmpty()) return null
+
+        val allNodes = mutableListOf<AccessibilityNodeInfo>()
+        collectVisibleNodes(root, allNodes)
+
+        val resultMap = mutableMapOf<String, AccessibilityNodeInfo>()
+
+        for (target in targetTexts) {
+            val normTarget = normalize(target)
+            val matchedNode = allNodes.firstOrNull { node ->
+                val t = normalize(node.text?.toString() ?: "")
+                val d = normalize(node.contentDescription?.toString() ?: "")
+                if (exactMatch) {
+                    t == normTarget || d == normTarget
+                } else {
+                    t.contains(normTarget) || d.contains(normTarget)
+                }
+            }
+
+            if (matchedNode != null) {
+                resultMap[target] = matchedNode
+            } else {
+                return null // Thiếu 1 từ -> không thỏa mãn
+            }
+        }
+
+        return resultMap
+    }
+
+    private fun collectVisibleTexts(node: AccessibilityNodeInfo?, result: MutableList<String>) {
+        if (node == null || !node.isVisibleToUser) return
+        val t = node.text?.toString()
+        if (!t.isNullOrBlank()) result.add(normalize(t))
+        val d = node.contentDescription?.toString()
+        if (!d.isNullOrBlank()) result.add(normalize(d))
+        for (i in 0 until node.childCount) {
+            collectVisibleTexts(node.getChild(i), result)
+        }
+    }
+
+    private fun collectVisibleNodes(node: AccessibilityNodeInfo?, result: MutableList<AccessibilityNodeInfo>) {
+        if (node == null || !node.isVisibleToUser) return
+        result.add(node)
+        for (i in 0 until node.childCount) {
+            collectVisibleNodes(node.getChild(i), result)
+        }
+    }
+
     private fun findNodeByTexts(root: AccessibilityNodeInfo, targetTexts: List<String>): AccessibilityNodeInfo? {
         // 1. Ưu tiên tìm các node có khả năng click (isClickable hoặc Button)
         for (text in targetTexts) {
@@ -1308,6 +1443,85 @@ step13RetryCount = 0
         }
     }
 
+     private fun findThem(root: AccessibilityNodeInfo, index: Int = 2): AccessibilityNodeInfo? {
+        val allNodes = mutableListOf<AccessibilityNodeInfo>()
+
+        // 1. Gom tất cả node trên màn hình (quét cả các cửa sổ popup nếu có)
+        fun collect(node: AccessibilityNodeInfo?) {
+            if (node == null || !node.isVisibleToUser) return
+            allNodes.add(node)
+            for (i in 0 until node.childCount) {
+                collect(node.getChild(i))
+            }
+        }
+
+        try {
+            windows?.forEach { w -> w.root?.let { collect(it) } }
+        } catch (e: Exception) { }
+        if (allNodes.isEmpty()) collect(root)
+
+        // 2. Lọc các phần tử có chữ "Thêm"
+        val matchedNodes = allNodes.filter { node ->
+            val txt = normalize(node.text?.toString() ?: "")
+            val desc = normalize(node.contentDescription?.toString() ?: "")
+            txt.contains("thêm") || desc.contains("thêm") || txt.contains("them")
+        }
+
+        // 3. Lọc trùng lặp tọa độ (tránh 1 nút bị đếm 2 lần do cả TextView và Button cha đều có)
+        val distinctButtons = mutableListOf<AccessibilityNodeInfo>()
+        for (node in matchedNodes) {
+            val r = Rect()
+            node.getBoundsInScreen(r)
+            if (r.width() > 0 && r.height() > 0) {
+                val isDuplicate = distinctButtons.any { existing ->
+                    val er = Rect()
+                    existing.getBoundsInScreen(er)
+                    Math.abs(er.centerX() - r.centerX()) < 30 && Math.abs(er.centerY() - r.centerY()) < 30
+                }
+                if (!isDuplicate) {
+                    distinctButtons.add(findClickableParent(node) ?: node)
+                }
+            }
+        }
+
+        // 4. Sắp xếp các nút từ trên xuống dưới theo tọa độ Y
+        distinctButtons.sortBy {
+            val r = Rect()
+            it.getBoundsInScreen(r)
+            r.top
+        }
+
+        // In log danh sách nút tìm được để bạn nhìn thấy ngay trong Logcat
+        Log.i(TAG, "🔎 Quét thấy tổng cộng ${distinctButtons.size} nút [Thêm]:")
+        distinctButtons.forEachIndexed { i, btn ->
+            val r = Rect()
+            btn.getBoundsInScreen(r)
+            Log.i(TAG, "   👉 Nút Thêm [${i + 1}]: bounds=$r, clickable=${btn.isClickable}")
+        }
+
+        val targetIdx = index - 1
+        return if (targetIdx in distinctButtons.indices) {
+            Log.i(TAG, "🎯 Đang chọn nút Thêm [$index]")
+            distinctButtons[targetIdx]
+        } else {
+            Log.e(TAG, "❌ Không tìm thấy nút Thêm [$index] (Chỉ tìm thấy ${distinctButtons.size} nút)")
+            null
+        }
+    }
+
+    /**
+     * Helper duyệt đệ quy toàn bộ cây để gom node thỏa mãn điều kiện
+     */
+    private fun collectNodesRecursive(node: AccessibilityNodeInfo?, predicate: (AccessibilityNodeInfo) -> Boolean) {
+        if (node == null || !node.isVisibleToUser) return
+        if (predicate(node)) {
+            // Callback hoặc thêm vào collection
+        }
+        for (i in 0 until node.childCount) {
+            collectNodesRecursive(node.getChild(i), predicate)
+        }
+    }
+
     private fun findFirstRoutePointNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
         val specific = findNodeByTexts(root, listOf("593200", "Hoài Nhơn", "Tam Quan", "Kho", "Nhận hàng", "Chưa đến điểm"))
         if (specific != null) {
@@ -1317,7 +1531,7 @@ step13RetryCount = 0
     }
 
     private fun findSecondRoutePointNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        val specific = findNodeByTexts(root, listOf("BCP", "Quy Nhơn", "Giao hàng", "Trả hàng"))
+        val specific = findNodeByTexts(root, listOf("593280", "BCP", "Quy Nhơn", "Giao hàng", "Trả hàng"))
         if (specific != null) {
             return findClickableParent(specific) ?: specific
         }
@@ -1340,7 +1554,6 @@ step13RetryCount = 0
     /**
      * Tìm chính xác nút [Thêm] (màu xanh lá) bên trong Modal 2 "DS BD10 tại điểm lên"
      * Tránh nhầm lẫn 100% với nút [Thêm] (màu xanh dương) của ô "Nhập tay mã BD10" ở Modal 1 bên dưới
-     * Đồng thời in LOG CHI TIẾT & HIỂN THỊ TOAST để người dùng nhận diện rõ ràng.
      */
     private fun findAddButtonInDsLenPopup(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
         val detectedList = mutableListOf<DetectedAddButton>()
@@ -1431,56 +1644,19 @@ step13RetryCount = 0
             }
         }
 
-        // 4. Lựa chọn Target chính xác
+        // 4. Lựa chọn Target chính xác (Modal 2 bên trên)
         var target: DetectedAddButton? = detectedList.firstOrNull { it.modalType.contains("Modal 2") }
 
         if (target == null && detectedList.isNotEmpty()) {
             target = detectedList.lastOrNull { it.isClickable || it.className.contains("Button") } ?: detectedList.last()
         }
 
-        for (btn in detectedList) {
-            if (btn == target) {
-                btn.isTarget = true
-                btn.reason = "NÚT MỤC TIÊU CẦN BẤM (Cửa sổ nổi Modal 2 bên trên)"
-            } else {
-                btn.isTarget = false
-                btn.reason = "Nằm ở Modal 1 bên dưới (bị che khuất, bỏ qua)"
-            }
-        }
-
-        // 5. In LOG BLOCK CHI TIẾT ĐỂ NGƯỜI DÙNG DỄ DÀNG QUAN SÁT VÀ PHÂN BIỆT
-        Log.i(TAG, "╔═══════════════════════════════════════════════════════════════════════════════╗")
-        Log.i(TAG, "║ 🔍 [TMS BUTTON DETECT] PHÂN TÍCH TOÀN BỘ BUTTON 'THÊM' TRÊN MÀN HÌNH          ║")
-        Log.i(TAG, "╠═══════════════════════════════════════════════════════════════════════════════╣")
-        Log.i(TAG, "║ Tổng số nút 'Thêm' phát hiện: ${detectedList.size}")
-        for ((idx, btn) in detectedList.withIndex()) {
-            val mark = if (btn.isTarget) "🎯 [ĐƯỢC CHỌN]" else "⏭️ [BỎ QUA]"
-            Log.i(TAG, "║")
-            Log.i(TAG, "║ $mark Nút #${idx + 1}: ${btn.modalType}")
-            Log.i(TAG, "║   ├─ Class: ${btn.className}, Text: '${btn.text}', Clickable: ${btn.isClickable}")
-            Log.i(TAG, "║   ├─ Bounds: ${btn.bounds} (Rộng: ${btn.bounds.width()}px, Cao: ${btn.bounds.height()}px)")
-            Log.i(TAG, "║   ├─ Tọa độ tâm: (${btn.centerX.toInt()}, ${btn.centerY.toInt()})")
-            Log.i(TAG, "║   └─ Đánh giá: ${btn.reason}")
-        }
-        Log.i(TAG, "╠═══════════════════════════════════════════════════════════════════════════════╣")
         if (target != null) {
-            Log.i(TAG, "║ 👉 KẾT QUẢ: ĐÃ CHỌN NÚT #${detectedList.indexOf(target) + 1} (${target.modalType})")
-            Log.i(TAG, "║    Tâm click: (${target.centerX.toInt()}, ${target.centerY.toInt()})")
-        } else {
-            Log.w(TAG, "║ ⚠️ CẢNH BÁO: Không phát hiện được nút 'Thêm' nào!")
-        }
-        Log.i(TAG, "╚═══════════════════════════════════════════════════════════════════════════════╝")
-
-        // 6. Hiển thị Toast thông báo trực quan trên màn hình điện thoại
-        if (target != null) {
-            mainHandler.post {
-                val shortName = if (target.modalType.contains("Modal 2")) "Modal 2 (Xanh lá)" else "Modal 1 (Xanh dương)"
-                Toast.makeText(this, "🎯 Bấm [Thêm] của $shortName\nTọa độ: (${target.centerX.toInt()}, ${target.centerY.toInt()})", Toast.LENGTH_SHORT).show()
-            }
+            Log.i(TAG, "🎯 [CHỌN NÚT THÊM] ${target.modalType} tại (${target.centerX.toInt()}, ${target.centerY.toInt()})")
             return target.node
         }
 
-        // 7. PHƯƠNG ÁN DỰ PHÒNG CUỐI CÙNG (FALLBACK THEO NÚT 'ĐÓNG' CỦA MODAL 2)
+        // 5. Fallback theo nút 'Đóng' của Modal 2
         val closeNodes = root.findAccessibilityNodeInfosByText("Đóng")
         if (!closeNodes.isNullOrEmpty()) {
             for (closeNode in closeNodes.reversed()) {
@@ -1494,10 +1670,7 @@ step13RetryCount = 0
                             val sibBounds = Rect()
                             sibling.getBoundsInScreen(sibBounds)
                             if (sibBounds.left >= closeBounds.right - 20 && Math.abs(sibBounds.centerY() - closeBounds.centerY()) < 50) {
-                                Log.i(TAG, "🎯 [Fallback theo nút Đóng] Đã tìm thấy nút Thêm bên phải nút Đóng: bounds=$sibBounds")
-                                mainHandler.post {
-                                    Toast.makeText(this, "🎯 Bấm [Thêm] bên phải nút Đóng: (${sibBounds.centerX()}, ${sibBounds.centerY()})", Toast.LENGTH_SHORT).show()
-                                }
+                                Log.i(TAG, "🎯 [Fallback theo nút Đóng] Tìm thấy nút Thêm: bounds=$sibBounds")
                                 return sibling
                             }
                         }
@@ -1560,27 +1733,22 @@ step13RetryCount = 0
 
         var success = false
 
-        // 1. Thử gửi Accessibility ACTION_CLICK trực tiếp trên node
+        // 1. Accessibility ACTION_CLICK trên node
         if (node.isClickable) {
             val res = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Log.d(TAG, "-> performAction(ACTION_CLICK) trên node: $res")
             if (res) success = true
         }
 
-        // 2. Thử gửi ACTION_CLICK lên Parent nếu node không clickable
+        // 2. ACTION_CLICK lên Parent nếu node không clickable
         val clickableParent = findClickableParent(node)
         if (clickableParent != null && clickableParent != node) {
-            val parentClass = clickableParent.className?.toString()?.substringAfterLast(".") ?: "Parent"
             val resParent = clickableParent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Log.d(TAG, "-> performAction(ACTION_CLICK) trên $parentClass: $resParent")
             if (resParent) success = true
         }
 
-        // 3. LUÔN LUÔN kích hoạt Gesture Tap vật lý vào tâm tọa độ của View
-        // Đảm bảo hoạt động 100% kể cả khi app dùng Flutter / React Native / Custom TouchListener
+        // 3. Kích hoạt Gesture Tap vật lý vào tâm tọa độ (đảm bảo click trúng 100% trên mọi framework)
         if (hasValidBounds) {
             val gestureRes = performGestureClick(centerX, centerY)
-            Log.d(TAG, "-> performGestureClick($centerX, $centerY): $gestureRes")
             if (gestureRes) success = true
         }
 
@@ -1594,47 +1762,20 @@ step13RetryCount = 0
         return targetNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
     }
 
-        private fun performGestureClick(x: Float, y: Float): Boolean {
+    private fun performGestureClick(x: Float, y: Float): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
         if (x <= 0f || y <= 0f) return false
 
-        // 👉 Dùng Path với 1 điểm chạm duy nhất (Click chuẩn xác, không kéo rê dù chỉ 1 pixel)
         val path = Path().apply {
             moveTo(x, y)
         }
         val builder = GestureDescription.Builder()
-        builder.addStroke(GestureDescription.StrokeDescription(path, 0L, 100L)) // 100ms chuẩn độ giữ của ngón tay
+        builder.addStroke(GestureDescription.StrokeDescription(path, 0L, 80L))
         return try {
             dispatchGesture(builder.build(), null, null)
         } catch (e: Exception) {
             Log.e(TAG, "Lỗi khi dispatchGesture: ${e.message}", e)
             false
-        }
-    
-    }
-
-    /**
-     * In ra toàn bộ cây giao diện hiện tại của màn hình để người dùng quan sát và debug
-     */
-    private fun logNodeHierarchy(node: AccessibilityNodeInfo?, depth: Int = 0) {
-        if (node == null || depth > 8) return
-        val indent = "  ".repeat(depth)
-        val bounds = Rect()
-        node.getBoundsInScreen(bounds)
-        val text = node.text?.toString() ?: ""
-        val desc = node.contentDescription?.toString() ?: ""
-        val cls = node.className?.toString()?.substringAfterLast(".") ?: "Node"
-        val info = buildString {
-            append("$indent├─ [$cls] ")
-            if (text.isNotEmpty()) append("text='$text' ")
-            if (desc.isNotEmpty()) append("desc='$desc' ")
-            if (node.isClickable) append("(CLICKABLE) ")
-            if (node.isEditable) append("(EDITABLE) ")
-            append("bounds=[${bounds.left},${bounds.top} - ${bounds.right},${bounds.bottom}]")
-        }
-        Log.d(TAG, info)
-        for (i in 0 until node.childCount) {
-            logNodeHierarchy(node.getChild(i), depth + 1)
         }
     }
 
@@ -1656,7 +1797,7 @@ step13RetryCount = 0
                 return true
             }
 
-            // 2. Tìm app có nhãn (Label) hoặc Package bắt đầu bằng tiền tố
+            // 2. Tìm app có nhãn hoặc Package bắt đầu bằng tiền tố
             for (app in apps) {
                 val label = pm.getApplicationLabel(app).toString()
                 if (label.startsWith(prefixOrPackage, ignoreCase = true) ||
@@ -1672,7 +1813,7 @@ step13RetryCount = 0
             }
 
             // 3. Tìm app có chứa "TMS", "STM", "VNPost"
-            val fallbacks = listOf("TMS", "STM", "VNPost", "Post")
+            val fallbacks = listOf("STM")
             for (fallback in fallbacks) {
                 for (app in apps) {
                     val label = pm.getApplicationLabel(app).toString()
